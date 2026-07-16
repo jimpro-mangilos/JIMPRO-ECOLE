@@ -1,0 +1,268 @@
+import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Users,
+  Wallet,
+  Package,
+  Briefcase,
+  FileText,
+  Menu,
+  X,
+  Settings,
+  Shield,
+  User as UserIcon,
+  LogOut,
+  ChevronDown,
+  DollarSign,
+  BarChart3,
+  Archive,
+  MessageCircle,
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useLogo } from '../contexts/LogoContext';
+import { useMenuConfig } from '../hooks/useMenuConfig';
+import { supabase } from '../lib/supabase';
+import { BROADCAST_CONVERSATION_ID } from '../hooks/useChat';
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  'dashboard': LayoutDashboard,
+  'eleves': Users,
+  'paiements': DollarSign,
+  'finances': Wallet,
+  'fournitures-eleves': Package,
+  'fournitures-bureau': Briefcase,
+  'stock-uniformes': Archive,
+  'rapports': FileText,
+  'tableau-bord-comptable': BarChart3,
+  'configuration': Settings,
+  'admin': Shield,
+  'chat': MessageCircle,
+};
+
+const MENU_PATH_MAP: Record<string, string> = {
+  'dashboard': '/',
+  'eleves': '/eleves',
+  'paiements': '/paiements',
+  'finances': '/finances',
+  'fournitures-eleves': '/fournitures-eleves',
+  'fournitures-bureau': '/fournitures-bureau',
+  'stock-uniformes': '/stock-uniformes',
+  'rapports': '/rapports',
+  'tableau-bord-comptable': '/tableau-bord-comptable',
+  'configuration': '/configuration',
+  'admin': '/admin',
+  'chat': '/chat',
+};
+
+export default function Layout({ children }: LayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, signOut, isItManager, isRevoque } = useAuth();
+  const { logoUrl } = useLogo();
+  const { menuItems: menuConfig, loading: menuLoading } = useMenuConfig(profile?.role_id);
+
+  useEffect(() => {
+    if (!user || isRevoque()) return;
+
+    async function loadUnread() {
+      const { data: participantRows } = await supabase
+        .from('chat_participants')
+        .select('conversation_id')
+        .eq('user_id', user!.id);
+      const convIds = [BROADCAST_CONVERSATION_ID, ...(participantRows ?? []).map((p) => p.conversation_id)];
+
+      const { data: msgs } = await supabase
+        .from('chat_messages')
+        .select('id')
+        .in('conversation_id', convIds)
+        .neq('sender_id', user!.id);
+
+      if (!msgs || msgs.length === 0) { setChatUnread(0); return; }
+
+      const { data: reads } = await supabase
+        .from('chat_message_reads')
+        .select('message_id')
+        .eq('user_id', user!.id);
+
+      const readIds = new Set((reads ?? []).map((r) => r.message_id));
+      const unread = msgs.filter((m) => !readIds.has(m.id)).length;
+      setChatUnread(unread);
+    }
+
+    loadUnread();
+
+    const channel = supabase
+      .channel('layout:chat-unread')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, loadUnread)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_message_reads' }, loadUnread)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  const visibleMenuItems = menuConfig
+    .filter((item) => {
+      if (isRevoque()) return false;
+      if (isItManager()) return true;
+      return item.is_visible;
+    })
+    .map((item) => ({
+      key: item.menu_key,
+      path: MENU_PATH_MAP[item.menu_key] || '/',
+      icon: MENU_ICON_MAP[item.menu_key] || LayoutDashboard,
+      label: item.label,
+    }));
+
+  const isActive = (path: string) => location.pathname === path;
+
+  async function handleSignOut() {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 z-40 h-screen transition-transform ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } bg-gradient-to-b from-blue-900 to-blue-800 w-64 shadow-xl`}
+      >
+        <div className="h-full px-3 py-4 overflow-y-auto">
+          {/* Logo */}
+          <div className="flex items-center justify-center mb-8 px-3 pt-2">
+            <img
+              src={logoUrl}
+              alt="JIMPRO"
+              className="w-48 object-contain drop-shadow-lg"
+            />
+          </div>
+
+          {/* Navigation */}
+          <ul className="space-y-2">
+            {menuLoading ? (
+              <li className="px-3 py-3 text-blue-200 text-sm animate-pulse">Chargement...</li>
+            ) : (
+              visibleMenuItems.map((item) => {
+                const Icon = item.icon;
+                const isChat = item.key === 'chat';
+                return (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                        isActive(item.path)
+                          ? 'bg-white text-blue-900 shadow-md'
+                          : 'text-blue-100 hover:bg-blue-700/50'
+                      }`}
+                    >
+                      <div className="relative">
+                        <Icon className="w-5 h-5" />
+                        {isChat && chatUnread > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-[9px] font-bold leading-none">
+                            {chatUnread > 9 ? '9+' : chatUnread}
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-medium">{item.label}</span>
+                      {isChat && chatUnread > 0 && (
+                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center leading-none">
+                          {chatUnread > 99 ? '99+' : chatUnread}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className={`transition-all overflow-x-hidden ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+        {/* Header */}
+        <header className="bg-white shadow-sm sticky top-0 z-30">
+          <div className="flex items-center justify-between px-6 py-4">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              {sidebarOpen ? (
+                <X className="w-6 h-6 text-gray-600" />
+              ) : (
+                <Menu className="w-6 h-6 text-gray-600" />
+              )}
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors"
+              >
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-900">
+                    {profile?.nom} {profile?.prenom}
+                  </p>
+                  <p className="text-xs text-gray-500">{profile?.role?.nom || 'Utilisateur'}</p>
+                </div>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold">
+                    {profile?.nom.charAt(0)}{profile?.prenom.charAt(0)}
+                  </span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                  <Link
+                    to="/profile"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors text-gray-700"
+                  >
+                    <UserIcon className="w-4 h-4" />
+                    Mon Profil
+                  </Link>
+                  <div className="border-t my-2"></div>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Deconnexion
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="p-6 overflow-hidden">
+          {children}
+        </main>
+      </div>
+
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+    </div>
+  );
+}

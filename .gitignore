@@ -1,0 +1,26 @@
+
+
+# Dépendances
+node_modules/
+
+# Build
+dist/
+
+# Bases de données
+*.db
+*.sqlite
+
+# Secrets (TRÈS IMPORTANT)
+.env
+.env.*
+
+# Logs et caches
+*.log
+.DS_Store
+.codewhale/
+
+
+
+# Environnement (contient les secrets)
+.env
+.env.local
