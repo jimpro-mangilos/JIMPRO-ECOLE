@@ -689,11 +689,11 @@ export default function Rapports() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="space-y-2">
+        <div className="bg-white rounded-xl shadow-sm">
         <button
-          onClick={() => setExpandedSection('eleves')}
-          className="w-full flex items-center justify-between gap-3"
+          onClick={() => setExpandedSection(expandedSection === 'eleves' ? null : 'eleves')}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 transition-colors rounded-xl"
         >
           <div className="flex items-center gap-3">
             <Users className="w-5 h-5 text-blue-600 shrink-0" />
@@ -713,7 +713,7 @@ export default function Rapports() {
           </div>
         </button>
         {expandedSection === 'eleves' && (
-          <div className="mt-4 pt-4 border-t">
+          <div className="px-4 pb-4 pt-2 border-t">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <MultiSelectFilter
             label="Section"
@@ -823,10 +823,10 @@ export default function Rapports() {
           )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="bg-white rounded-xl shadow-sm">
         <button
-          onClick={() => setExpandedSection('finances')}
-          className="w-full flex items-center justify-between gap-3"
+          onClick={() => setExpandedSection(expandedSection === 'finances' ? null : 'finances')}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 transition-colors rounded-xl"
         >
           <div className="flex items-center gap-3">
             <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -846,7 +846,7 @@ export default function Rapports() {
           </div>
         </button>
         {expandedSection === 'finances' && (
-          <div className="mt-4 pt-4 border-t">
+          <div className="px-4 pb-4 pt-2 border-t">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <MultiSelectFilter
             label="Type d'operation"
@@ -959,10 +959,10 @@ export default function Rapports() {
           )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="bg-white rounded-xl shadow-sm">
         <button
-          onClick={() => setExpandedSection('fournitures')}
-          className="w-full flex items-center justify-between gap-3"
+          onClick={() => setExpandedSection(expandedSection === 'fournitures' ? null : 'fournitures')}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 transition-colors rounded-xl"
         >
           <div className="flex items-center gap-3">
             <Package className="w-5 h-5 text-orange-600 shrink-0" />
@@ -982,7 +982,7 @@ export default function Rapports() {
           </div>
         </button>
         {expandedSection === 'fournitures' && (
-          <div className="mt-4 pt-4 border-t">
+          <div className="px-4 pb-4 pt-2 border-t">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <MultiSelectFilter
             label="Section"
@@ -1073,10 +1073,10 @@ export default function Rapports() {
           )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="bg-white rounded-xl shadow-sm">
         <button
-          onClick={() => setExpandedSection('comptable')}
-          className="w-full flex items-center justify-between gap-3"
+          onClick={() => setExpandedSection(expandedSection === 'comptable' ? null : 'comptable')}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 transition-colors rounded-xl"
         >
           <div className="flex items-center gap-3">
             <UserCheck className="w-5 h-5 text-pink-600 shrink-0" />
@@ -1088,7 +1088,7 @@ export default function Rapports() {
           <Settings className="w-4 h-4 text-gray-400" />
         </button>
         {expandedSection === 'comptable' && (
-          <div className="mt-4 pt-4 border-t">
+          <div className="px-4 pb-4 pt-2 border-t">
         <p className="text-sm text-gray-600 mb-6">
           Générez des rapports détaillés pour un ou plusieurs comptables avec comparaison des performances
         </p>
