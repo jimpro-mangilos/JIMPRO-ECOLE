@@ -284,6 +284,26 @@ export default function Finances() {
     });
   };
 
+  const buildFilterInfo = (isCurrentView: boolean) => {
+    const parts: string[] = [];
+    const viewLabels: Record<string, string> = {
+      compte_actif: 'Compte Actif',
+      journalier: 'Aujourd\'hui',
+      jour_precedent: 'Hier',
+      mois: 'Ce mois',
+      mois_precedent: 'Mois precedent',
+      general: 'General',
+    };
+    parts.push('Vue: ' + (viewLabels[viewMode] || viewMode));
+    if (isCurrentView) {
+      if (filterComptable !== 'all') parts.push('Intervenant: ' + filterComptable);
+      if (filterStatut !== 'all') parts.push('Statut: ' + (STATUT_LABELS[filterStatut] || filterStatut));
+      if (filterYear !== 'all') parts.push('Annee: ' + filterYear);
+      if (filterDateDebut || filterDateFin) parts.push('Periode creation: ' + (filterDateDebut || '...') + ' → ' + (filterDateFin || '...'));
+    }
+    return parts.join(' | ');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -1299,7 +1319,8 @@ export default function Finances() {
               <button
                 onClick={() => {
                   const allForPdf = applyFiltersAndSort(transactions);
-                  generateFinancesReport(allForPdf);
+                  const info = buildFilterInfo(false);
+                  generateFinancesReport(allForPdf, info);
                   setPdfConfirmModal(false);
                 }}
                 className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-left flex items-center justify-between"
@@ -1309,7 +1330,8 @@ export default function Finances() {
               </button>
               <button
                 onClick={() => {
-                  generateFinancesReport(allFiltered);
+                  const info = buildFilterInfo(true);
+                  generateFinancesReport(allFiltered, info);
                   setPdfConfirmModal(false);
                 }}
                 className="w-full px-4 py-3 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors font-medium text-left flex items-center justify-between"

@@ -257,7 +257,7 @@ export async function generateMinervalReport(minerval: MinervalRecord[], startDa
   doc.save(`rapport_minerval_${Date.now()}.pdf`);
 }
 
-export async function generateFinancesReport(finances: FinanceRecord[], startDate?: Date, endDate?: Date) {
+export async function generateFinancesReport(finances: FinanceRecord[], filterInfo?: string, startDate?: Date, endDate?: Date) {
   const doc = landscape();
   const period = startDate && endDate
     ? `Du ${formatDatePDF(startDate)} au ${formatDatePDF(endDate)}`
@@ -266,7 +266,7 @@ export async function generateFinancesReport(finances: FinanceRecord[], startDat
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
     title: 'Rapport Financier',
-    subtitle: 'Recettes et depenses consolidees',
+    subtitle: filterInfo || 'Recettes et depenses consolidees',
     period,
   };
   drawReportHeader(doc, header);
