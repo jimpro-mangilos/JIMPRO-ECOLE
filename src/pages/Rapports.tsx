@@ -181,14 +181,15 @@ export default function Rapports() {
 
   const loadFinanceFilterOptions = async () => {
     try {
-      const { data } = await supabase
+       const { data } = await supabase
         .from('compte_courant')
-        .select('nom_comptable, nom_approbateur');
+        .select('nom_comptable, nom_approbateur, nom_encaisseur');
 
       const comptableSet = new Set<string>();
       const approbateurSet = new Set<string>();
       (data || []).forEach((row: any) => {
         if (row.nom_comptable) comptableSet.add(row.nom_comptable);
+        if (row.nom_encaisseur) comptableSet.add(row.nom_encaisseur);
         if (row.nom_approbateur) approbateurSet.add(row.nom_approbateur);
       });
       setFinanceComptables(Array.from(comptableSet).sort());
@@ -564,7 +565,7 @@ export default function Rapports() {
 
       if (financeFilters.typeOperation) query = query.eq('type_operation', financeFilters.typeOperation);
       if (financeFilters.statut) query = query.eq('statut', financeFilters.statut);
-      if (financeFilters.comptable) query = query.eq('nom_comptable', financeFilters.comptable);
+      if (financeFilters.comptable) query = query.or(`nom_comptable.eq.${financeFilters.comptable},nom_encaisseur.eq.${financeFilters.comptable}`);
       if (financeFilters.approbateur) query = query.eq('nom_approbateur', financeFilters.approbateur);
       if (financeFilters.startDate) query = query.gte('date_transaction', financeFilters.startDate);
       if (financeFilters.endDate) query = query.lte('date_transaction', `${financeFilters.endDate}T23:59:59.999Z`);
@@ -1056,13 +1057,13 @@ export default function Rapports() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Comptable</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Comptable / Encaisseur</label>
             <select
               value={financeFilters.comptable}
               onChange={(e) => updateFinanceFilter('comptable', e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="">Tous les comptables</option>
+              <option value="">Tous (comptable, encaisseur)</option>
               {financeComptables.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
