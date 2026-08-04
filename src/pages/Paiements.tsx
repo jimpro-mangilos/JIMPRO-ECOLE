@@ -1361,7 +1361,38 @@ export default function Paiements() {
                 </div>
               )}
             </div>
-            <div className="border-t border-gray-100 px-6 py-3 bg-gray-50 rounded-b-2xl">
+            <div className="border-t border-gray-100 px-6 py-3 bg-gray-50 rounded-b-2xl space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {(() => {
+                  const statut = detailPaiement.statut || (detailPaiement.est_encaisse ? 'encaisse' : 'en_attente');
+                  if (statut === 'encaisse') return (
+                    <button onClick={() => { imprimerRecu(detailPaiement); }} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors">
+                      <Printer className="w-3.5 h-3.5" />Imprimer recu
+                    </button>
+                  );
+                  if (statut === 'en_attente' && canEncaisserMontant(detailPaiement.montant_paye)) return (
+                    <button onClick={() => { handleEncaisser(detailPaiement.id, detailPaiement.montant_paye); setDetailPaiement(null); }} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition-colors">
+                      <CheckCircle className="w-3.5 h-3.5" />Encaisser
+                    </button>
+                  );
+                  if (statut === 'en_attente' && canAnnulerPaiement()) return (
+                    <button onClick={() => { openAnnulationModal(detailPaiement.id); setDetailPaiement(null); }} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors">
+                      <XCircle className="w-3.5 h-3.5" />Annuler
+                    </button>
+                  );
+                  return null;
+                })()}
+                {canModifierPaiement() && (
+                  <button onClick={() => { setDetailPaiement(null); openEditPaiement(detailPaiement); }} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-colors">
+                    <Pencil className="w-3.5 h-3.5" />Modifier
+                  </button>
+                )}
+                {canSupprimerPaiement() && (detailPaiement.statut !== 'encaisse' || isItManager()) && (
+                  <button onClick={() => { setDetailPaiement(null); handleSupprimer(detailPaiement); }} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />Supprimer
+                  </button>
+                )}
+              </div>
               <button onClick={() => setDetailPaiement(null)} className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors">
                 Fermer
               </button>
