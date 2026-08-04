@@ -155,6 +155,7 @@ export default function Paiements() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set(['__first__']));
   const [editModal, setEditModal] = useState<{ open: boolean; paiement: Paiement | null; loading: boolean }>({ open: false, paiement: null, loading: false });
+  const [detailPaiement, setDetailPaiement] = useState<Paiement | null>(null);
   const [editFormData, setEditFormData] = useState({
     montant_paye: 0,
     montant_en_lettre: '',
@@ -1056,9 +1057,9 @@ export default function Paiements() {
                       {isOpen && items.map((paiement) => {
                         const statut = getStatut(paiement);
                         return (
-                          <tr key={paiement.id} className={`hover:bg-gray-50 border-t border-gray-100 ${statut === 'annule' ? 'opacity-70' : ''} ${selectedIds.has(paiement.id) ? 'bg-red-50' : ''}`}>
+                          <tr key={paiement.id} onClick={() => setDetailPaiement(paiement)} className={`cursor-pointer hover:bg-gray-50 border-t border-gray-100 ${statut === 'annule' ? 'opacity-70' : ''} ${selectedIds.has(paiement.id) ? 'bg-red-50' : ''}`}>
                             {isItManager() && (
-                              <td className="px-3 py-2.5">
+                              <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                                 <input
                                   type="checkbox"
                                   checked={selectedIds.has(paiement.id)}
@@ -1110,7 +1111,7 @@ export default function Paiements() {
                                 )}
                               </div>
                             </td>
-                            <td className="px-3 py-2.5 text-sm">
+                            <td className="px-3 py-2.5 text-sm" onClick={(e) => e.stopPropagation()}>
                               <div className="flex gap-2 items-center">
                                 {statut === 'encaisse' && (
                                   <button
@@ -1231,6 +1232,143 @@ export default function Paiements() {
         }}
         preselectedEleve={null}
       />
+
+      {detailPaiement && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDetailPaiement(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h3 className="text-lg font-bold text-gray-900">Details du paiement</h3>
+              <button onClick={() => setDetailPaiement(null)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Numero recu</span>
+                  <p className="text-sm font-bold text-gray-900 mt-0.5">{detailPaiement.numero_recu}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Statut</span>
+                  <p className="mt-0.5">
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${detailPaiement.statut === 'encaisse' ? 'bg-green-100 text-green-700' : detailPaiement.statut === 'annule' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {detailPaiement.statut === 'encaisse' ? 'Encaisse' : detailPaiement.statut === 'annule' ? 'Annule' : 'En attente'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Nom</span>
+                  <p className="text-sm font-medium text-gray-900 mt-0.5">{detailPaiement.nom_eleve}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Postnom</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailPaiement.postnom || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Prenom</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailPaiement.prenom || '—'}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Matricule</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailPaiement.matricule}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Classe</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailPaiement.classe}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Section</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailPaiement.section}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Option</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailPaiement.option || '—'}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Type de paiement</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{typesPaiement.find(t => t.id === detailPaiement.type_paiement)?.libelle || detailPaiement.type_paiement}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Motif</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailPaiement.motif_libelle}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Montant</span>
+                  <p className="text-sm font-bold text-green-600 mt-0.5">{detailPaiement.montant_paye.toLocaleString()} FC</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Mode de paiement</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailPaiement.mode_paiement}</p>
+                </div>
+              </div>
+              {detailPaiement.montant_en_lettre && (
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Montant en lettres</span>
+                  <p className="text-sm text-gray-700 mt-0.5 italic">{detailPaiement.montant_en_lettre}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Date de paiement</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{new Date(detailPaiement.date_paiement).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Annee scolaire</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailPaiement.annee_scolaire || '—'}</p>
+                </div>
+              </div>
+              <div className="border-t border-gray-100 pt-4 mt-2">
+                <span className="text-xs font-semibold text-gray-400 uppercase">Intervenants</span>
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                    <User className="w-4 h-4 text-gray-400 shrink-0" />
+                    <div>
+                      <span className="text-xs text-gray-400">Comptable</span>
+                      <p className="text-sm font-medium text-gray-900">{detailPaiement.nom_comptable || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 bg-green-50 rounded-lg px-3 py-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    <div>
+                      <span className="text-xs text-green-500">Encaisseur</span>
+                      <p className="text-sm font-medium text-gray-900">{detailPaiement.nom_encaisseur || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {detailPaiement.statut === 'annule' && (
+                <div className="border-t border-red-100 pt-4 mt-2">
+                  <span className="text-xs font-semibold text-red-400 uppercase">Annulation</span>
+                  <div className="mt-2 bg-red-50 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                      <div>
+                        <span className="text-xs text-red-500">Motif: {detailPaiement.motif_annulation || '—'}</span>
+                        <p className="text-sm text-gray-700">Annule par: {detailPaiement.nom_annuleur || '—'} {detailPaiement.date_annulation ? 'le ' + new Date(detailPaiement.date_annulation).toLocaleDateString('fr-FR') : ''}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="border-t border-gray-100 px-6 py-3 bg-gray-50 rounded-b-2xl">
+              <button onClick={() => setDetailPaiement(null)} className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors">
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editModal.open && editModal.paiement && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

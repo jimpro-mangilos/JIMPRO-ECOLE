@@ -759,9 +759,13 @@ export default function Eleves() {
                 </tr>
               ) : (
                 filteredEleves.map((eleve) => (
-                  <tr key={eleve.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.has(eleve.id) ? 'bg-red-50' : ''}`}>
+                  <tr
+                    key={eleve.id}
+                    onClick={() => handleViewDetails(eleve)}
+                    className={`hover:bg-gray-50 transition-colors cursor-pointer ${selectedIds.has(eleve.id) ? 'bg-red-50' : ''}`}
+                  >
                     {isItManager() && (
-                      <td className="px-3 py-4">
+                      <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={selectedIds.has(eleve.id)}
@@ -801,7 +805,7 @@ export default function Eleves() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       {eleve.telephone}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleViewDetails(eleve)}
