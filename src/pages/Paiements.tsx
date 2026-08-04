@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { generateReceipt } from '../utils/receiptGenerator';
 import { generatePaiementsReport } from '../utils/pdfGenerator';
 import PaymentFormModal from '../components/PaymentFormModal';
+import MultiSelectFilter from '../components/MultiSelectFilter';
 
 interface Paiement {
   id: string;
@@ -131,14 +132,14 @@ export default function Paiements() {
   const [typesPaiement, setTypesPaiement] = useState<TypePaiement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('tous');
-  const [filterStatut, setFilterStatut] = useState('tous');
+  const [filterType, setFilterType] = useState<string[]>([]);
+  const [filterStatut, setFilterStatut] = useState<string[]>([]);
   const [filterMotifs, setFilterMotifs] = useState<string[]>([]);
-  const [filterYear, setFilterYear] = useState('tous');
-  const [filterEncaisseur, setFilterEncaisseur] = useState('tous');
-  const [filterSection, setFilterSection] = useState('tous');
-  const [filterOption, setFilterOption] = useState('tous');
-  const [filterClasse, setFilterClasse] = useState('tous');
+  const [filterYear, setFilterYear] = useState<string[]>([]);
+  const [filterEncaisseur, setFilterEncaisseur] = useState<string[]>([]);
+  const [filterSection, setFilterSection] = useState<string[]>([]);
+  const [filterOption, setFilterOption] = useState<string[]>([]);
+  const [filterClasse, setFilterClasse] = useState<string[]>([]);
   const [filterDateDebut, setFilterDateDebut] = useState('');
   const [filterDateFin, setFilterDateFin] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -270,14 +271,14 @@ export default function Paiements() {
       );
     }
 
-    if (filterType !== 'tous') {
-      filtered = filtered.filter(p => p.type_paiement === filterType);
+    if (filterType.length > 0) {
+      filtered = filtered.filter(p => filterType.includes(p.type_paiement));
     }
 
-    if (filterStatut !== 'tous') {
+    if (filterStatut.length > 0) {
       filtered = filtered.filter(p => {
         const statut = p.statut || (p.est_encaisse ? 'encaisse' : 'en_attente');
-        return statut === filterStatut;
+        return filterStatut.includes(statut);
       });
     }
 
@@ -285,27 +286,27 @@ export default function Paiements() {
       filtered = filtered.filter(p => filterMotifs.includes(p.motif_libelle));
     }
 
-    if (filterYear !== 'tous') {
+    if (filterYear.length > 0) {
       filtered = filtered.filter(p => {
         const d = new Date(p.date_paiement);
-        return d.getFullYear() === parseInt(filterYear);
+        return filterYear.includes(d.getFullYear().toString());
       });
     }
 
-    if (filterEncaisseur !== 'tous') {
-      filtered = filtered.filter(p => p.nom_encaisseur === filterEncaisseur);
+    if (filterEncaisseur.length > 0) {
+      filtered = filtered.filter(p => filterEncaisseur.includes(p.nom_encaisseur || ''));
     }
 
-    if (filterSection !== 'tous') {
-      filtered = filtered.filter(p => p.section === filterSection);
+    if (filterSection.length > 0) {
+      filtered = filtered.filter(p => filterSection.includes(p.section));
     }
 
-    if (filterOption !== 'tous') {
-      filtered = filtered.filter(p => p.option === filterOption);
+    if (filterOption.length > 0) {
+      filtered = filtered.filter(p => filterOption.includes(p.option || ''));
     }
 
-    if (filterClasse !== 'tous') {
-      filtered = filtered.filter(p => p.classe === filterClasse);
+    if (filterClasse.length > 0) {
+      filtered = filtered.filter(p => filterClasse.includes(p.classe));
     }
 
     if (filterDateDebut) {
@@ -555,41 +556,6 @@ export default function Paiements() {
       alert('Erreur lors de la generation du recu');
     }
   };
-
-  const yearOptions = useMemo(() => {
-    const years = paiements
-      .map((p) => new Date(p.date_paiement).getFullYear())
-      .filter((y) => !isNaN(y));
-    return Array.from(new Set(years)).sort((a, b) => b - a);
-  }, [paiements]);
-
-  const encaisseurOptions = useMemo(() => {
-    const names = paiements
-      .map((p) => p.nom_encaisseur)
-      .filter((n): n is string => !!n);
-    return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
-  }, [paiements]);
-
-  const sectionOptions = useMemo(() => {
-    const sections = paiements
-      .map((p) => p.section)
-      .filter((s): s is string => !!s);
-    return Array.from(new Set(sections)).sort((a, b) => a.localeCompare(b));
-  }, [paiements]);
-
-  const optionOptions = useMemo(() => {
-    const options = paiements
-      .map((p) => p.option)
-      .filter((o): o is string => !!o);
-    return Array.from(new Set(options)).sort((a, b) => a.localeCompare(b));
-  }, [paiements]);
-
-  const classeOptions = useMemo(() => {
-    const classes = paiements
-      .map((p) => p.classe)
-      .filter((c): c is string => !!c);
-    return Array.from(new Set(classes)).sort((a, b) => a.localeCompare(b));
-  }, [paiements]);
 
   const motifOptions = useMemo(() => {
     const motifs = paiements
@@ -852,14 +818,14 @@ export default function Paiements() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => generatePaiementsReport(filteredPaiements, {
-                section: filterSection,
-                option: filterOption,
-                classe: filterClasse,
-                encaisseur: filterEncaisseur,
-                type: filterType,
-                statut: filterStatut,
+                section: filterSection.join(', '),
+                option: filterOption.join(', '),
+                classe: filterClasse.join(', '),
+                encaisseur: filterEncaisseur.join(', '),
+                type: filterType.join(', '),
+                statut: filterStatut.join(', '),
                 motifs: filterMotifs,
-                annee: filterYear,
+                annee: filterYear.join(', '),
               })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors"
             >
@@ -902,27 +868,21 @@ export default function Paiements() {
             </div>
           </div>
 
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="tous">Tous types</option>
-            {typesPaiement.map((type) => (
-              <option key={type.id} value={type.id}>{type.libelle}</option>
-            ))}
-          </select>
+          <MultiSelectFilter
+            label="Type"
+            placeholder="Tous types"
+            options={typesPaiement.map(t => t.id)}
+            selected={filterType}
+            onChange={(v) => setFilterType(v)}
+          />
 
-          <select
-            value={filterStatut}
-            onChange={(e) => setFilterStatut(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="tous">Tous statuts</option>
-            <option value="encaisse">Encaisses</option>
-            <option value="en_attente">En attente</option>
-            <option value="annule">Annules</option>
-          </select>
+          <MultiSelectFilter
+            label="Statut"
+            placeholder="Tous statuts"
+            options={['en_attente', 'encaisse', 'annule']}
+            selected={filterStatut}
+            onChange={(v) => setFilterStatut(v)}
+          />
 
           <MotifMultiSelect
             options={motifOptions}
@@ -930,60 +890,45 @@ export default function Paiements() {
             onChange={setFilterMotifs}
           />
 
-          <select
-            value={filterYear}
-            onChange={(e) => setFilterYear(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="tous">Toutes les annees</option>
-            {yearOptions.map((year) => (
-              <option key={year} value={year}>{year}</option>
-            ))}
-          </select>
+          <MultiSelectFilter
+            label="Année"
+            placeholder="Toutes les annees"
+            options={[...new Set(paiements.map(p => new Date(p.date_paiement).getFullYear().toString()))].sort().reverse()}
+            selected={filterYear}
+            onChange={(v) => setFilterYear(v)}
+          />
 
-          <select
-            value={filterEncaisseur}
-            onChange={(e) => setFilterEncaisseur(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="tous">Tous encaisseurs</option>
-            {encaisseurOptions.map((name) => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-          </select>
+          <MultiSelectFilter
+            label="Encaisseur"
+            placeholder="Tous encaisseurs"
+            options={[...new Set(paiements.map(p => p.nom_encaisseur).filter(Boolean))].sort() as string[]}
+            selected={filterEncaisseur}
+            onChange={(v) => setFilterEncaisseur(v)}
+          />
 
-          <select
-            value={filterSection}
-            onChange={(e) => setFilterSection(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="tous">Toutes sections</option>
-            {sectionOptions.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+          <MultiSelectFilter
+            label="Section"
+            placeholder="Toutes sections"
+            options={[...new Set(paiements.map(p => p.section))].sort()}
+            selected={filterSection}
+            onChange={(v) => setFilterSection(v)}
+          />
 
-          <select
-            value={filterOption}
-            onChange={(e) => setFilterOption(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="tous">Toutes options</option>
-            {optionOptions.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
+          <MultiSelectFilter
+            label="Option"
+            placeholder="Toutes options"
+            options={[...new Set(paiements.map(p => p.option).filter(Boolean))].sort() as string[]}
+            selected={filterOption}
+            onChange={(v) => setFilterOption(v)}
+          />
 
-          <select
-            value={filterClasse}
-            onChange={(e) => setFilterClasse(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="tous">Toutes classes</option>
-            {classeOptions.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          <MultiSelectFilter
+            label="Classe"
+            placeholder="Toutes classes"
+            options={[...new Set(paiements.map(p => p.classe))].sort()}
+            selected={filterClasse}
+            onChange={(v) => setFilterClasse(v)}
+          />
 
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${isDateFilterActive ? 'bg-teal-50 border-2 border-teal-400 shadow-sm shadow-teal-100' : 'border border-transparent'}`}>
             <Calendar className={`w-5 h-5 shrink-0 transition-colors ${isDateFilterActive ? 'text-teal-600' : 'text-gray-400'}`} />
@@ -1007,14 +952,14 @@ export default function Paiements() {
           <button
             onClick={() => {
               setSearchTerm('');
-              setFilterType('tous');
-              setFilterStatut('tous');
+              setFilterType([]);
+              setFilterStatut([]);
               setFilterMotifs([]);
-              setFilterYear('tous');
-              setFilterEncaisseur('tous');
-              setFilterSection('tous');
-              setFilterOption('tous');
-              setFilterClasse('tous');
+              setFilterYear([]);
+              setFilterEncaisseur([]);
+              setFilterSection([]);
+              setFilterOption([]);
+              setFilterClasse([]);
               setFilterDateDebut('');
               setFilterDateFin('');
             }}

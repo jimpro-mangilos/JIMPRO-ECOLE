@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import MultiSelectFilter from '../components/MultiSelectFilter';
 import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
@@ -49,9 +50,9 @@ export default function Eleves() {
   const [classes, setClasses] = useState<Classe[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSection, setSelectedSection] = useState<string>('');
-  const [selectedOption, setSelectedOption] = useState<string>('');
-  const [selectedClasse, setSelectedClasse] = useState<string>('');
+  const [selectedSection, setSelectedSection] = useState<string[]>([]);
+  const [selectedOption, setSelectedOption] = useState<string[]>([]);
+  const [selectedClasse, setSelectedClasse] = useState<string[]>([]);
   const [filterOrdre, setFilterOrdre] = useState<'' | 'en_ordre' | 'pas_en_ordre'>('');
   const [filterDateDebut, setFilterDateDebut] = useState('');
   const [filterDateFin, setFilterDateFin] = useState('');
@@ -300,9 +301,9 @@ export default function Eleves() {
         eleve.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         eleve.matricule.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesSection = selectedSection === '' || eleve.section.toLowerCase() === selectedSection.toLowerCase();
-      const matchesOption = selectedOption === '' || (eleve.option && eleve.option.toLowerCase() === selectedOption.toLowerCase());
-      const matchesClasse = selectedClasse === '' || (eleve.classe && eleve.classe.toLowerCase() === selectedClasse.toLowerCase());
+      const matchesSection = selectedSection.length === 0 || selectedSection.some(s => eleve.section.toLowerCase() === s.toLowerCase());
+      const matchesOption = selectedOption.length === 0 || (eleve.option && selectedOption.some(o => eleve.option!.toLowerCase() === o.toLowerCase()));
+      const matchesClasse = selectedClasse.length === 0 || (eleve.classe && selectedClasse.some(c => eleve.classe!.toLowerCase() === c.toLowerCase()));
 
       let matchesOrdre = true;
       if (filterOrdre === 'en_ordre') {
@@ -472,9 +473,9 @@ export default function Eleves() {
       {/* Section Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
-          onClick={() => setSelectedSection('')}
+          onClick={() => setSelectedSection([])}
           className={`bg-white rounded-xl shadow-sm p-5 cursor-pointer transition-all hover:shadow-md ${
-            selectedSection === '' ? 'ring-2 ring-blue-500' : ''
+            selectedSection.length === 0 ? 'ring-2 ring-blue-500' : ''
           }`}
         >
           <div className="flex items-center justify-between mb-3">
@@ -499,9 +500,9 @@ export default function Eleves() {
           return (
             <div
               key={section.id}
-              onClick={() => setSelectedSection(section.nom)}
+              onClick={() => setSelectedSection(prev => prev.includes(section.nom) ? prev.filter(s => s !== section.nom) : [...prev, section.nom])}
               className={`bg-white rounded-xl shadow-sm p-5 cursor-pointer transition-all hover:shadow-md ${
-                selectedSection === section.nom ? 'ring-2 ring-blue-500' : ''
+                selectedSection.includes(section.nom) ? 'ring-2 ring-blue-500' : ''
               }`}
             >
               <div className="flex items-center justify-between mb-3">
@@ -540,51 +541,46 @@ export default function Eleves() {
 
           {/* Filtres supplémentaires */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Option</label>
-              <select
-                value={selectedOption}
-                onChange={(e) => setSelectedOption(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Toutes les options</option>
-                {options
-                  .filter(opt => !selectedSection || opt.section_id === sections.find(s => s.nom === selectedSection)?.id)
-                  .map((option) => (
-                    <option key={option.id} value={option.nom}>
-                      {option.nom}
-                    </option>
-                  ))}
-              </select>
-            </div>
+            <MultiSelectFilter
+              label="Section"
+              placeholder="Toutes les sections"
+              options={sections.map(s => s.nom)}
+              selected={selectedSection}
+              onChange={(v) => setSelectedSection(v)}
+            />
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Classe</label>
-              <select
-                value={selectedClasse}
-                onChange={(e) => setSelectedClasse(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Toutes les classes</option>
-                {classes
-                  .filter(cls => {
-                    if (selectedSection) {
-                      const section = sections.find(s => s.nom === selectedSection);
-                      if (cls.section_id !== section?.id) return false;
-                    }
-                    if (selectedOption) {
-                      const option = options.find(o => o.nom === selectedOption);
-                      if (cls.option_id !== option?.id) return false;
-                    }
-                    return true;
-                  })
-                  .map((classe) => (
-                    <option key={classe.id} value={classe.nom}>
-                      {classe.nom}
-                    </option>
-                  ))}
-              </select>
-            </div>
+            <MultiSelectFilter
+              label="Option"
+              placeholder="Toutes les options"
+              options={options
+                .filter(opt => selectedSection.length === 0 || selectedSection.some(secName => {
+                  const sec = sections.find(s => s.nom === secName);
+                  return sec && opt.section_id === sec.id;
+                }))
+                .map(opt => opt.nom)}
+              selected={selectedOption}
+              onChange={(v) => setSelectedOption(v)}
+            />
+
+            <MultiSelectFilter
+              label="Classe"
+              placeholder="Toutes les classes"
+              options={classes
+                .filter(cls => {
+                  if (selectedSection.length > 0) {
+                    const sectionIds = sections.filter(s => selectedSection.includes(s.nom)).map(s => s.id);
+                    if (!sectionIds.includes(cls.section_id)) return false;
+                  }
+                  if (selectedOption.length > 0) {
+                    const optionIds = options.filter(o => selectedOption.includes(o.nom)).map(o => o.id);
+                    if (cls.option_id && !optionIds.includes(cls.option_id)) return false;
+                  }
+                  return true;
+                })
+                .map(cls => cls.nom)}
+              selected={selectedClasse}
+              onChange={(v) => setSelectedClasse(v)}
+            />
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Statut Paiement ({getCurrentMoisMinerval()})</label>
@@ -636,15 +632,15 @@ export default function Eleves() {
               <button
                 onClick={() => {
                   setSearchTerm('');
-                  setSelectedSection('');
-                  setSelectedOption('');
-                  setSelectedClasse('');
+                  setSelectedSection([]);
+                  setSelectedOption([]);
+                  setSelectedClasse([]);
                   setFilterOrdre('');
                   setFilterDateDebut('');
                   setFilterDateFin('');
                   setSortAlpha('');
                 }}
-                disabled={!searchTerm && !selectedSection && !selectedOption && !selectedClasse && !filterOrdre && !filterDateDebut && !filterDateFin && !sortAlpha}
+                disabled={!searchTerm && selectedSection.length === 0 && selectedOption.length === 0 && selectedClasse.length === 0 && !filterOrdre && !filterDateDebut && !filterDateFin && !sortAlpha}
                 className="w-full px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <RefreshCw className="w-4 h-4 inline mr-1" />
@@ -653,22 +649,22 @@ export default function Eleves() {
             </div>
           </div>
 
-          {(selectedSection || selectedOption || selectedClasse || filterOrdre || filterDateDebut || filterDateFin || sortAlpha) && (
+          {(selectedSection.length > 0 || selectedOption.length > 0 || selectedClasse.length > 0 || filterOrdre || filterDateDebut || filterDateFin || sortAlpha) && (
             <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap mt-3">
               <span className="font-medium">Filtres actifs:</span>
-              {selectedSection && (
+              {selectedSection.length > 0 && (
                 <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                  Section: {selectedSection}
+                  Section: {selectedSection.join(', ')}
                 </span>
               )}
-              {selectedOption && (
+              {selectedOption.length > 0 && (
                 <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
-                  Option: {selectedOption}
+                  Option: {selectedOption.join(', ')}
                 </span>
               )}
-              {selectedClasse && (
+              {selectedClasse.length > 0 && (
                 <span className="px-2 py-1 bg-teal-100 text-teal-700 rounded">
-                  Classe: {selectedClasse}
+                  Classe: {selectedClasse.join(', ')}
                 </span>
               )}
               {filterOrdre && (
