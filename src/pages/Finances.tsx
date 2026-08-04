@@ -196,6 +196,37 @@ export default function Finances() {
     }
   };
 
+  const handleDetailAction = async (id: string, newStatut: string) => {
+    setActionLoading(id + newStatut);
+    try {
+      const updateData: Record<string, any> = { statut: newStatut };
+      if (newStatut === 'approuve' && currentUserFullName) {
+        updateData.nom_approbateur = currentUserFullName;
+      }
+      if ((newStatut === 'encaisse' || newStatut === 'decaisse') && currentUserFullName) {
+        updateData.nom_encaisseur = currentUserFullName;
+      }
+      const { error } = await (supabase as any)
+        .from('compte_courant')
+        .update(updateData)
+        .eq('id', id);
+      if (error) throw error;
+      await loadTransactions();
+      // Refresh detail modal with updated data
+      const { data: updated } = await (supabase as any)
+        .from('compte_courant')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (updated) setDetailTransaction(updated);
+    } catch (error) {
+      console.error('Erreur mise a jour statut:', error);
+      alert('Erreur lors de la mise a jour du statut');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleSupprimer = async (id: string) => {
     if (!confirm('Confirmer la suppression de cette transaction ?')) return;
     setActionLoading(id + 'delete');
@@ -1391,7 +1422,61 @@ export default function Finances() {
                 </div>
               </div>
             </div>
-            <div className="border-t border-gray-100 px-6 py-3 bg-gray-50 rounded-b-2xl">
+            <div className="border-t border-gray-100 px-6 py-3 bg-gray-50 rounded-b-2xl space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {detailTransaction.statut === 'en_attente' && canApprouverTransaction(detailTransaction.montant_chiffre) && (
+                  <button
+                    onClick={() => handleDetailAction(detailTransaction.id, 'approuve')}
+                    disabled={actionLoading === detailTransaction.id + 'approuve'}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Approuver
+                  </button>
+                )}
+                {detailTransaction.statut === 'approuve' && detailTransaction.type_operation !== 'recette' && canDecaisserTransaction(detailTransaction.montant_chiffre) && (
+                  <button
+                    onClick={() => handleDetailAction(detailTransaction.id, 'decaisse')}
+                    disabled={actionLoading === detailTransaction.id + 'decaisse'}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors disabled:opacity-50"
+                  >
+                    <ArrowDownCircle className="w-3.5 h-3.5" />
+                    Decaisser
+                  </button>
+                )}
+                {detailTransaction.statut === 'approuve' && detailTransaction.type_operation === 'recette' && canDecaisserEncaisserTransaction(detailTransaction.montant_chiffre) && (
+                  <button
+                    onClick={() => handleDetailAction(detailTransaction.id, 'encaisse')}
+                    disabled={actionLoading === detailTransaction.id + 'encaisse'}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition-colors disabled:opacity-50"
+                  >
+                    <ArrowUpCircle className="w-3.5 h-3.5" />
+                    Encaisser
+                  </button>
+                )}
+                {canModifier() && (
+                  <button
+                    onClick={() => { setDetailTransaction(null); openEditModal(detailTransaction); }}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Modifier
+                  </button>
+                )}
+                {canSupprimer() && (
+                  <button
+                    onClick={() => {
+                      setDetailTransaction(null);
+                      handleSupprimer(detailTransaction.id);
+                    }}
+                    disabled={actionLoading === detailTransaction.id + 'delete'}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Supprimer
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setDetailTransaction(null)}
                 className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
