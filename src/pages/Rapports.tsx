@@ -15,7 +15,6 @@ import {
 export default function Rapports() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [selectedType, setSelectedType] = useState('Élèves');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [comptables, setComptables] = useState<any[]>([]);
@@ -602,7 +601,15 @@ export default function Rapports() {
 
       const start = financeFilters.startDate ? new Date(financeFilters.startDate) : undefined;
       const end = financeFilters.endDate ? new Date(financeFilters.endDate) : undefined;
-      generateFinancesReport(filtered, start, end);
+      const filterParts: string[] = [];
+      if (financeFilters.typeOperation.length > 0) filterParts.push('Type: ' + financeFilters.typeOperation.join(', '));
+      if (financeFilters.statut.length > 0) filterParts.push('Statut: ' + financeFilters.statut.join(', '));
+      if (financeFilters.comptable.length > 0) filterParts.push('Intervenant: ' + financeFilters.comptable.join(', '));
+      if (financeFilters.approbateur.length > 0) filterParts.push('Approbateur: ' + financeFilters.approbateur.join(', '));
+      if (financeFilters.montantMin) filterParts.push('Min: ' + financeFilters.montantMin + ' FC');
+      if (financeFilters.montantMax) filterParts.push('Max: ' + financeFilters.montantMax + ' FC');
+      const filterInfo = filterParts.length > 0 ? filterParts.join(' | ') : undefined;
+      generateFinancesReport(filtered, filterInfo, start, end);
       setMessage({ type: 'success', text: `Rapport financier genere avec succes (${filtered.length} transactions)` });
     } catch (error) {
       console.error('Erreur lors de la generation du rapport:', error);
@@ -702,73 +709,6 @@ export default function Rapports() {
     }
   }
 
-  async function handleCustomReport() {
-    if (!startDate || !endDate) {
-      setMessage({ type: 'error', text: 'Veuillez sélectionner une date de début et une date de fin' });
-      return;
-    }
-
-    if (new Date(startDate) > new Date(endDate)) {
-      setMessage({ type: 'error', text: 'La date de début doit être antérieure à la date de fin' });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setMessage(null);
-
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-
-      if (selectedType === 'Élèves') {
-        await handleElevesReport();
-      } else if (selectedType === 'Minerval') {
-        const { data, error } = await supabase
-          .from('minerval')
-          .select('*')
-          .gte('date_paiement', start.toISOString())
-          .lte('date_paiement', end.toISOString())
-          .order('date_paiement', { ascending: false });
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          setMessage({ type: 'error', text: 'Aucune donnée disponible pour cette période' });
-          return;
-        }
-
-        generateMinervalReport(data, start, end);
-        setMessage({ type: 'success', text: 'Rapport généré avec succès' });
-      } else if (selectedType === 'Finances') {
-        const { data, error } = await supabase
-          .from('compte_courant')
-          .select('*')
-          .gte('date_transaction', start.toISOString())
-          .lte('date_transaction', end.toISOString())
-          .order('date_transaction', { ascending: false });
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          setMessage({ type: 'error', text: 'Aucune donnée disponible pour cette période' });
-          return;
-        }
-
-        generateFinancesReport(data, start, end);
-        setMessage({ type: 'success', text: 'Rapport généré avec succès' });
-      } else if (selectedType === 'Fournitures Élèves') {
-        await handleFournituresElevesReport();
-      } else if (selectedType === 'Fournitures Bureau') {
-        await handleFournituresBureauReport();
-      }
-    } catch (error) {
-      console.error('Erreur lors de la génération du rapport:', error);
-      setMessage({ type: 'error', text: 'Erreur lors de la génération du rapport' });
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -836,66 +776,6 @@ export default function Rapports() {
             </div>
           );
         })}
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Générer un Rapport Personnalisé</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Type de Rapport
-            </label>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option>Élèves</option>
-              <option>Minerval</option>
-              <option>Finances</option>
-              <option>Fournitures Élèves</option>
-              <option>Fournitures Bureau</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Format
-            </label>
-            <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-              <option>PDF</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date de Début
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date de Fin
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-        <button
-          onClick={handleCustomReport}
-          disabled={loading}
-          className="mt-6 w-full md:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-          Générer le Rapport
-        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6">
