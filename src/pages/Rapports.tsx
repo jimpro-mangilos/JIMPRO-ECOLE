@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FileText, Download, Users, DollarSign, Package, Briefcase, Loader2, CheckCircle, AlertCircle, UserCheck, Filter, RotateCcw, ChevronDown } from 'lucide-react';
+import { FileText, Download, Users, DollarSign, Package, Briefcase, Loader2, CheckCircle, AlertCircle, UserCheck, Filter, RotateCcw, ChevronDown, X, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import {
@@ -692,7 +692,7 @@ export default function Rapports() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl shadow-sm p-4">
         <button
-          onClick={() => setExpandedSection(expandedSection === 'eleves' ? null : 'eleves')}
+          onClick={() => setExpandedSection('eleves')}
           className="w-full flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-3">
@@ -709,7 +709,7 @@ export default function Rapports() {
                 {activeEleveFilterCount}
               </span>
             )}
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSection === 'eleves' ? 'rotate-180' : ''}`} />
+            <Settings className="w-4 h-4 text-gray-400" />
           </div>
         </button>
         {expandedSection === 'eleves' && (
@@ -825,7 +825,7 @@ export default function Rapports() {
 
       <div className="bg-white rounded-xl shadow-sm p-4">
         <button
-          onClick={() => setExpandedSection(expandedSection === 'finances' ? null : 'finances')}
+          onClick={() => setExpandedSection('finances')}
           className="w-full flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-3">
@@ -842,7 +842,7 @@ export default function Rapports() {
                 {activeFinanceFilterCount}
               </span>
             )}
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSection === 'finances' ? 'rotate-180' : ''}`} />
+            <Settings className="w-4 h-4 text-gray-400" />
           </div>
         </button>
         {expandedSection === 'finances' && (
@@ -961,7 +961,7 @@ export default function Rapports() {
 
       <div className="bg-white rounded-xl shadow-sm p-4">
         <button
-          onClick={() => setExpandedSection(expandedSection === 'fournitures' ? null : 'fournitures')}
+          onClick={() => setExpandedSection('fournitures')}
           className="w-full flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-3">
@@ -978,7 +978,7 @@ export default function Rapports() {
                 {activeFournitureFilterCount}
               </span>
             )}
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSection === 'fournitures' ? 'rotate-180' : ''}`} />
+            <Settings className="w-4 h-4 text-gray-400" />
           </div>
         </button>
         {expandedSection === 'fournitures' && (
@@ -1075,7 +1075,7 @@ export default function Rapports() {
 
       <div className="bg-white rounded-xl shadow-sm p-4">
         <button
-          onClick={() => setExpandedSection(expandedSection === 'comptable' ? null : 'comptable')}
+          onClick={() => setExpandedSection('comptable')}
           className="w-full flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-3">
@@ -1085,7 +1085,7 @@ export default function Rapports() {
               <p className="text-xs text-gray-500">Performance et statistiques des comptables</p>
             </div>
           </div>
-          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSection === 'comptable' ? 'rotate-180' : ''}`} />
+          <Settings className="w-4 h-4 text-gray-400" />
         </button>
         {expandedSection === 'comptable' && (
           <div className="mt-4 pt-4 border-t">
