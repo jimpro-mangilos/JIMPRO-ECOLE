@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const BROADCAST_CONVERSATION_ID = '00000000-0000-0000-0000-000000000001';
 
