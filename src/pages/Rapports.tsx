@@ -689,7 +689,8 @@ export default function Rapports() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-sm p-4">
         <button
           onClick={() => setExpandedSection(expandedSection === 'eleves' ? null : 'eleves')}
           className="w-full flex items-center justify-between gap-3"
@@ -1201,6 +1202,7 @@ export default function Rapports() {
         </div>
             </div>
           )}
+      </div>
       </div>
     </div>
   );
