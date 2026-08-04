@@ -23,10 +23,10 @@ export default function Rapports() {
   const [loadingComptables, setLoadingComptables] = useState(false);
 
   const [fournitureFilters, setFournitureFilters] = useState({
-    section: '',
-    classe: '',
-    typeUniforme: '',
-    annee: '',
+    section: [] as string[],
+    classe: [] as string[],
+    typeUniforme: [] as string[],
+    annee: [] as string[],
     startDate: '',
     endDate: '',
     search: '',
@@ -57,10 +57,10 @@ export default function Rapports() {
   const [financeFilters, setFinanceFilters] = useState({
     startDate: '',
     endDate: '',
-    typeOperation: '',
-    statut: '',
-    comptable: '',
-    approbateur: '',
+    typeOperation: [] as string[],
+    statut: [] as string[],
+    comptable: [] as string[],
+    approbateur: [] as string[],
     montantMin: '',
     montantMax: '',
     search: '',
@@ -159,20 +159,24 @@ export default function Rapports() {
     }
   };
 
-  const activeFinanceFilterCount = Object.values(financeFilters).filter(v => v && v.length > 0).length;
+  const activeFinanceFilterCount = Object.entries(financeFilters).filter(([k, v]) => Array.isArray(v) ? v.length > 0 : (v && (v as string).length > 0)).length;
 
   const updateFinanceFilter = (key: keyof typeof financeFilters, value: string) => {
     setFinanceFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const updateFinanceArrayFilter = (key: 'typeOperation' | 'statut' | 'comptable' | 'approbateur', values: string[]) => {
+    setFinanceFilters(prev => ({ ...prev, [key]: values }));
   };
 
   const resetFinanceFilters = () => {
     setFinanceFilters({
       startDate: '',
       endDate: '',
-      typeOperation: '',
-      statut: '',
-      comptable: '',
-      approbateur: '',
+      typeOperation: [] as string[],
+      statut: [] as string[],
+      comptable: [] as string[],
+      approbateur: [] as string[],
       montantMin: '',
       montantMax: '',
       search: '',
@@ -247,24 +251,27 @@ export default function Rapports() {
   const updateFournitureFilter = (key: keyof typeof fournitureFilters, value: string) => {
     setFournitureFilters(prev => {
       const next = { ...prev, [key]: value };
-      if (key === 'section') next.classe = '';
       return next;
     });
   };
 
+  const updateFournitureArrayFilter = (key: 'section' | 'classe' | 'typeUniforme' | 'annee', values: string[]) => {
+    setFournitureFilters(prev => ({ ...prev, [key]: values }));
+  };
+
   const resetFournitureFilters = () => {
     setFournitureFilters({
-      section: '',
-      classe: '',
-      typeUniforme: '',
-      annee: '',
+      section: [] as string[],
+      classe: [] as string[],
+      typeUniforme: [] as string[],
+      annee: [] as string[],
       startDate: '',
       endDate: '',
       search: '',
     });
   };
 
-  const activeFournitureFilterCount = Object.values(fournitureFilters).filter(v => v && v.length > 0).length;
+  const activeFournitureFilterCount = Object.entries(fournitureFilters).filter(([k, v]) => Array.isArray(v) ? v.length > 0 : (v && (v as string).length > 0)).length;
 
   const loadComptables = async () => {
     setLoadingComptables(true);
@@ -563,10 +570,13 @@ export default function Rapports() {
         .select('*')
         .order('date_transaction', { ascending: false });
 
-      if (financeFilters.typeOperation) query = query.eq('type_operation', financeFilters.typeOperation);
-      if (financeFilters.statut) query = query.eq('statut', financeFilters.statut);
-      if (financeFilters.comptable) query = query.or(`nom_comptable.eq.${financeFilters.comptable},nom_encaisseur.eq.${financeFilters.comptable}`);
-      if (financeFilters.approbateur) query = query.eq('nom_approbateur', financeFilters.approbateur);
+      if (financeFilters.typeOperation.length > 0) query = query.in('type_operation', financeFilters.typeOperation);
+      if (financeFilters.statut.length > 0) query = query.in('statut', financeFilters.statut);
+      if (financeFilters.comptable.length > 0) {
+        const orParts = financeFilters.comptable.map(c => `nom_comptable.eq.${c},nom_encaisseur.eq.${c}`).join(',');
+        query = query.or(orParts);
+      }
+      if (financeFilters.approbateur.length > 0) query = query.in('nom_approbateur', financeFilters.approbateur);
       if (financeFilters.startDate) query = query.gte('date_transaction', financeFilters.startDate);
       if (financeFilters.endDate) query = query.lte('date_transaction', `${financeFilters.endDate}T23:59:59.999Z`);
       if (financeFilters.montantMin) query = query.gte('montant_chiffre', parseInt(financeFilters.montantMin));
@@ -611,10 +621,10 @@ export default function Rapports() {
         .from('gestion_uniformes')
         .select('matricule, nom_eleve, postnom, prenom, section, classe, type_uniforme_libelle, quantite, annee_scolaire, date_distribution, nom_comptable');
 
-      if (fournitureFilters.section) query = query.eq('section', fournitureFilters.section);
-      if (fournitureFilters.classe) query = query.eq('classe', fournitureFilters.classe);
-      if (fournitureFilters.typeUniforme) query = query.eq('type_uniforme_libelle', fournitureFilters.typeUniforme);
-      if (fournitureFilters.annee) query = query.eq('annee_scolaire', fournitureFilters.annee);
+      if (fournitureFilters.section.length > 0) query = query.in('section', fournitureFilters.section);
+      if (fournitureFilters.classe.length > 0) query = query.in('classe', fournitureFilters.classe);
+      if (fournitureFilters.typeUniforme.length > 0) query = query.in('type_uniforme_libelle', fournitureFilters.typeUniforme);
+      if (fournitureFilters.annee.length > 0) query = query.in('annee_scolaire', fournitureFilters.annee);
       if (fournitureFilters.startDate) query = query.gte('date_distribution', fournitureFilters.startDate);
       if (fournitureFilters.endDate) {
         const endOfDay = `${fournitureFilters.endDate}T23:59:59.999Z`;
@@ -648,10 +658,10 @@ export default function Rapports() {
       }
 
       generateFournituresElevesReport(data, {
-        section: fournitureFilters.section,
-        classe: fournitureFilters.classe,
-        typeUniforme: fournitureFilters.typeUniforme,
-        annee: fournitureFilters.annee,
+        section: fournitureFilters.section.join(', '),
+        classe: fournitureFilters.classe.join(', '),
+        typeUniforme: fournitureFilters.typeUniforme.join(', '),
+        annee: fournitureFilters.annee.join(', '),
         startDate: fournitureFilters.startDate,
         endDate: fournitureFilters.endDate,
         search: fournitureFilters.search.trim(),
@@ -1030,58 +1040,34 @@ export default function Rapports() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type d'operation</label>
-            <select
-              value={financeFilters.typeOperation}
-              onChange={(e) => updateFinanceFilter('typeOperation', e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="">Tous les types</option>
-              <option value="recette">Recettes</option>
-              <option value="dépense">Depenses</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Statut</label>
-            <select
-              value={financeFilters.statut}
-              onChange={(e) => updateFinanceFilter('statut', e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="">Tous les statuts</option>
-              <option value="en_attente">En attente</option>
-              <option value="approuve">Approuve</option>
-              <option value="encaisse">Encaisse</option>
-              <option value="decaisse">Decaisse</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Comptable / Encaisseur</label>
-            <select
-              value={financeFilters.comptable}
-              onChange={(e) => updateFinanceFilter('comptable', e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="">Tous (comptable, encaisseur)</option>
-              {financeComptables.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Approbateur</label>
-            <select
-              value={financeFilters.approbateur}
-              onChange={(e) => updateFinanceFilter('approbateur', e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="">Tous les approbateurs</option>
-              {financeApprobateurs.map(a => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-          </div>
+          <MultiSelectFilter
+            label="Type d'operation"
+            placeholder="Tous les types"
+            options={['recette', 'dépense']}
+            selected={financeFilters.typeOperation}
+            onChange={(v) => updateFinanceArrayFilter('typeOperation', v)}
+          />
+          <MultiSelectFilter
+            label="Statut"
+            placeholder="Tous les statuts"
+            options={['en_attente', 'approuve', 'encaisse', 'decaisse']}
+            selected={financeFilters.statut}
+            onChange={(v) => updateFinanceArrayFilter('statut', v)}
+          />
+          <MultiSelectFilter
+            label="Comptable / Encaisseur"
+            placeholder="Tous (comptable, encaisseur)"
+            options={financeComptables}
+            selected={financeFilters.comptable}
+            onChange={(v) => updateFinanceArrayFilter('comptable', v)}
+          />
+          <MultiSelectFilter
+            label="Approbateur"
+            placeholder="Tous les approbateurs"
+            options={financeApprobateurs}
+            selected={financeFilters.approbateur}
+            onChange={(v) => updateFinanceArrayFilter('approbateur', v)}
+          />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Date de debut</label>
             <input
@@ -1181,58 +1167,34 @@ export default function Rapports() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Section</label>
-            <select
-              value={fournitureFilters.section}
-              onChange={(e) => updateFournitureFilter('section', e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="">Toutes les sections</option>
-              {fournitureSections.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Classe</label>
-            <select
-              value={fournitureFilters.classe}
-              onChange={(e) => updateFournitureFilter('classe', e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="">Toutes les classes</option>
-              {filteredFournitureClasses.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type d'uniforme</label>
-            <select
-              value={fournitureFilters.typeUniforme}
-              onChange={(e) => updateFournitureFilter('typeUniforme', e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="">Tous les types</option>
-              {fournitureTypes.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Année scolaire</label>
-            <select
-              value={fournitureFilters.annee}
-              onChange={(e) => updateFournitureFilter('annee', e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="">Toutes les années</option>
-              {fournitureAnnees.map(a => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-          </div>
+          <MultiSelectFilter
+            label="Section"
+            placeholder="Toutes les sections"
+            options={fournitureSections}
+            selected={fournitureFilters.section}
+            onChange={(v) => updateFournitureArrayFilter('section', v)}
+          />
+          <MultiSelectFilter
+            label="Classe"
+            placeholder="Toutes les classes"
+            options={filteredFournitureClasses}
+            selected={fournitureFilters.classe}
+            onChange={(v) => updateFournitureArrayFilter('classe', v)}
+          />
+          <MultiSelectFilter
+            label="Type d'uniforme"
+            placeholder="Tous les types"
+            options={fournitureTypes}
+            selected={fournitureFilters.typeUniforme}
+            onChange={(v) => updateFournitureArrayFilter('typeUniforme', v)}
+          />
+          <MultiSelectFilter
+            label="Année scolaire"
+            placeholder="Toutes les années"
+            options={fournitureAnnees}
+            selected={fournitureFilters.annee}
+            onChange={(v) => updateFournitureArrayFilter('annee', v)}
+          />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Date de début</label>
             <input
