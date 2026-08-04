@@ -822,7 +822,7 @@ export default function Paiements() {
                 option: filterOption.join(', '),
                 classe: filterClasse.join(', '),
                 encaisseur: filterEncaisseur.join(', '),
-                type: filterType.join(', '),
+                type: filterType.map(id => typesPaiement.find(t => t.id === id)?.libelle || id).join(', '),
                 statut: filterStatut.join(', '),
                 motifs: filterMotifs,
                 annee: filterYear.join(', '),
@@ -873,6 +873,7 @@ export default function Paiements() {
             placeholder="Tous types"
             options={typesPaiement.map(t => t.id)}
             selected={filterType}
+            optionLabels={Object.fromEntries(typesPaiement.map(t => [t.id, t.libelle]))}
             onChange={(v) => setFilterType(v)}
           />
 

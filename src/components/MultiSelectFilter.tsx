@@ -7,9 +7,10 @@ interface MultiSelectFilterProps {
   options: string[];
   selected: string[];
   onChange: (selected: string[]) => void;
+  optionLabels?: Record<string, string>;
 }
 
-export default function MultiSelectFilter({ label, placeholder, options, selected, onChange }: MultiSelectFilterProps) {
+export default function MultiSelectFilter({ label, placeholder, options, selected, onChange, optionLabels }: MultiSelectFilterProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -92,7 +93,7 @@ export default function MultiSelectFilter({ label, placeholder, options, selecte
                   <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
                     {isSelected && <Check className="w-3 h-3 text-white" />}
                   </span>
-                  <span className="truncate">{option}</span>
+                  <span className="truncate">{optionLabels ? optionLabels[option] || option : option}</span>
                 </button>
               );
             })
