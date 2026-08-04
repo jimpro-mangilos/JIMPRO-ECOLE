@@ -10,7 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useChat, BROADCAST_CONVERSATION_ID, ChatMessage, ChatProfile, Conversation } from '../hooks/useChat';
+import { useChat, BROADCAST_CONVERSATION_ID, ChatMessage, ChatProfile, Conversation } from '../lib/hooks/useChat';
 
 const AVATAR_COLORS = [
   'bg-blue-500',

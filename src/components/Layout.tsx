@@ -21,9 +21,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogo } from '../contexts/LogoContext';
-import { useMenuConfig } from '../hooks/useMenuConfig';
+import { useMenuConfig } from '../lib/hooks/useMenuConfig';
 import { supabase } from '../lib/supabase';
-import { BROADCAST_CONVERSATION_ID } from '../hooks/useChat';
+import { BROADCAST_CONVERSATION_ID } from '../lib/hooks/useChat';
 
 interface LayoutProps {
   children: React.ReactNode;

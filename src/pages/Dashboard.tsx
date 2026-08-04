@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useMenuConfig } from '../hooks/useMenuConfig';
+import { useMenuConfig } from '../lib/hooks/useMenuConfig';
 
 interface Stats {
   totalEleves: number;
