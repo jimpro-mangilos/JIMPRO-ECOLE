@@ -33,7 +33,6 @@ export default function Finances() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatut, setFilterStatut] = useState<'all' | 'en_attente' | 'approuve' | 'decaisse' | 'encaisse'>('all');
   const [filterComptable, setFilterComptable] = useState<string>('all');
-  const [filterApprobateur, setFilterApprobateur] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>('all');
   const [filterDateDebut, setFilterDateDebut] = useState('');
   const [filterDateFin, setFilterDateFin] = useState('');
@@ -298,12 +297,11 @@ export default function Finances() {
   };
 
   const comptableOptions = useMemo(() => {
-    const names = transactions.map((t) => t.nom_comptable).filter((n): n is string => !!n);
-    return Array.from(new Set(names)).sort();
-  }, [transactions]);
-
-  const approbateurOptions = useMemo(() => {
-    const names = transactions.map((t) => t.nom_approbateur).filter((n): n is string => !!n);
+    const names = [
+      ...transactions.map((t) => t.nom_comptable),
+      ...transactions.map((t) => t.nom_approbateur),
+      ...transactions.map((t) => (t as any).nom_encaisseur),
+    ].filter((n): n is string => !!n);
     return Array.from(new Set(names)).sort();
   }, [transactions]);
 
@@ -359,10 +357,10 @@ export default function Finances() {
           t.beneficiaire.toLowerCase().includes(search) ||
           t.libelle.toLowerCase().includes(search) ||
           (t.nom_comptable || '').toLowerCase().includes(search) ||
-          (t.nom_approbateur || '').toLowerCase().includes(search);
+          (t.nom_approbateur || '').toLowerCase().includes(search) ||
+          ((t as any).nom_encaisseur || '').toLowerCase().includes(search);
         const matchStatut = filterStatut === 'all' || t.statut === filterStatut;
-        const matchComptable = filterComptable === 'all' || t.nom_comptable === filterComptable;
-        const matchApprobateur = filterApprobateur === 'all' || t.nom_approbateur === filterApprobateur;
+        const matchComptable = filterComptable === 'all' || t.nom_comptable === filterComptable || t.nom_approbateur === filterComptable || (t as any).nom_encaisseur === filterComptable;
         const txDate = new Date(t.date_transaction);
         const matchYear = filterYear === 'all' || txDate.getFullYear() === parseInt(filterYear);
         let matchDateRange = true;
@@ -374,7 +372,7 @@ export default function Finances() {
           const created = new Date(t.created_at).toLocaleDateString('fr-CA');
           if (created > filterDateFin) matchDateRange = false;
         }
-        return matchSearch && matchStatut && matchComptable && matchApprobateur && matchYear && matchDateRange;
+        return matchSearch && matchStatut && matchComptable && matchYear && matchDateRange;
       })
       .sort((a, b) => {
         let valA: number | string = a[sortField];
@@ -878,7 +876,7 @@ export default function Finances() {
             <Search className="w-4 h-4 text-gray-400 shrink-0" />
             <input
               type="text"
-              placeholder="Rechercher par beneficiaire, libelle, comptable..."
+              placeholder="Rechercher par beneficiaire, libelle, comptable, encaisseur..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 outline-none text-gray-700 text-sm"
@@ -905,19 +903,8 @@ export default function Finances() {
               onChange={(e) => setFilterComptable(e.target.value)}
               className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none"
             >
-              <option value="all">Tous les comptables</option>
+              <option value="all">Tous (comptable, approbateur, encaisseur)</option>
               {comptableOptions.map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-
-            <select
-              value={filterApprobateur}
-              onChange={(e) => setFilterApprobateur(e.target.value)}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none"
-            >
-              <option value="all">Tous les approbateurs</option>
-              {approbateurOptions.map((name) => (
                 <option key={name} value={name}>{name}</option>
               ))}
             </select>
