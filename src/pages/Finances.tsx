@@ -66,6 +66,7 @@ export default function Finances() {
     statut: 'en_attente',
   });
   const [pdfConfirmModal, setPdfConfirmModal] = useState(false);
+  const [detailTransaction, setDetailTransaction] = useState<Transaction | null>(null);
 
   const canApprouver = () => isAdmin() || isItManager() || isCoordonnateur() || isPromoteur();
   const canApprouverTransaction = (montant: number) => {
@@ -569,9 +570,13 @@ export default function Finances() {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                           {items.map((t) => (
-                            <tr key={t.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.has(t.id) ? 'bg-blue-50/50' : ''}`}>
+                            <tr
+                              key={t.id}
+                              onClick={() => setDetailTransaction(t)}
+                              className={`hover:bg-gray-50 transition-colors cursor-pointer ${selectedIds.has(t.id) ? 'bg-blue-50/50' : ''}`}
+                            >
                               {canSupprimer() && (
-                                <td className="px-2 py-2.5 w-8">
+                                <td className="px-2 py-2.5 w-8" onClick={(e) => e.stopPropagation()}>
                                   <input
                                     type="checkbox"
                                     checked={selectedIds.has(t.id)}
@@ -624,7 +629,7 @@ export default function Finances() {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-3 py-2.5 whitespace-nowrap">
+                              <td className="px-3 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center gap-1">
                                   {t.statut === 'en_attente' && canApprouverTransaction(t.montant_chiffre) && (
                                     <button
@@ -1288,6 +1293,112 @@ export default function Finances() {
             >
               Annuler
             </button>
+          </div>
+        </div>
+      )}
+
+      {detailTransaction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDetailTransaction(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h3 className="text-lg font-bold text-gray-900">Details de la transaction</h3>
+              <button onClick={() => setDetailTransaction(null)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Type</span>
+                  <p className={`text-sm font-bold mt-0.5 ${detailTransaction.type_operation === 'recette' ? 'text-green-600' : 'text-red-600'}`}>
+                    {detailTransaction.type_operation === 'recette' ? 'Recette' : 'Depense'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Statut</span>
+                  <p className="mt-0.5">
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${STATUT_COLORS[detailTransaction.statut] || 'bg-gray-100 text-gray-600'}`}>
+                      {STATUT_LABELS[detailTransaction.statut] || detailTransaction.statut}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-gray-400 uppercase">Beneficiaire</span>
+                <p className="text-sm font-medium text-gray-900 mt-0.5">{detailTransaction.beneficiaire}</p>
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-gray-400 uppercase">Libelle</span>
+                <p className="text-sm text-gray-700 mt-0.5">{detailTransaction.libelle}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Montant en chiffres</span>
+                  <p className={`text-sm font-bold mt-0.5 ${detailTransaction.type_operation === 'recette' ? 'text-green-600' : 'text-red-600'}`}>
+                    {detailTransaction.type_operation === 'recette' ? '+' : '-'}{detailTransaction.montant_chiffre.toLocaleString()} FC
+                  </p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Telephone</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{detailTransaction.telephone || '—'}</p>
+                </div>
+              </div>
+              {detailTransaction.montant_lettre && (
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Montant en lettres</span>
+                  <p className="text-sm text-gray-700 mt-0.5 italic">{detailTransaction.montant_lettre}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Date de transaction</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{new Date(detailTransaction.date_transaction).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Date de creation</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{new Date(detailTransaction.created_at).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+              </div>
+              <div className="border-t border-gray-100 pt-4 mt-2">
+                <span className="text-xs font-semibold text-gray-400 uppercase">Intervenants</span>
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                    <User className="w-4 h-4 text-gray-400 shrink-0" />
+                    <div>
+                      <span className="text-xs text-gray-400">Createur (comptable)</span>
+                      <p className="text-sm font-medium text-gray-900">{detailTransaction.nom_comptable || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2">
+                    <CheckCircle className="w-4 h-4 text-blue-400 shrink-0" />
+                    <div>
+                      <span className="text-xs text-blue-400">Approbateur</span>
+                      <p className="text-sm font-medium text-gray-900">{detailTransaction.nom_approbateur || '—'}</p>
+                    </div>
+                  </div>
+                  <div className={`flex items-center gap-2 rounded-lg px-3 py-2 ${detailTransaction.type_operation === 'recette' ? 'bg-green-50' : 'bg-red-50'}`}>
+                    {detailTransaction.type_operation === 'recette'
+                      ? <ArrowUpCircle className="w-4 h-4 text-green-500 shrink-0" />
+                      : <ArrowDownCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    }
+                    <div>
+                      <span className={`text-xs ${detailTransaction.type_operation === 'recette' ? 'text-green-500' : 'text-red-500'}`}>
+                        {detailTransaction.type_operation === 'recette' ? 'Encaisseur' : 'Decaisseur'}
+                      </span>
+                      <p className="text-sm font-medium text-gray-900">{(detailTransaction as any).nom_encaisseur || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gray-100 px-6 py-3 bg-gray-50 rounded-b-2xl">
+              <button
+                onClick={() => setDetailTransaction(null)}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Fermer
+              </button>
+            </div>
           </div>
         </div>
       )}
