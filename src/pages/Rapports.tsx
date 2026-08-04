@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FileText, Download, Users, DollarSign, Package, Briefcase, Loader2, CheckCircle, AlertCircle, UserCheck, Filter, RotateCcw } from 'lucide-react';
+import { FileText, Download, Users, DollarSign, Package, Briefcase, Loader2, CheckCircle, AlertCircle, UserCheck, Filter, RotateCcw, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import {
@@ -20,6 +20,7 @@ export default function Rapports() {
   const [comptables, setComptables] = useState<any[]>([]);
   const [selectedComptables, setSelectedComptables] = useState<string[]>([]);
   const [loadingComptables, setLoadingComptables] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const [fournitureFilters, setFournitureFilters] = useState({
     section: [] as string[],
@@ -778,24 +779,31 @@ export default function Rapports() {
         })}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-start justify-between gap-4 mb-2">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-600" />
-            Rapport des Eleves
-          </h2>
-          {activeEleveFilterCount > 0 && (
-            <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
-              <Filter className="w-3 h-3" />
-              {activeEleveFilterCount} filtre{activeEleveFilterCount > 1 ? 's' : ''} actif{activeEleveFilterCount > 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-        <p className="text-sm text-gray-600 mb-6">
-          Filtrez les eleves par section, option, classe, motif de paiement, annee scolaire ou tranche de montant avant export
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white rounded-xl shadow-sm p-4">
+        <button
+          onClick={() => setExpandedSection(expandedSection === 'eleves' ? null : 'eleves')}
+          className="w-full flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <Users className="w-5 h-5 text-blue-600 shrink-0" />
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-900 text-sm">Rapport des Eleves</h3>
+              <p className="text-xs text-gray-500">Filtrez par section, option, classe, motif, annee</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {activeEleveFilterCount > 0 && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
+                <Filter className="w-3 h-3" />
+                {activeEleveFilterCount}
+              </span>
+            )}
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSection === 'eleves' ? 'rotate-180' : ''}`} />
+          </div>
+        </button>
+        {expandedSection === 'eleves' && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <MultiSelectFilter
             label="Section"
             placeholder="Toutes les sections"
@@ -900,26 +908,35 @@ export default function Rapports() {
             Reinitialiser
           </button>
         </div>
+            </div>
+          )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-start justify-between gap-4 mb-2">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <FileText className="w-6 h-6 text-emerald-600" />
-            Rapport Financier
-          </h2>
-          {activeFinanceFilterCount > 0 && (
-            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1 rounded-full">
-              <Filter className="w-3 h-3" />
-              {activeFinanceFilterCount} filtre{activeFinanceFilterCount > 1 ? 's' : ''} actif{activeFinanceFilterCount > 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-        <p className="text-sm text-gray-600 mb-6">
-          Filtrez les transactions par type, statut, comptable, approbateur, periode ou tranche de montant avant export
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white rounded-xl shadow-sm p-4">
+        <button
+          onClick={() => setExpandedSection(expandedSection === 'finances' ? null : 'finances')}
+          className="w-full flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-900 text-sm">Rapport Financier</h3>
+              <p className="text-xs text-gray-500">Filtrez par type, statut, comptable, approbateur, periode</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {activeFinanceFilterCount > 0 && (
+              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1 rounded-full">
+                <Filter className="w-3 h-3" />
+                {activeFinanceFilterCount}
+              </span>
+            )}
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSection === 'finances' ? 'rotate-180' : ''}`} />
+          </div>
+        </button>
+        {expandedSection === 'finances' && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <MultiSelectFilter
             label="Type d'operation"
             placeholder="Tous les types"
@@ -1027,26 +1044,35 @@ export default function Rapports() {
             Reinitialiser
           </button>
         </div>
+            </div>
+          )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-start justify-between gap-4 mb-2">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Package className="w-6 h-6 text-orange-600" />
-            Rapport Fournitures Élèves
-          </h2>
-          {activeFournitureFilterCount > 0 && (
-            <span className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 text-xs font-medium px-3 py-1 rounded-full">
-              <Filter className="w-3 h-3" />
-              {activeFournitureFilterCount} filtre{activeFournitureFilterCount > 1 ? 's' : ''} actif{activeFournitureFilterCount > 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-        <p className="text-sm text-gray-600 mb-6">
-          Filtrez les distributions d'uniformes par section, classe, type, année scolaire ou période avant export
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white rounded-xl shadow-sm p-4">
+        <button
+          onClick={() => setExpandedSection(expandedSection === 'fournitures' ? null : 'fournitures')}
+          className="w-full flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <Package className="w-5 h-5 text-orange-600 shrink-0" />
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-900 text-sm">Rapport Fournitures Élèves</h3>
+              <p className="text-xs text-gray-500">Filtrez par section, classe, type, annee</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {activeFournitureFilterCount > 0 && (
+              <span className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 text-xs font-medium px-3 py-1 rounded-full">
+                <Filter className="w-3 h-3" />
+                {activeFournitureFilterCount}
+              </span>
+            )}
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSection === 'fournitures' ? 'rotate-180' : ''}`} />
+          </div>
+        </button>
+        {expandedSection === 'fournitures' && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <MultiSelectFilter
             label="Section"
             placeholder="Toutes les sections"
@@ -1132,13 +1158,26 @@ export default function Rapports() {
             Réinitialiser
           </button>
         </div>
+            </div>
+          )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <UserCheck className="w-6 h-6 text-pink-600" />
-          Rapport par Comptable
-        </h2>
+      <div className="bg-white rounded-xl shadow-sm p-4">
+        <button
+          onClick={() => setExpandedSection(expandedSection === 'comptable' ? null : 'comptable')}
+          className="w-full flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <UserCheck className="w-5 h-5 text-pink-600 shrink-0" />
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-900 text-sm">Rapport par Comptable</h3>
+              <p className="text-xs text-gray-500">Performance et statistiques des comptables</p>
+            </div>
+          </div>
+          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSection === 'comptable' ? 'rotate-180' : ''}`} />
+        </button>
+        {expandedSection === 'comptable' && (
+          <div className="mt-4 pt-4 border-t">
         <p className="text-sm text-gray-600 mb-6">
           Générez des rapports détaillés pour un ou plusieurs comptables avec comparaison des performances
         </p>
@@ -1250,6 +1289,8 @@ export default function Rapports() {
             )}
           </button>
         </div>
+            </div>
+          )}
       </div>
     </div>
   );
