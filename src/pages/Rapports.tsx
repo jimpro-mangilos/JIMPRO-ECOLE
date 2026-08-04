@@ -434,51 +434,6 @@ export default function Rapports() {
     );
   };
 
-  const rapportTypes = [
-    {
-      title: 'Rapport des Élèves',
-      description: 'Liste complète des élèves inscrits par section',
-      icon: Users,
-      color: 'blue',
-      handler: handleElevesReport,
-    },
-    {
-      title: 'Rapport Minerval',
-      description: 'État des paiements et soldes des frais scolaires',
-      icon: DollarSign,
-      color: 'green',
-      handler: handleMinervalReport,
-    },
-    {
-      title: 'Rapport Financier',
-      description: 'Bilan des recettes et dépenses',
-      icon: FileText,
-      color: 'purple',
-      handler: handleFinancesReport,
-    },
-    {
-      title: 'Rapport Fournitures Élèves',
-      description: 'État de distribution des fournitures scolaires',
-      icon: Package,
-      color: 'orange',
-      handler: handleFournituresElevesReport,
-    },
-    {
-      title: 'Rapport Fournitures Bureau',
-      description: 'Historique des fournitures de bureau distribuées',
-      icon: Briefcase,
-      color: 'teal',
-      handler: handleFournituresBureauReport,
-    },
-    {
-      title: 'Rapport par Comptable',
-      description: 'Performance et statistiques des comptables',
-      icon: UserCheck,
-      color: 'pink',
-      handler: () => {}, // Interface spéciale en bas de page
-    },
-  ];
-
   async function handleElevesReport() {
     try {
       setLoading(true);
@@ -733,51 +688,6 @@ export default function Rapports() {
           <span>{message.text}</span>
         </div>
       )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {rapportTypes.map((rapport, index) => {
-          const Icon = rapport.icon;
-          const colorClasses = {
-            blue: 'bg-blue-50 text-blue-600',
-            green: 'bg-green-50 text-green-600',
-            purple: 'bg-purple-50 text-purple-600',
-            orange: 'bg-orange-50 text-orange-600',
-            teal: 'bg-teal-50 text-teal-600',
-            pink: 'bg-pink-50 text-pink-600',
-          };
-
-          return (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
-            >
-              <div className={`${colorClasses[rapport.color as keyof typeof colorClasses].split(' ')[0]} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
-                <Icon className={`w-6 h-6 ${colorClasses[rapport.color as keyof typeof colorClasses].split(' ')[1]}`} />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">{rapport.title}</h3>
-              <p className="text-sm text-gray-600 mb-4">{rapport.description}</p>
-              {rapport.title !== 'Rapport par Comptable' && rapport.title !== 'Rapport Fournitures Élèves' && rapport.title !== 'Rapport des Élèves' && rapport.title !== 'Rapport Financier' ? (
-                <button
-                  onClick={rapport.handler}
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                  Télécharger
-                </button>
-              ) : (
-                <div className="text-center text-sm text-gray-500 italic">
-                  Voir filtres ci-dessous
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
 
       <div className="bg-white rounded-xl shadow-sm p-4">
         <button
