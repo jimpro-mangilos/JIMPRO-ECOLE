@@ -18,6 +18,7 @@ import Paiements from './pages/Paiements';
 import TableauBordComptable from './pages/TableauBordComptable';
 import StockUniforms from './pages/StockUniforms';
 import Chat from './pages/Chat';
+import PortailParent from './pages/PortailParent';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
       <AuthProvider>
         <LogoProvider>
         <Routes>
+          <Route path="/portail-parent" element={<PortailParent />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
