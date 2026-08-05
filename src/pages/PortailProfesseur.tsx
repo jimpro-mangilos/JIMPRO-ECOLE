@@ -74,7 +74,7 @@ export default function PortailProfesseur() {
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from('cours-files').getPublicUrl(path);
       return { url: publicUrl, nom: file.name };
-    } catch (e) { console.error('Upload error:', e); return null; }
+    } catch (e: any) { console.error('Upload error:', e); setError('Erreur upload: ' + (e.message || String(e))); return null; }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
