@@ -84,7 +84,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE cours;
 ALTER PUBLICATION supabase_realtime ADD TABLE devoirs;
 
 -- 7. Add enseignant to menu_visibility
-INSERT INTO menu_visibility (role_id, menu_key, visible)
-SELECT id, 'portail-professeur', true
+INSERT INTO menu_visibility (role_id, menu_key, label, is_visible, ordre)
+SELECT id, 'portail-professeur', 'Portail Professeur', true, 9
 FROM roles WHERE nom = 'enseignant'
 ON CONFLICT (role_id, menu_key) DO NOTHING;
