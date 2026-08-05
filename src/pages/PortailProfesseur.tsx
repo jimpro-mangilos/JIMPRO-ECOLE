@@ -6,15 +6,17 @@ import { useAuth } from '../contexts/AuthContext';
 interface ClasseInfo { id: string; nom: string; section_nom: string; }
 interface CoursItem { id: string; titre: string; description: string; professeur_id: string; classe_id: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; classes?: { nom: string; sections?: { nom: string } } | null; }
 interface DevoirItem { id: string; titre: string; description: string; professeur_id: string; classe_id: string | null; cours_id: string | null; date_limite: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; classes?: { nom: string; sections?: { nom: string } } | null; cours?: { titre: string } | null; }
-interface FormData { titre: string; description: string; classe_id: string; cours_id: string; date_limite: string; fichier: File | null; }
+interface FormData { titre: string; description: string; classe_id: string; section_id: string; option_id: string; cours_id: string; date_limite: string; fichier: File | null; }
 
-const EMPTY_FORM: FormData = { titre: '', description: '', classe_id: '', cours_id: '', date_limite: '', fichier: null };
+const EMPTY_FORM: FormData = { titre: '', description: '', classe_id: '', section_id: '', option_id: '', cours_id: '', date_limite: '', fichier: null };
 
 export default function PortailProfesseur() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'cours' | 'devoirs'>('cours');
   const [cours, setCours] = useState<CoursItem[]>([]);
   const [devoirs, setDevoirs] = useState<DevoirItem[]>([]);
+  const [sections, setSections] = useState<{ id: string; nom: string }[]>([]);
+  const [options, setOptions] = useState<{ id: string; nom: string; section_id: string }[]>([]);
   const [classes, setClasses] = useState<ClasseInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -25,7 +27,17 @@ export default function PortailProfesseur() {
   const [success, setSuccess] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { loadClasses(); loadCours(); loadDevoirs(); }, []);
+  useEffect(() => { loadSections(); loadOptions(); loadClasses(); loadCours(); loadDevoirs(); }, []);
+
+  const loadSections = async () => {
+    const { data } = await supabase.from('sections').select('id, nom').eq('is_active', true).order('ordre');
+    if (data) setSections(data);
+  };
+
+  const loadOptions = async () => {
+    const { data } = await supabase.from('options').select('id, nom, section_id').eq('is_active', true).order('ordre');
+    if (data) setOptions(data);
+  };
 
   const loadClasses = async () => {
     const { data } = await supabase.from('classes').select('id, nom, sections(nom)').eq('is_active', true).order('nom');
@@ -46,7 +58,9 @@ export default function PortailProfesseur() {
   const openCreate = () => { setEditingId(null); setForm(EMPTY_FORM); setShowForm(true); setError(''); };
   const openEdit = (item: any, isDevoir: boolean) => {
     setEditingId(item.id);
-    setForm({ titre: item.titre || '', description: item.description || '', classe_id: item.classe_id || '', cours_id: item.cours_id || '', date_limite: item.date_limite ? item.date_limite.split('T')[0] : '', fichier: null });
+    const sectionId = (item as any).section_id || '';
+    const optionId = (item as any).option_id || '';
+    setForm({ titre: item.titre || '', description: item.description || '', classe_id: item.classe_id || '', section_id: sectionId, option_id: optionId, cours_id: item.cours_id || '', date_limite: item.date_limite ? item.date_limite.split('T')[0] : '', fichier: null });
     setShowForm(true);
     setError('');
   };
@@ -74,7 +88,7 @@ export default function PortailProfesseur() {
       if (uploaded) { fichier_url = uploaded.url; fichier_nom = uploaded.nom; }
     }
 
-    const payload = { titre: form.titre, description: form.description, professeur_id: user!.id, classe_id: form.classe_id || null, fichier_url, fichier_nom };
+    const payload = { titre: form.titre, description: form.description, professeur_id: user!.id, classe_id: form.classe_id || null, section_id: form.section_id || null, option_id: form.option_id || null, fichier_url, fichier_nom };
 
     try {
       if (activeTab === 'cours') {
@@ -189,10 +203,28 @@ export default function PortailProfesseur() {
                 <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
+                <select value={form.section_id} onChange={e => setForm(p => ({ ...p, section_id: e.target.value, option_id: '', classe_id: '' }))} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                  <option value="">Toutes les sections</option>
+                  {sections.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Option</label>
+                <select value={form.option_id} onChange={e => setForm(p => ({ ...p, option_id: e.target.value, classe_id: '' }))} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                  <option value="">Toutes les options</option>
+                  {options.filter(o => !form.section_id || o.section_id === form.section_id).map(o => <option key={o.id} value={o.id}>{o.nom}</option>)}
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Classe</label>
                 <select value={form.classe_id} onChange={e => setForm(p => ({ ...p, classe_id: e.target.value }))} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
                   <option value="">Toutes les classes</option>
-                  {classes.map(c => <option key={c.id} value={c.id}>{c.section_nom ? `${c.section_nom} - ` : ''}{c.nom}</option>)}
+                  {classes.filter(c => {
+                    if (!form.section_id && !form.option_id) return true;
+                    const sec = sections.find(s => s.nom === c.section_nom);
+                    return (!form.section_id || sec?.id === form.section_id);
+                  }).map(c => <option key={c.id} value={c.id}>{c.section_nom ? `${c.section_nom} - ` : ''}{c.nom}</option>)}
                 </select>
               </div>
               {activeTab === 'devoirs' && (
