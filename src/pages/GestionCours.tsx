@@ -37,8 +37,8 @@ export default function GestionCours() {
   };
 
   const loadClasses = async () => {
-    const { data } = await supabase.from('classes').select('id, nom').eq('is_active', true).order('nom');
-    if (data) setClasses(data);
+    const { data } = await supabase.from('classes').select('id, nom, option_id').eq('is_active', true).order('nom');
+    if (data) setClasses(data as any);
   };
 
   const loadSections = async () => {
@@ -92,7 +92,7 @@ export default function GestionCours() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..." className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500" />
         </div>
-        <select value={filterSection} onChange={e => { setFilterSection(e.target.value); setFilterClasse(''); }} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+        <select value={filterSection} onChange={e => { setFilterSection(e.target.value); setFilterOption(''); setFilterClasse(''); }} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-sm">
           <option value="">Toutes les sections</option>
           {sections.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
         </select>
@@ -102,7 +102,7 @@ export default function GestionCours() {
         </select>
         <select value={filterClasse} onChange={e => setFilterClasse(e.target.value)} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-sm">
           <option value="">Toutes les classes</option>
-          {classes.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
+          {classes.filter(c => (!filterOption || (c as any).option_id === filterOption)).map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
         </select>
         <button onClick={openCreate} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm font-medium"><Plus className="w-4 h-4" /> Nouveau cours</button>
       </div>
@@ -111,12 +111,14 @@ export default function GestionCours() {
         : filtered.length === 0 ? <p className="text-gray-400 py-12 text-center">Aucun cours trouvé.</p>
         : <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b"><tr><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Titre</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Section</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Section</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Option</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Classe</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Professeur</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Date</th><th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th></tr></thead>
+            <thead className="bg-gray-50 border-b"><tr><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Titre</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Section</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Option</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Classe</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Professeur</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Date</th><th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th></tr></thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.map(c => (
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900">{c.titre}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.sections?.nom || '—'}</td><td className="px-4 py-3 text-gray-600">{c.options?.nom || '—'}</td><td className="px-4 py-3 text-gray-600">{c.classes?.nom || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.sections?.nom || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.options?.nom || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.classes?.nom || '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{c.profiles ? `${c.profiles.prenom} ${c.profiles.nom}` : '—'}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{new Date(c.created_at).toLocaleDateString('fr-FR')}</td>
                   <td className="px-4 py-3 text-right">

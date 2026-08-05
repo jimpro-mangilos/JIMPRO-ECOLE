@@ -47,8 +47,8 @@ export default function GestionDevoirs() {
   };
 
   const loadClasses = async () => {
-    const { data } = await supabase.from('classes').select('id, nom').eq('is_active', true).order('nom');
-    if (data) setClasses(data);
+    const { data } = await supabase.from('classes').select('id, nom, option_id').eq('is_active', true).order('nom');
+    if (data) setClasses(data as any);
   };
 
   const openCreate = () => { setEditingId(null); setForm({ titre: '', description: '', classe_id: '', date_limite: '' }); setShowForm(true); setError(''); };
@@ -92,7 +92,7 @@ export default function GestionDevoirs() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..." className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500" />
         </div>
-        <select value={filterSection} onChange={e => { setFilterSection(e.target.value); setFilterClasse(''); }} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+        <select value={filterSection} onChange={e => { setFilterSection(e.target.value); setFilterOption(''); setFilterClasse(''); }} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-sm">
           <option value="">Toutes les sections</option>
           {sections.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
         </select>
@@ -102,7 +102,7 @@ export default function GestionDevoirs() {
         </select>
         <select value={filterClasse} onChange={e => setFilterClasse(e.target.value)} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-sm">
           <option value="">Toutes les classes</option>
-          {classes.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
+          {classes.filter(c => (!filterOption || (c as any).option_id === filterOption)).map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
         </select>
         <button onClick={openCreate} className="flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 text-sm font-medium"><Plus className="w-4 h-4" /> Nouveau devoir</button>
       </div>
