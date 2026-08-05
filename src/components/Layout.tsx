@@ -44,6 +44,8 @@ const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
   'admin': Shield,
   'chat': MessageCircle,
   'portail-professeur': BookOpen,
+  'gestion-cours': BookOpen,
+  'gestion-devoirs': FileText,
 };
 
 const MENU_PATH_MAP: Record<string, string> = {
@@ -60,6 +62,8 @@ const MENU_PATH_MAP: Record<string, string> = {
   'admin': '/admin',
   'chat': '/chat',
   'portail-professeur': '/portail-professeur',
+  'gestion-cours': '/gestion-cours',
+  'gestion-devoirs': '/gestion-devoirs',
 };
 
 export default function Layout({ children }: LayoutProps) {

@@ -20,6 +20,8 @@ import StockUniforms from './pages/StockUniforms';
 import Chat from './pages/Chat';
 import PortailParent from './pages/PortailParent';
 import PortailProfesseur from './pages/PortailProfesseur';
+import GestionCours from './pages/GestionCours';
+import GestionDevoirs from './pages/GestionDevoirs';
 
 function App() {
   return (
@@ -185,6 +187,27 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <PortailProfesseur />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/gestion-cours"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <GestionCours />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestion-devoirs"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <GestionDevoirs />
                 </Layout>
               </ProtectedRoute>
             }
