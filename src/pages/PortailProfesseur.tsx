@@ -3,7 +3,7 @@ import { Plus, BookOpen, FileText, Edit, Trash2, Loader2, Upload, X, Calendar, G
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
-interface ClasseInfo { id: string; nom: string; section_nom: string; option_id: string | null; }
+interface ClasseInfo { id: string; nom: string; option_nom: string; option_id: string | null; }
 interface CoursItem { id: string; titre: string; description: string; professeur_id: string; classe_id: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; classes?: { nom: string; sections?: { nom: string } } | null; }
 interface DevoirItem { id: string; titre: string; description: string; professeur_id: string; classe_id: string | null; cours_id: string | null; date_limite: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; classes?: { nom: string; sections?: { nom: string } } | null; cours?: { titre: string } | null; }
 interface FormData { titre: string; description: string; classe_id: string; section_id: string; option_id: string; cours_id: string; date_limite: string; fichier: File | null; }
@@ -40,8 +40,8 @@ export default function PortailProfesseur() {
   };
 
   const loadClasses = async () => {
-    const { data } = await supabase.from('classes').select('id, nom, sections(nom), option_id').eq('is_active', true).order('nom');
-    if (data) setClasses((data as any[]).map(c => ({ id: c.id, nom: c.nom, section_nom: c.sections?.nom || '', option_id: c.option_id || null })));
+    const { data } = await supabase.from('classes').select('id, nom, sections(nom), options(nom), option_id').eq('is_active', true).order('nom');
+    if (data) setClasses((data as any[]).map(c => ({ id: c.id, nom: c.nom, option_nom: c.options?.nom || '', option_id: c.option_id || null })));
   };
 
   const loadCours = async () => {
@@ -122,7 +122,7 @@ export default function PortailProfesseur() {
   const classLabel = (item: any) => {
     const cls = item.classes;
     if (!cls?.nom) return '—';
-    return cls.sections?.nom ? `${cls.sections.nom} - ${cls.nom}` : cls.nom;
+    return cls.nom;
   };
 
   return (
@@ -223,8 +223,7 @@ export default function PortailProfesseur() {
                   {classes.filter(c => {
                     if (!form.option_id) return true;
                     return c.option_id === form.option_id;
-                    return (!form.section_id || sec?.id === form.section_id);
-                  }).map(c => <option key={c.id} value={c.id}>{c.section_nom ? `${c.section_nom} - ` : ''}{c.nom}</option>)}
+                  }).map(c => <option key={c.id} value={c.id}>{c.option_nom ? `${c.option_nom} - ` : ''}{c.nom}</option>)}
                 </select>
               </div>
               {activeTab === 'devoirs' && (
