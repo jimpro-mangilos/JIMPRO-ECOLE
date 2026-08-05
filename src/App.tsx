@@ -19,6 +19,7 @@ import TableauBordComptable from './pages/TableauBordComptable';
 import StockUniforms from './pages/StockUniforms';
 import Chat from './pages/Chat';
 import PortailParent from './pages/PortailParent';
+import PortailProfesseur from './pages/PortailProfesseur';
 
 function App() {
   return (
@@ -173,6 +174,17 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Chat />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/portail-professeur"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <PortailProfesseur />
                 </Layout>
               </ProtectedRoute>
             }

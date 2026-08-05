@@ -18,6 +18,7 @@ import {
   BarChart3,
   Archive,
   MessageCircle,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogo } from '../contexts/LogoContext';
@@ -42,6 +43,7 @@ const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
   'configuration': Settings,
   'admin': Shield,
   'chat': MessageCircle,
+  'portail-professeur': BookOpen,
 };
 
 const MENU_PATH_MAP: Record<string, string> = {
@@ -57,6 +59,7 @@ const MENU_PATH_MAP: Record<string, string> = {
   'configuration': '/configuration',
   'admin': '/admin',
   'chat': '/chat',
+  'portail-professeur': '/portail-professeur',
 };
 
 export default function Layout({ children }: LayoutProps) {
