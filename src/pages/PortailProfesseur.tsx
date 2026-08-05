@@ -94,13 +94,17 @@ export default function PortailProfesseur() {
 
     try {
       if (activeTab === 'cours') {
-        if (editingId) await supabase.from('cours').update(payload).eq('id', editingId);
-        else await supabase.from('cours').insert(payload);
+        let result;
+        if (editingId) result = await supabase.from('cours').update(payload).eq('id', editingId).select();
+        else result = await supabase.from('cours').insert(payload).select();
+        if (result.error) throw result.error;
         await loadCours();
       } else {
         const devoirPayload = { ...payload, cours_id: form.cours_id || null, date_limite: form.date_limite || null } as any;
-        if (editingId) await supabase.from('devoirs').update(devoirPayload).eq('id', editingId);
-        else await supabase.from('devoirs').insert(devoirPayload);
+        let result;
+        if (editingId) result = await supabase.from('devoirs').update(devoirPayload).eq('id', editingId).select();
+        else result = await supabase.from('devoirs').insert(devoirPayload).select();
+        if (result.error) throw result.error;
         await loadDevoirs();
       }
       setShowForm(false); setSuccess(editingId ? 'Modifié avec succès' : 'Créé avec succès');
