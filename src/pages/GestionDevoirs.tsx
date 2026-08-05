@@ -4,12 +4,15 @@ import { supabase } from '../lib/supabase';
 
 interface DevoirItem { id: string; titre: string; description: string; professeur_id: string; classe_id: string | null; date_limite: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; classes?: { nom: string } | null; profiles?: { nom: string; prenom: string } | null; }
 interface ClasseInfo { id: string; nom: string; }
+interface SectionInfo { id: string; nom: string; }
 
 export default function GestionDevoirs() {
   const [devoirs, setDevoirs] = useState<DevoirItem[]>([]);
+  const [sections, setSections] = useState<SectionInfo[]>([]);
   const [classes, setClasses] = useState<ClasseInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterSection, setFilterSection] = useState('');
   const [filterClasse, setFilterClasse] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -21,13 +24,18 @@ export default function GestionDevoirs() {
 
   const loadAll = async () => {
     setLoading(true);
-    await Promise.all([loadDevoirs(), loadClasses()]);
+    await Promise.all([loadDevoirs(), loadClasses(), loadSections()]);
     setLoading(false);
   };
 
   const loadDevoirs = async () => {
-    const { data } = await supabase.from('devoirs').select('*, classes(nom), profiles!professeur_id(nom, prenom)').order('created_at', { ascending: false });
+    const { data } = await supabase.from('devoirs').select('*, classes(nom), sections(nom), profiles!professeur_id(nom, prenom)').order('created_at', { ascending: false });
     if (data) setDevoirs(data as any);
+  };
+
+  const loadSections = async () => {
+    const { data } = await supabase.from('sections').select('id, nom').eq('is_active', true).order('ordre');
+    if (data) setSections(data);
   };
 
   const loadClasses = async () => {
@@ -58,6 +66,7 @@ export default function GestionDevoirs() {
 
   const filtered = devoirs.filter(d => {
     if (search && !d.titre.toLowerCase().includes(search.toLowerCase()) && !(d.profiles?.nom || '').toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterSection && d.section_id !== filterSection) return false;
     if (filterClasse && d.classe_id !== filterClasse) return false;
     return true;
   });
@@ -74,6 +83,10 @@ export default function GestionDevoirs() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..." className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500" />
         </div>
+        <select value={filterSection} onChange={e => { setFilterSection(e.target.value); setFilterClasse(''); }} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+          <option value="">Toutes les sections</option>
+          {sections.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
+        </select>
         <select value={filterClasse} onChange={e => setFilterClasse(e.target.value)} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-sm">
           <option value="">Toutes les classes</option>
           {classes.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
@@ -85,7 +98,7 @@ export default function GestionDevoirs() {
         : filtered.length === 0 ? <p className="text-gray-400 py-12 text-center">Aucun devoir trouvé.</p>
         : <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b"><tr><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Titre</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Classe</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Professeur</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Date limite</th><th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th></tr></thead>
+            <thead className="bg-gray-50 border-b"><tr><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Titre</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Section</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Classe</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Professeur</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Date limite</th><th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th></tr></thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.map(d => (
                 <tr key={d.id} className="hover:bg-gray-50">
