@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 interface CoursItem { id: string; titre: string; description: string; professeur_id: string; classe_id: string | null; section_id: string | null; option_id: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; classes?: { nom: string } | null; sections?: { nom: string } | null; options?: { nom: string } | null; profiles?: { nom: string; prenom: string } | null; }
 interface ClasseInfo { id: string; nom: string; }
 interface SectionInfo { id: string; nom: string; }
-interface OptionInfo { id: string; nom: string; }
+interface OptionInfo { id: string; nom: string; section_id: string; }
 
 export default function GestionCours() {
   const [cours, setCours] = useState<CoursItem[]>([]);
@@ -15,6 +15,7 @@ export default function GestionCours() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterSection, setFilterSection] = useState('');
+  const [filterOption, setFilterOption] = useState('');
   const [filterClasse, setFilterClasse] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,12 +42,12 @@ export default function GestionCours() {
   };
 
   const loadSections = async () => {
-    const { data } = await supabase.from('sections').select('id, nom').eq('is_active', true).order('ordre');
+    const { data } = await supabase.from('sections').select('id, nom, section_id').eq('is_active', true).order('ordre');
     if (data) setSections(data);
   };
 
   const loadOptions = async () => {
-    const { data } = await supabase.from('options').select('id, nom').eq('is_active', true).order('ordre');
+    const { data } = await supabase.from('options').select('id, nom, section_id').eq('is_active', true).order('ordre');
     if (data) setOptions(data);
   };
 
@@ -74,6 +75,7 @@ export default function GestionCours() {
   const filtered = cours.filter(c => {
     if (search && !c.titre.toLowerCase().includes(search.toLowerCase()) && !(c.profiles?.nom || '').toLowerCase().includes(search.toLowerCase())) return false;
     if (filterSection && c.section_id !== filterSection) return false;
+    if (filterOption && c.option_id !== filterOption) return false;
     if (filterClasse && c.classe_id !== filterClasse) return false;
     return true;
   });
@@ -94,6 +96,10 @@ export default function GestionCours() {
           <option value="">Toutes les sections</option>
           {sections.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
         </select>
+        <select value={filterOption} onChange={e => { setFilterOption(e.target.value); setFilterClasse(''); }} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+          <option value="">Toutes les options</option>
+          {options.filter(o => !filterSection || o.section_id === filterSection).map(o => <option key={o.id} value={o.id}>{o.nom}</option>)}
+        </select>
         <select value={filterClasse} onChange={e => setFilterClasse(e.target.value)} className="px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-sm">
           <option value="">Toutes les classes</option>
           {classes.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
@@ -105,12 +111,12 @@ export default function GestionCours() {
         : filtered.length === 0 ? <p className="text-gray-400 py-12 text-center">Aucun cours trouvé.</p>
         : <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b"><tr><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Titre</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Section</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Section</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Classe</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Professeur</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Date</th><th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th></tr></thead>
+            <thead className="bg-gray-50 border-b"><tr><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Titre</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Section</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Section</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Option</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Classe</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Professeur</th><th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Date</th><th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th></tr></thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.map(c => (
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900">{c.titre}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.sections?.nom || '—'}</td><td className="px-4 py-3 text-gray-600">{c.classes?.nom || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.sections?.nom || '—'}</td><td className="px-4 py-3 text-gray-600">{c.options?.nom || '—'}</td><td className="px-4 py-3 text-gray-600">{c.classes?.nom || '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{c.profiles ? `${c.profiles.prenom} ${c.profiles.nom}` : '—'}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{new Date(c.created_at).toLocaleDateString('fr-FR')}</td>
                   <td className="px-4 py-3 text-right">
