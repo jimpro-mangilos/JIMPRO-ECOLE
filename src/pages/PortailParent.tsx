@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X } from 'lucide-react';
+import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X, BookOpen, Upload } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, formatDate } from '../utils/calculations';
@@ -13,6 +13,7 @@ interface EleveInfo {
   section: string;
   option: string | null;
   classe: string | null;
+  classe_id: string | null;
   date_naissance: string | null;
   lieu_naissance: string | null;
   domicile: string | null;
@@ -35,6 +36,9 @@ interface PaiementInfo {
   est_encaisse: boolean;
 }
 
+interface CoursInfo { id: string; titre: string; description: string; fichier_url: string | null; fichier_nom: string | null; created_at: string; }
+interface DevoirInfo { id: string; titre: string; description: string; date_limite: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; }
+
 export default function PortailParent() {
   const [matricule, setMatricule] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,6 +46,8 @@ export default function PortailParent() {
   const [eleve, setEleve] = useState<EleveInfo | null>(null);
   const [paiements, setPaiements] = useState<PaiementInfo[]>([]);
   const [totalPaye, setTotalPaye] = useState(0);
+  const [cours, setCours] = useState<CoursInfo[]>([]);
+  const [devoirs, setDevoirs] = useState<DevoirInfo[]>([]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -125,6 +131,17 @@ export default function PortailParent() {
       const payments = (paiementsData || []) as PaiementInfo[];
       setPaiements(payments);
       setTotalPaye(payments.reduce((sum, p) => sum + Number(p.montant_paye), 0));
+
+      // Fetch cours and devoirs for student's class
+      const classeId = (eleveData as any).classe_id;
+      if (classeId) {
+        const [{ data: coursData }, { data: devoirsData }] = await Promise.all([
+          supabase.from('cours').select('id, titre, description, fichier_url, fichier_nom, created_at').eq('classe_id', classeId).order('created_at', { ascending: false }),
+          supabase.from('devoirs').select('id, titre, description, date_limite, fichier_url, fichier_nom, created_at').eq('classe_id', classeId).order('created_at', { ascending: false }),
+        ]);
+        setCours((coursData || []) as CoursInfo[]);
+        setDevoirs((devoirsData || []) as DevoirInfo[]);
+      }
     } catch (err: any) {
       console.error('Erreur recherche:', err);
       setError('Une erreur est survenue. Veuillez reessayer.');
@@ -162,9 +179,9 @@ export default function PortailParent() {
             <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-6">
               <Search className="w-8 h-8 text-blue-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Suivi des paiements</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Portail Élève</h2>
             <p className="text-gray-500 mb-8 max-w-md mx-auto">
-              Entrez le matricule de votre enfant pour consulter l'historique de ses paiements scolaires.
+              Entrez votre matricule pour consulter vos paiements, cours et devoirs.
             </p>
 
             <form onSubmit={handleSearch} className="max-w-md mx-auto">
@@ -392,6 +409,74 @@ export default function PortailParent() {
                   </table>
                 </div>
               )}
+            </div>
+
+            {/* Cours & Devoirs */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-6">
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-purple-600" />
+                  Cours & Devoirs
+                </h3>
+              </div>
+              <div className="p-5 space-y-4">
+                {cours.length === 0 && devoirs.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-4">Aucun cours ou devoir disponible pour votre classe.</p>
+                ) : (
+                  <>
+                    {cours.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 text-purple-500" /> Cours ({cours.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {cours.map(c => (
+                            <div key={c.id} className="bg-purple-50/50 rounded-lg p-3 border border-purple-100">
+                              <p className="text-sm font-medium text-gray-900">{c.titre}</p>
+                              {c.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{c.description}</p>}
+                              <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                <span>{new Date(c.created_at).toLocaleDateString('fr-FR')}</span>
+                                {c.fichier_url && (
+                                  <a href={c.fichier_url} target="_blank" rel="noopener" className="text-purple-600 hover:underline flex items-center gap-1">
+                                    <Upload className="w-3 h-3" /> {c.fichier_nom || 'Fichier'}
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {devoirs.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-amber-500" /> Devoirs ({devoirs.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {devoirs.map(d => (
+                            <div key={d.id} className="bg-amber-50/50 rounded-lg p-3 border border-amber-100">
+                              <div className="flex items-start justify-between">
+                                <p className="text-sm font-medium text-gray-900">{d.titre}</p>
+                                {d.date_limite && (
+                                  <span className="text-xs text-amber-600 font-medium whitespace-nowrap ml-2">
+                                    Avant le {new Date(d.date_limite).toLocaleDateString('fr-FR')}
+                                  </span>
+                                )}
+                              </div>
+                              {d.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{d.description}</p>}
+                              {d.fichier_url && (
+                                <a href={d.fichier_url} target="_blank" rel="noopener" className="text-xs text-amber-600 hover:underline flex items-center gap-1 mt-1">
+                                  <Upload className="w-3 h-3" /> {d.fichier_nom || 'Fichier'}
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}
