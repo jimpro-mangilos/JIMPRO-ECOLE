@@ -45,14 +45,16 @@ export default function PortailProfesseur() {
   };
 
   const loadCours = async () => {
-    const { data } = await supabase.from('cours').select('*, classes(nom, sections(nom))').order('created_at', { ascending: false });
-    setCours((data || []) as any);
+    const { data, error } = await supabase.from('cours').select('*, classes(nom, sections(nom))').order('created_at', { ascending: false });
+    if (error) { console.error('Erreur chargement cours:', error); setError('Erreur chargement cours: ' + error.message); }
+    else setCours((data || []) as any);
     setLoading(false);
   };
 
   const loadDevoirs = async () => {
-    const { data } = await supabase.from('devoirs').select('*, classes(nom, sections(nom)), cours(titre)').order('created_at', { ascending: false });
-    setDevoirs((data || []) as any);
+    const { data, error } = await supabase.from('devoirs').select('*, classes(nom, sections(nom)), cours(titre)').order('created_at', { ascending: false });
+    if (error) console.error('Erreur chargement devoirs:', error);
+    else setDevoirs((data || []) as any);
   };
 
   const openCreate = () => { setEditingId(null); setForm(EMPTY_FORM); setShowForm(true); setError(''); };
@@ -147,10 +149,16 @@ export default function PortailProfesseur() {
         ))}
       </div>
 
-      <button onClick={openCreate} className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
-        <Plus className="w-4 h-4" /> {activeTab === 'cours' ? 'Nouveau cours' : 'Nouveau devoir'}
-      </button>
+      <div className="flex items-center gap-3">
+        <button onClick={openCreate} className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
+          <Plus className="w-4 h-4" /> {activeTab === 'cours' ? 'Nouveau cours' : 'Nouveau devoir'}
+        </button>
+        <button onClick={() => { setLoading(true); loadCours(); loadDevoirs(); }} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors">
+          <Loader2 className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
+        </button>
+      </div>
 
+      {error && <div className="p-4 bg-red-50 text-red-700 rounded-lg text-sm">{error} <button onClick={() => setError('')} className="ml-2 underline">Fermer</button></div>}
       {loading ? <div className="flex items-center gap-2 text-gray-500 py-12"><Loader2 className="w-5 h-5 animate-spin" /> Chargement...</div>
         : (activeTab === 'cours' ? cours : devoirs).length === 0 ? <p className="text-gray-400 py-12 text-center">Aucun {activeTab === 'cours' ? 'cours' : 'devoir'} pour le moment.</p>
         : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
