@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, formatDate } from '../utils/calculations';
 
@@ -41,26 +42,67 @@ export default function PortailParent() {
   const [eleve, setEleve] = useState<EleveInfo | null>(null);
   const [paiements, setPaiements] = useState<PaiementInfo[]>([]);
   const [totalPaye, setTotalPaye] = useState(0);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanError, setScanError] = useState('');
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerDivId = 'qr-scanner-reader';
 
-  const handleSearch = async (e?: React.FormEvent) => {
+  // QR Scanner lifecycle
+  useEffect(() => {
+    if (showScanner) {
+      const scanner = new Html5Qrcode(scannerDivId);
+      scannerRef.current = scanner;
+      scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          // Extract matricule: text starting with "GA" until "|"
+          const match = decodedText.match(/GA[^|]*/i);
+          if (match) {
+            const matriculeExtrait = match[0].toUpperCase();
+            setMatricule(matriculeExtrait);
+            setShowScanner(false);
+            setScanError('');
+            // Auto-trigger search
+            setTimeout(() => {
+              const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+              handleSearchWithMatricule(matriculeExtrait, fakeEvent);
+            }, 300);
+          } else {
+            setScanError('Aucun matricule valide (GA...) trouve dans ce QR code.');
+          }
+        },
+        () => { /* ignore scan errors */ }
+      ).catch((err) => {
+        console.error('Scanner error:', err);
+        setScanError('Erreur d\'acces a la camera. Verifiez les permissions.');
+      });
+    }
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
+    };
+  }, [showScanner]);
+
+  const handleSearchWithMatricule = async (term: string, e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const term = matricule.trim().toUpperCase();
-    if (!term) {
+    const cleanTerm = term.trim().toUpperCase();
+    if (!cleanTerm) {
       setError('Veuillez entrer un matricule');
       return;
     }
-
     setLoading(true);
     setError('');
     setEleve(null);
     setPaiements([]);
 
     try {
-      // Lookup eleve
       const { data: eleveData, error: eleveError } = await supabase
         .from('eleves')
         .select('*')
-        .ilike('matricule', term)
+        .ilike('matricule', cleanTerm)
         .maybeSingle();
 
       if (eleveError) throw eleveError;
@@ -72,7 +114,6 @@ export default function PortailParent() {
 
       setEleve(eleveData as EleveInfo);
 
-      // Fetch paiements
       const { data: paiementsData, error: paiementsError } = await supabase
         .from('paiements')
         .select('*')
@@ -90,6 +131,11 @@ export default function PortailParent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    handleSearchWithMatricule(matricule, e);
   };
 
   return (
@@ -142,14 +188,57 @@ export default function PortailParent() {
                   {loading ? 'Recherche...' : 'Verifier'}
                 </button>
               </div>
-              {error && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
-                  <span className="text-red-500">⚠</span> {error}
+
+              {/* QR Code Scanner button */}
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => { setShowScanner(true); setScanError(''); }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all text-sm font-medium"
+                >
+                  <QrCode className="w-5 h-5" />
+                  Scanner un QR Code
+                </button>
+              </div>
+
+              {/* QR Scanner modal */}
+              {showScanner && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b">
+                      <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                        <QrCode className="w-5 h-5 text-blue-600" />
+                        Scanner le QR Code
+                      </h3>
+                      <button
+                        onClick={() => { setShowScanner(false); setScanError(''); }}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <X className="w-5 h-5 text-gray-500" />
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <div id={scannerDivId} className="w-full aspect-square rounded-xl overflow-hidden bg-black" />
+                      {scanError && (
+                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                          {scanError}
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-400 text-center mt-3">
+                        Placez le QR Code dans le cadre. Le matricule sera extrait automatiquement.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </form>
           </div>
         )}
+              {error && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2 max-w-md mx-auto">
+                  <span className="text-red-500">⚠</span> {error}
+                </div>
+              )}
 
         {/* Student found */}
         {eleve && (
