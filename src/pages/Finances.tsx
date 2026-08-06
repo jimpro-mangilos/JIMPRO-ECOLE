@@ -120,7 +120,7 @@ export default function Finances() {
           const isExpanded = expandedDates.has(dateKey) || expandedDates.has('__first__');
           return (
             <div key={dateKey} className="border border-gray-100 rounded-lg mb-2 overflow-hidden">
-              <button onClick={() => toggleDate(dateKey)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <button onClick={() => toggleDate(dateKey)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
                 <div className="flex items-center gap-3"><ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} /><span className="font-semibold text-gray-800">{formatDateLong(dateKey)}</span><span className="text-sm text-gray-500">({group.length})</span></div>
                 <span className={`text-sm font-semibold ${groupTotal(group) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{groupTotal(group) >= 0 ? '+' : ''}{groupTotal(group).toLocaleString('fr-FR')} FC</span>
               </button>
@@ -129,8 +129,8 @@ export default function Finances() {
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Bénéficiaire</th><th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Libellé</th><th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th><th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Type</th><th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th><th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
               </tr></thead><tbody className="divide-y divide-gray-50">
                 {group.map(t => (
-                  <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
-                    {canSupprimer() && <td className="px-3 py-2"><input type="checkbox" checked={selectedIds.has(t.id)} onChange={() => toggleSelectOne(t.id)} className="rounded" /></td>}
+                  <tr key={t.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setDetailTransaction(t)}>
+                    {canSupprimer() && <td className="px-3 py-2"><input type="checkbox" checked={selectedIds.has(t.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(t.id); }} className="rounded" /></td>}
                     <td className="px-3 py-2"><p className="text-sm font-medium text-gray-900">{t.beneficiaire}</p><p className="text-xs text-gray-400">{t.telephone}</p></td>
                     <td className="px-3 py-2 text-sm text-gray-600">{t.libelle}</td>
                     <td className="px-3 py-2 text-sm font-semibold text-right"><span className={t.type_operation === 'recette' ? 'text-emerald-600' : 'text-red-600'}>{t.type_operation === 'recette' ? '+' : '-'}{t.montant_chiffre.toLocaleString('fr-FR')} FC</span></td>
@@ -139,10 +139,10 @@ export default function Finances() {
                     <td className="px-3 py-2 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => setDetailTransaction(t)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600" title="Détails"><ChevronRight className="w-3.5 h-3.5" /></button>
-                        {canModifier() && <button onClick={() => openEditModal(t)} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>}
-                        {t.statut === 'en_attente' && canApprouverTransaction(t.montant_chiffre) && <button onClick={() => updateStatut(t.id, 'approuve')} disabled={actionLoading === t.id + 'approuve'} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600" title="Approuver"><CheckCircle className="w-3.5 h-3.5" /></button>}
-                        {t.statut === 'approuve' && canDecaisserEncaisserTransaction(t.montant_chiffre) && <button onClick={() => updateStatut(t.id, t.type_operation === 'recette' ? 'encaisse' : 'decaisse')} disabled={actionLoading === t.id + (t.type_operation === 'recette' ? 'encaisse' : 'decaisse')} className="p-1.5 rounded-lg hover:bg-green-50 text-green-600" title={t.type_operation === 'recette' ? 'Encaisser' : 'Décaisser'}>{t.type_operation === 'recette' ? <ArrowUpCircle className="w-3.5 h-3.5" /> : <ArrowDownCircle className="w-3.5 h-3.5" />}</button>}
-                        {canSupprimer() && <button onClick={() => supprimer(t.id)} disabled={actionLoading === t.id + 'delete'} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>}
+                        {canModifier() && <button onClick={(e) => { e.stopPropagation(); openEditModal(t); }} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>}
+                        {t.statut === 'en_attente' && canApprouverTransaction(t.montant_chiffre) && <button onClick={(e) => { e.stopPropagation(); updateStatut(t.id, 'approuve'); }} disabled={actionLoading === t.id + 'approuve'} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600" title="Approuver"><CheckCircle className="w-3.5 h-3.5" /></button>}
+                        {t.statut === 'approuve' && canDecaisserEncaisserTransaction(t.montant_chiffre) && <button onClick={(e) => { e.stopPropagation(); updateStatut(t.id, t.type_operation === 'recette' ? 'encaisse' : 'decaisse'); }} disabled={actionLoading === t.id + (t.type_operation === 'recette' ? 'encaisse' : 'decaisse')} className="p-1.5 rounded-lg hover:bg-green-50 text-green-600" title={t.type_operation === 'recette' ? 'Encaisser' : 'Décaisser'}>{t.type_operation === 'recette' ? <ArrowUpCircle className="w-3.5 h-3.5" /> : <ArrowDownCircle className="w-3.5 h-3.5" />}</button>}
+                        {canSupprimer() && <button onClick={(e) => { e.stopPropagation(); supprimer(t.id); }} disabled={actionLoading === t.id + 'delete'} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>}
                       </div>
                     </td>
                   </tr>

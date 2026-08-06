@@ -269,8 +269,8 @@ export default function Paiements() {
                     </tr></thead>
                     <tbody className="divide-y divide-gray-50">
                       {groupPaiements.map(p => (
-                        <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                          {isItManager() && <td className="px-3 py-2"><input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelectOne(p.id)} className="rounded" /></td>}
+                        <tr key={p.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setDetailPaiement(p)}>
+                          {isItManager() && <td className="px-3 py-2"><input type="checkbox" checked={selectedIds.has(p.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(p.id); }} className="rounded" /></td>}
                           <td className="px-3 py-2 text-sm font-mono text-gray-900">{p.numero_recu}</td>
                           <td className="px-3 py-2"><p className="text-sm font-medium text-gray-900">{p.nom_eleve} {p.prenom}</p><p className="text-xs text-gray-400">{p.matricule}</p></td>
                           <td className="px-3 py-2 text-sm text-gray-600">{p.classe}</td>
@@ -283,11 +283,11 @@ export default function Paiements() {
                           </td>
                           <td className="px-3 py-2 text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <button onClick={() => handlePrintRecu(p)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600" title="Reçu"><Printer className="w-3.5 h-3.5" /></button>
-                              {(canCreatePaiement() || isItManager()) && getStatut(p) !== 'annule' && <button onClick={() => openEditModal(p)} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>}
-                              {(canEncaisserMontant(p.montant_paye) && getStatut(p) === 'en_attente') && <button onClick={() => encaisser(p.id, p.montant_paye)} className="p-1.5 rounded-lg hover:bg-green-50 text-green-600" title="Encaisser"><CheckCircle className="w-3.5 h-3.5" /></button>}
-                              {canAnnulerPaiement() && getStatut(p) !== 'annule' && <button onClick={() => openAnnulation(p.id)} className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-600" title="Annuler"><AlertTriangle className="w-3.5 h-3.5" /></button>}
-                              {(canSupprimerPaiement() || isItManager()) && <button onClick={() => supprimer(p)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>}
+                              <button onClick={(e) => { e.stopPropagation(); handlePrintRecu(p); }} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600" title="Reçu"><Printer className="w-3.5 h-3.5" /></button>
+                              {(canCreatePaiement() || isItManager()) && getStatut(p) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openEditModal(p); }} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>}
+                              {(canEncaisserMontant(p.montant_paye) && getStatut(p) === 'en_attente') && <button onClick={(e) => { e.stopPropagation(); encaisser(p.id, p.montant_paye); }} className="p-1.5 rounded-lg hover:bg-green-50 text-green-600" title="Encaisser"><CheckCircle className="w-3.5 h-3.5" /></button>}
+                              {canAnnulerPaiement() && getStatut(p) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openAnnulation(p.id); }} className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-600" title="Annuler"><AlertTriangle className="w-3.5 h-3.5" /></button>}
+                              {(canSupprimerPaiement() || isItManager()) && <button onClick={(e) => { e.stopPropagation(); supprimer(p); }} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>}
                             </div>
                           </td>
                         </tr>
