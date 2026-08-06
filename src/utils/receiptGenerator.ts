@@ -41,7 +41,8 @@ function formatMontant(montant: number): string {
   return parts.join(' ');
 }
 
-function parseNomComplet(nomComplet: string) {
+function parseNomComplet(nomComplet: string | undefined) {
+  if (!nomComplet) return { nom: '', postnom: '', prenom: '' };
   const parts = nomComplet.trim().split(/\s+/);
   if (parts.length >= 3) {
     return {
@@ -132,7 +133,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(accent[0], accent[1], accent[2]);
-  doc.text(S(data.numero_recu.toUpperCase()), pageWidth / 2, 42, { align: 'center' });
+  doc.text(S((data.numero_recu || 'RECU-XXXX').toUpperCase()), pageWidth / 2, 42, { align: 'center' });
 
   const dateEmission = new Date(data.date_encaissement);
   const dateStr = `${String(dateEmission.getDate()).padStart(2, '0')}/${String(dateEmission.getMonth() + 1).padStart(2, '0')}/${dateEmission.getFullYear()} ${String(dateEmission.getHours()).padStart(2, '0')}:${String(dateEmission.getMinutes()).padStart(2, '0')}`;
