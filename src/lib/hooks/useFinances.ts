@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { queryKeys } from '../queryKeys';
 import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
 import type { Database } from '../database.types';
 
 export type Transaction = Database['public']['Tables']['compte_courant']['Row'];
@@ -163,7 +164,7 @@ export function useFinances(filters: FinanceFilters) {
       if (error) throw error;
       invalidate();
       return true;
-    } catch (err) { alert('Erreur mise à jour statut'); return false; }
+    } catch (err) {  toast.error('Erreur mise à jour statut'); return false; }
     finally { setActionLoading(null); }
   }, [currentUserFullName, invalidate]);
 
@@ -175,7 +176,7 @@ export function useFinances(filters: FinanceFilters) {
       if (error) throw error;
       setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
       invalidate();
-    } catch (err) { alert('Erreur suppression'); }
+    } catch (err) {  toast.error('Erreur suppression'); }
     finally { setActionLoading(null); }
   }, [invalidate]);
 
@@ -188,20 +189,20 @@ export function useFinances(filters: FinanceFilters) {
       if (error) throw error;
       setSelectedIds(new Set());
       invalidate();
-    } catch (err) { alert('Erreur suppression en masse'); }
+    } catch (err) {  toast.error('Erreur suppression en masse'); }
     finally { setBulkDeleting(false); }
   }, [selectedIds, invalidate]);
 
   const createTransaction = useCallback(async (formData: { montant_chiffre: number; montant_lettre: string; beneficiaire: string; libelle: string; telephone: string; type_operation: string }) => {
     const { error } = await supabase.from('compte_courant').insert([{ ...formData, nom_comptable: currentUserFullName || null }]);
-    if (error) { alert('Erreur création: ' + error.message); return false; }
+    if (error) {  toast.error('Erreur création: ' + error.message); return false; }
     invalidate();
     return true;
   }, [currentUserFullName, invalidate]);
 
   const editTransaction = useCallback(async (id: string, formData: Record<string, any>) => {
     const { error } = await supabase.from('compte_courant').update(formData).eq('id', id);
-    if (error) { alert('Erreur modification: ' + error.message); return false; }
+    if (error) {  toast.error('Erreur modification: ' + error.message); return false; }
     invalidate();
     return true;
   }, [invalidate]);

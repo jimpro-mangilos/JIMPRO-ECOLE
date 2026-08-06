@@ -4,6 +4,7 @@ import { supabase } from '../supabase';
 import { queryKeys } from '../queryKeys';
 import type { Database } from '../database.types';
 import { generateMatricule, validateMatriculeUniqueness } from '../../utils/matriculeGenerator';
+import { toast } from 'sonner';
 
 type Eleve = Database['public']['Tables']['eleves']['Row'];
 
@@ -138,7 +139,7 @@ export function useEleves(filters: UseElevesOptions) {
       if (result.isUnique && result.matricule) {
         setFormData(prev => ({ ...prev, matricule: result.matricule }));
       } else {
-        alert('Impossible de générer un matricule unique.');
+         toast.error('Impossible de générer un matricule unique.');
       }
     } finally { setGeneratingMatricule(false); }
   }, [autoGenerateMatricule, selectedEleve]);
@@ -150,7 +151,7 @@ export function useEleves(filters: UseElevesOptions) {
 
   const submitEleve = useCallback(async (classes: { id: string; nom: string }[]) => {
     const isUnique = selectedEleve ? true : await validateMatriculeUniqueness(formData.matricule);
-    if (!isUnique) { alert('Ce matricule existe déjà.'); return false; }
+    if (!isUnique) {  toast.error('Ce matricule existe déjà.'); return false; }
 
     const classeObj = classes.find(c => c.id === formData.classe_id);
     const dataToSave = { ...formData, classe: classeObj?.nom || formData.classe, classe_id: formData.classe_id || null };
@@ -161,7 +162,7 @@ export function useEleves(filters: UseElevesOptions) {
     } else {
       const { error } = await supabase.from('eleves').insert([dataToSave]);
       if (error) {
-        if (error.code === '23505') { alert('Matricule en double. Régénérez.'); return false; }
+        if (error.code === '23505') {  toast.error('Matricule en double. Régénérez.'); return false; }
         throw error;
       }
     }
@@ -202,7 +203,7 @@ export function useEleves(filters: UseElevesOptions) {
       }
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: queryKeys.eleves.all });
-    } catch (err: any) { alert('Erreur suppression: ' + err.message); }
+    } catch (err: any) {  toast.error('Erreur suppression: ' + err.message); }
     finally { setBulkDeleting(false); }
   }, [selectedIds, queryClient]);
 

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { queryKeys } from '../queryKeys';
 import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
 
 export interface Paiement {
   id: string; numero_recu: string; eleve_id: string; nom_eleve: string; matricule: string;
@@ -175,7 +176,7 @@ export function usePaiements(filters: PaiementFilters) {
 
   const encaisser = useCallback(async (paiementId: string, montant: number) => {
     if (!canEncaisserMontant(montant)) {
-      alert(montant === 0 ? 'Seuls Promoteur, Coordonnateur, Secrétaire et IT Manager peuvent encaisser les paiements à 0' : 'Seuls admins, comptables, Promoteur et IT Manager peuvent encaisser');
+       toast.error(montant === 0 ? 'Seuls Promoteur, Coordonnateur, Secrétaire et IT Manager peuvent encaisser les paiements à 0' : 'Seuls admins, comptables, Promoteur et IT Manager peuvent encaisser');
       return;
     }
     if (!confirm("Confirmer l'encaissement ?")) return;
@@ -183,8 +184,8 @@ export function usePaiements(filters: PaiementFilters) {
       est_encaisse: true, statut: 'encaisse', date_encaissement: new Date().toISOString(),
       encaisseur_id: user?.id, nom_encaisseur: `${userProfile?.prenom} ${userProfile?.nom}`,
     }).eq('id', paiementId);
-    if (error) { alert("Erreur d'encaissement: " + error.message); return; }
-    alert('Paiement encaissé avec succès');
+    if (error) {  toast.error("Erreur d'encaissement: " + error.message); return; }
+     toast.success('Paiement encaissé avec succès');
     invalidate();
   }, [canEncaisserMontant, user, userProfile, invalidate]);
 
@@ -198,25 +199,25 @@ export function usePaiements(filters: PaiementFilters) {
 
   const handleAnnuler = useCallback(async () => {
     if (!annulationModal.paiementId) return;
-    if (!annulationModal.motif.trim()) { alert('Veuillez saisir un motif'); return; }
+    if (!annulationModal.motif.trim()) {  toast.error('Veuillez saisir un motif'); return; }
     setAnnulationModal(p => ({ ...p, loading: true }));
     const { error } = await supabase.from('paiements').update({
       statut: 'annule', motif_annulation: annulationModal.motif.trim(),
       annule_par: user?.id, nom_annuleur: `${userProfile?.prenom} ${userProfile?.nom}`,
       date_annulation: new Date().toISOString(),
     }).eq('id', annulationModal.paiementId);
-    if (error) { alert("Erreur d'annulation: " + error.message); setAnnulationModal(p => ({ ...p, loading: false })); return; }
+    if (error) {  toast.error("Erreur d'annulation: " + error.message); setAnnulationModal(p => ({ ...p, loading: false })); return; }
     closeAnnulation();
     invalidate();
   }, [annulationModal, user, userProfile, closeAnnulation, invalidate]);
 
   const supprimer = useCallback(async (p: Paiement) => {
     const statut = getStatut(p);
-    if (statut === 'encaisse' && !isItManager()) { alert("Seul l'IT Manager peut supprimer un paiement encaissé"); return; }
-    if (statut === 'annule' && !isItManager() && !canSupprimerPaiement()) { alert('Permission insuffisante'); return; }
+    if (statut === 'encaisse' && !isItManager()) {  toast.error("Seul l'IT Manager peut supprimer un paiement encaissé"); return; }
+    if (statut === 'annule' && !isItManager() && !canSupprimerPaiement()) {  toast.error('Permission insuffisante'); return; }
     if (!confirm('Supprimer définitivement ce paiement ?')) return;
     const { error } = await supabase.from('paiements').delete().eq('id', p.id);
-    if (error) { alert('Erreur: ' + error.message); return; }
+    if (error) { toast.error('Erreur: ' + error.message); return; }
     invalidate();
   }, [isItManager, canSupprimerPaiement, invalidate]);
 
@@ -232,13 +233,13 @@ export function usePaiements(filters: PaiementFilters) {
       }
       setSelectedIds(new Set());
       invalidate();
-    } catch (err: any) { alert('Erreur: ' + err.message); }
+    } catch (err: any) {  toast.error('Erreur: ' + err.message); }
     finally { setBulkDeleting(false); }
   }, [selectedIds, invalidate]);
 
   const editPaiement = useCallback(async (paiementId: string, formData: { montant_paye: number; montant_en_lettre: string; motif_libelle: string; mode_paiement: string; date_paiement: string; annee_scolaire: string }) => {
     const { error } = await supabase.from('paiements').update(formData).eq('id', paiementId);
-    if (error) { alert('Erreur modification: ' + error.message); return false; }
+    if (error) {  toast.error('Erreur modification: ' + error.message); return false; }
     invalidate();
     return true;
   }, [invalidate]);
