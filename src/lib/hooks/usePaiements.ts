@@ -54,6 +54,10 @@ export function usePaiements(filters: PaiementFilters) {
   const { data: paiements = [], isLoading: loading } = useQuery({
     queryKey: [...queryKeys.paiements.all, 'v3'],
     queryFn: async () => {
+      // First, get exact count to verify
+      const { count: totalCount } = await supabase.from('paiements').select('*', { count: 'exact', head: true });
+      console.log(`[usePaiements] Server total count: ${totalCount}`);
+
       const PAGE = 1000;
       let all: Paiement[] = [];
       let from = 0;
@@ -63,9 +67,11 @@ export function usePaiements(filters: PaiementFilters) {
         if (error) throw error;
         if (!data || data.length === 0) break;
         all = all.concat(data as Paiement[]);
+        console.log(`[usePaiements] Page ${from}-${to}: got ${data.length}, total so far: ${all.length}`);
         if (data.length < PAGE) break;
         from += PAGE;
       }
+      console.log(`[usePaiements] FINAL: ${all.length} paiements loaded`);
       return all;
     },
     staleTime: 0,
