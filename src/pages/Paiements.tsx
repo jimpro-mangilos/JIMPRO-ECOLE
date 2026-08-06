@@ -100,7 +100,7 @@ export default function Paiements() {
     try {
       const typeLabel = typesPaiement.find((t: any) => t.libelle === paiement.type_paiement)?.description || paiement.type_paiement;
       generateReceipt({
-        id: paiement.id, nom_eleve: paiement.nom_eleve, matricule: paiement.matricule,
+        numero_recu: paiement.numero_recu, nom_eleve: paiement.nom_eleve, matricule: paiement.matricule,
         postnom: paiement.postnom, prenom: paiement.prenom, classe: paiement.classe,
         sexe: paiement.sexe, section: paiement.section, telephone: paiement.telephone,
         option: paiement.option || '', lieu_naissance: paiement.lieu_naissance,
