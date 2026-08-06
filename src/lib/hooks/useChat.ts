@@ -32,7 +32,7 @@ export interface Conversation {
 }
 
 export function useChat() {
-  const { user } = useAuth();
+  const { user, isItManager } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -66,15 +66,22 @@ export function useChat() {
     if (!user) return;
 
     try {
-      // Load private conversations where current user is participant
-      const { data: participantRows, error: partErr } = await db
-        .from('chat_participants')
-        .select('conversation_id')
-        .eq('user_id', user.id);
-
-      if (partErr) throw partErr;
-
-      const privateConvIds = (participantRows ?? []).map((r: { conversation_id: string }) => r.conversation_id);
+      // Load private conversations — IT managers see all, others see only their own
+      let privateConvIds: string[];
+      if (isItManager()) {
+        const { data: allParts, error: allErr } = await db
+          .from('chat_participants')
+          .select('conversation_id');
+        if (allErr) throw allErr;
+        privateConvIds = [...new Set((allParts ?? []).map((r: { conversation_id: string }) => r.conversation_id))];
+      } else {
+        const { data: participantRows, error: partErr } = await db
+          .from('chat_participants')
+          .select('conversation_id')
+          .eq('user_id', user.id);
+        if (partErr) throw partErr;
+        privateConvIds = (participantRows ?? []).map((r: { conversation_id: string }) => r.conversation_id);
+      }
       const allConvIds = [BROADCAST_CONVERSATION_ID, ...privateConvIds];
 
       // Get last messages per conversation
