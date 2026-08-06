@@ -350,12 +350,36 @@ export default function Paiements() {
         </div>
       )}
 
-      {/* Detail Modal - kept minimal, the full version is in the original but simplified here */}
+      {/* Detail Modal */}
       {detailPaiement && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDetailPaiement(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Détails du paiement</h2><button onClick={() => setDetailPaiement(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
-            <div className="p-6 space-y-2 text-sm"><p><strong>Reçu:</strong> {detailPaiement.numero_recu}</p><p><strong>Élève:</strong> {detailPaiement.nom_eleve} {detailPaiement.prenom}</p><p><strong>Montant:</strong> {detailPaiement.montant_paye.toLocaleString('fr-FR')} FC</p><p><strong>Statut:</strong> {getStatut(detailPaiement)}</p></div>
+            <div className="p-6 space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-gray-500">N° Reçu</span><p className="font-medium text-gray-900">{detailPaiement.numero_recu}</p></div>
+                <div><span className="text-gray-500">Statut</span><p className="font-medium">{getStatut(detailPaiement) === 'encaisse' ? <span className="text-green-600">Encaissé</span> : getStatut(detailPaiement) === 'annule' ? <span className="text-red-600">Annulé</span> : <span className="text-amber-600">En attente</span>}</p></div>
+                <div><span className="text-gray-500">Élève</span><p className="font-medium text-gray-900">{detailPaiement.nom_eleve} {detailPaiement.prenom}</p></div>
+                <div><span className="text-gray-500">Matricule</span><p className="font-medium text-gray-900">{detailPaiement.matricule}</p></div>
+                <div><span className="text-gray-500">Classe</span><p className="font-medium text-gray-900">{detailPaiement.classe}</p></div>
+                <div><span className="text-gray-500">Section</span><p className="font-medium text-gray-900">{detailPaiement.section}</p></div>
+                <div><span className="text-gray-500">Montant</span><p className="font-bold text-gray-900">{detailPaiement.montant_paye.toLocaleString('fr-FR')} FC</p></div>
+                <div><span className="text-gray-500">Mode</span><p className="font-medium text-gray-900">{detailPaiement.mode_paiement}</p></div>
+                <div><span className="text-gray-500">Type</span><p className="font-medium text-gray-900">{detailPaiement.type_paiement}</p></div>
+                <div><span className="text-gray-500">Motif</span><p className="font-medium text-gray-900">{detailPaiement.motif_libelle || '—'}</p></div>
+                <div><span className="text-gray-500">Date</span><p className="font-medium text-gray-900">{new Date(detailPaiement.date_paiement).toLocaleDateString('fr-FR')}</p></div>
+                <div><span className="text-gray-500">Comptable</span><p className="font-medium text-gray-900">{detailPaiement.nom_comptable || '—'}</p></div>
+                {detailPaiement.nom_encaisseur && <div><span className="text-gray-500">Encaisseur</span><p className="font-medium text-gray-900">{detailPaiement.nom_encaisseur}</p></div>}
+                {detailPaiement.motif_annulation && <div><span className="text-gray-500">Motif annulation</span><p className="font-medium text-red-600">{detailPaiement.motif_annulation}</p></div>}
+              </div>
+              <div className="flex flex-wrap gap-2 pt-3 border-t">
+                <button onClick={(e) => { e.stopPropagation(); handlePrintRecu(detailPaiement); }} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200"><Printer className="w-3.5 h-3.5 inline mr-1" />Imprimer</button>
+                {(canCreatePaiement() || isItManager()) && getStatut(detailPaiement) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openEditModal(detailPaiement); setDetailPaiement(null); }} className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs hover:bg-amber-200"><Pencil className="w-3.5 h-3.5 inline mr-1" />Modifier</button>}
+                {(canEncaisserMontant(detailPaiement.montant_paye) && getStatut(detailPaiement) === 'en_attente') && <button onClick={(e) => { e.stopPropagation(); encaisser(detailPaiement.id, detailPaiement.montant_paye); }} className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200"><CheckCircle className="w-3.5 h-3.5 inline mr-1" />Encaisser</button>}
+                {canAnnulerPaiement() && getStatut(detailPaiement) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openAnnulation(detailPaiement.id); }} className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-xs hover:bg-orange-200"><AlertTriangle className="w-3.5 h-3.5 inline mr-1" />Annuler</button>}
+                {(canSupprimerPaiement() || isItManager()) && <button onClick={(e) => { e.stopPropagation(); supprimer(detailPaiement); }} className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs hover:bg-red-200"><Trash2 className="w-3.5 h-3.5 inline mr-1" />Supprimer</button>}
+              </div>
+            </div>
           </div>
         </div>
       )}
