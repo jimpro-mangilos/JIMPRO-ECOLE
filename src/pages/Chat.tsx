@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   MessageCircle,
   Search,
@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   Plus,
   X,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useChat, BROADCAST_CONVERSATION_ID, ChatMessage, ChatProfile, Conversation } from '../lib/hooks/useChat';
@@ -82,10 +84,14 @@ function groupMessagesByDay(messages: ChatMessage[]): MessageGroupDay[] {
     if (!groups[day]) groups[day] = [];
     groups[day].push(msg);
   }
-  return Object.entries(groups).map(([day, msgs]) => ({
+  return Object.entries(groups).map(([, msgs]) => ({
     day: formatDay(msgs[0].created_at),
     messages: msgs,
   }));
+}
+
+function isOptimistic(msg: ChatMessage): boolean {
+  return msg.id.startsWith('temp-');
 }
 
 function ConversationItem({
@@ -220,6 +226,9 @@ export default function Chat() {
     setActiveConversationId,
     allUsers,
     loadingMessages,
+    sending,
+    error,
+    clearError,
     sendMessage,
     openOrCreatePrivateConversation,
   } = useChat();
@@ -229,7 +238,7 @@ export default function Chat() {
   const [showNewConv, setShowNewConv] = useState(false);
   const [mobileShowMessages, setMobileShowMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-open broadcast on first load
   useEffect(() => {
@@ -238,10 +247,27 @@ export default function Chat() {
     }
   }, [conversations, activeConversationId, setActiveConversationId]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages or when conversation changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Clear error on conversation switch
+  useEffect(() => {
+    clearError();
+  }, [activeConversationId, clearError]);
+
+  // Auto-resize textarea
+  const autoResize = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
+  }, []);
+
+  useEffect(() => {
+    autoResize();
+  }, [input, autoResize]);
 
   const filteredConversations = useMemo(() => {
     if (!search.trim()) return conversations;
@@ -265,11 +291,14 @@ export default function Chat() {
   }
 
   async function handleSend() {
-    if (!input.trim() || !activeConversationId) return;
+    if (!input.trim() || !activeConversationId || sending) return;
     const text = input.trim();
     setInput('');
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     await sendMessage(activeConversationId, text);
-    inputRef.current?.focus();
   }
 
   async function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -281,9 +310,13 @@ export default function Chat() {
 
   async function handleNewConvSelect(userId: string) {
     setShowNewConv(false);
-    const convId = await openOrCreatePrivateConversation(userId);
-    setActiveConversationId(convId);
-    setMobileShowMessages(true);
+    try {
+      const convId = await openOrCreatePrivateConversation(userId);
+      setActiveConversationId(convId);
+      setMobileShowMessages(true);
+    } catch {
+      // Error is handled by the hook and displayed via error state
+    }
   }
 
   function handleConvClick(convId: string) {
@@ -328,7 +361,9 @@ export default function Chat() {
         {/* Conversations list */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
           {filteredConversations.length === 0 && (
-            <div className="text-center py-10 text-gray-400 text-sm">Aucune conversation</div>
+            <div className="text-center py-10 text-gray-400 text-sm">
+              {search.trim() ? 'Aucune conversation trouvée' : 'Aucune conversation'}
+            </div>
           )}
           {filteredConversations.map((conv) => (
             <ConversationItem
@@ -383,11 +418,22 @@ export default function Chat() {
               </div>
             </div>
 
+            {/* Error banner */}
+            {error && (
+              <div className="mx-4 mt-3 px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-sm text-red-700">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1">{error}</span>
+                <button onClick={clearError} className="p-0.5 rounded hover:bg-red-100 transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6 bg-gray-50">
               {loadingMessages && (
                 <div className="flex justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
                 </div>
               )}
               {!loadingMessages && messages.length === 0 && (
@@ -408,6 +454,7 @@ export default function Chat() {
                   <div className="space-y-3">
                     {group.messages.map((msg, idx) => {
                       const isOwn = msg.sender_id === user.id;
+                      const isOptimisticMsg = isOptimistic(msg);
                       const prev = group.messages[idx - 1];
                       const showAvatar = !isOwn && (!prev || prev.sender_id !== msg.sender_id);
                       const showName = showAvatar;
@@ -415,7 +462,9 @@ export default function Chat() {
                       return (
                         <div
                           key={msg.id}
-                          className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+                          className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'} ${
+                            isOptimisticMsg ? 'opacity-70' : ''
+                          }`}
                         >
                           {/* Avatar placeholder for alignment */}
                           {!isOwn && (
@@ -441,11 +490,14 @@ export default function Chat() {
                             >
                               {msg.content}
                             </div>
-                            <span className="text-xs text-gray-400 mt-1 mx-1">
+                            <span className="text-xs text-gray-400 mt-1 mx-1 flex items-center gap-1">
                               {new Date(msg.created_at).toLocaleTimeString('fr-FR', {
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
+                              {isOptimisticMsg && (
+                                <span className="inline-block w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                              )}
                             </span>
                           </div>
                         </div>
@@ -461,21 +513,30 @@ export default function Chat() {
             <div className="px-4 py-3 bg-white border-t border-gray-100">
               <div className="flex items-end gap-2">
                 <textarea
-                  ref={inputRef}
+                  ref={textareaRef}
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    // Auto-resize is handled by the useEffect on input
+                  }}
                   onKeyDown={handleKeyDown}
                   placeholder="Écrivez un message... (Entrée pour envoyer)"
                   rows={1}
-                  className="flex-1 resize-none px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors max-h-32 overflow-y-auto"
-                  style={{ minHeight: '46px' }}
+                  disabled={sending}
+                  className="flex-1 resize-none px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors disabled:opacity-50 overflow-hidden"
+                  style={{ minHeight: '46px', maxHeight: '160px' }}
                 />
                 <button
                   onClick={handleSend}
-                  disabled={!input.trim()}
+                  disabled={!input.trim() || sending}
                   className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
+                  title="Envoyer"
                 >
-                  <Send className="w-4 h-4" />
+                  {sending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>

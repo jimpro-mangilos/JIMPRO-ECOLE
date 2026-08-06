@@ -355,6 +355,86 @@ export interface Database {
           created_at?: string;
         };
       };
+      chat_conversations: {
+        Row: {
+          id: string;
+          type: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          type: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          type?: string;
+          created_at?: string;
+        };
+      };
+      chat_participants: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          user_id: string;
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          user_id: string;
+          joined_at?: string;
+        };
+        Update: {
+          id?: string;
+          conversation_id?: string;
+          user_id?: string;
+          joined_at?: string;
+        };
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          conversation_id?: string;
+          sender_id?: string;
+          content?: string;
+          created_at?: string;
+        };
+      };
+      chat_message_reads: {
+        Row: {
+          id: string;
+          message_id: string;
+          user_id: string;
+          read_at: string;
+        };
+        Insert: {
+          id?: string;
+          message_id: string;
+          user_id: string;
+          read_at?: string;
+        };
+        Update: {
+          id?: string;
+          message_id?: string;
+          user_id?: string;
+          read_at?: string;
+        };
+      };
     };
   };
 }
