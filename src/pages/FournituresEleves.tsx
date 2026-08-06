@@ -45,6 +45,10 @@ export default function FournituresEleves() {
   const [showUniformeForm, setShowUniformeForm] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanError, setScanError] = useState('');
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerDivId = 'qr-scanner-fournitures-main';
 
   useEffect(() => {
     loadDistributions();
@@ -60,6 +64,39 @@ export default function FournituresEleves() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // QR Scanner — scans eleve matricule and opens uniforme form
+  useEffect(() => {
+    if (showScanner) {
+      const scanner = new Html5Qrcode(scannerDivId);
+      scannerRef.current = scanner;
+      scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        async (decodedText) => {
+          const match = decodedText.match(/GA[^|]*/i);
+          if (match) {
+            const matriculeExtrait = match[0].toUpperCase();
+            setShowScanner(false);
+            setScanError('');
+            const { data } = await supabase.from('eleves').select('*').ilike('matricule', matriculeExtrait).maybeSingle();
+            if (data) {
+              setSelectedEleve(data);
+              setShowUniformeForm(true);
+            } else {
+              setScanError('Aucun eleve trouve avec le matricule ' + matriculeExtrait);
+            }
+          } else {
+            setScanError('Aucun matricule valide (GA...) trouve.');
+          }
+        },
+        () => {}
+      ).catch(() => setScanError("Erreur d'acces camera. Verifiez les permissions."));
+    }
+    return () => {
+      if (scannerRef.current) { scannerRef.current.stop().catch(() => {}); scannerRef.current = null; }
+    };
+  }, [showScanner]);
 
   const loadDistributions = async () => {
     try {
@@ -188,16 +225,39 @@ export default function FournituresEleves() {
           <h1 className="text-3xl font-bold text-gray-900">Fournitures Élèves</h1>
           <p className="text-gray-600 mt-1">Distributions d'uniformes aux élèves (gratuit)</p>
         </div>
-        {(!isReadOnly() || isGestionnaireUniforme()) && (
-          <button
-            onClick={() => setShowEleveSelector(true)}
-            className="flex items-center gap-2 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors shadow-md"
-          >
-            <Plus className="w-5 h-5" />
-            Nouvelle distribution
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {(!isReadOnly() || isGestionnaireUniforme()) && (
+            <button
+              onClick={() => { setShowScanner(!showScanner); setScanError(''); }}
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors shadow-sm ${
+                showScanner ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+              }`}
+            >
+              <QrCode className="w-5 h-5" />
+              Scanner QR
+            </button>
+          )}
+          {(!isReadOnly() || isGestionnaireUniforme()) && (
+            <button
+              onClick={() => setShowEleveSelector(true)}
+              className="flex items-center gap-2 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors shadow-md"
+            >
+              <Plus className="w-5 h-5" />
+              Nouvelle distribution
+            </button>
+          )}
+        </div>
       </div>
+
+      {scanError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{scanError}</div>
+      )}
+      {showScanner && (
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <p className="text-sm text-gray-500 mb-3">Scannez le QR code de l'élève pour distribuer un uniforme</p>
+          <div id={scannerDivId} className="w-full max-w-sm mx-auto rounded-lg overflow-hidden" />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
