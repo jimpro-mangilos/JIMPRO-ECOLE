@@ -58,7 +58,13 @@ function usePaiementFilters() {
   const [filterDateDebut, setFilterDateDebut] = useState('');
   const [filterDateFin, setFilterDateFin] = useState('');
   const [viewMode, setViewMode] = useState<'general' | 'journalier' | 'jour_precedent' | 'mois' | 'mois_precedent' | 'compte_actif'>('compte_actif');
-  return { searchTerm, setSearchTerm, filterType, setFilterType, filterStatut, setFilterStatut, filterMotifs, setFilterMotifs, filterYear, setFilterYear, filterEncaisseur, setFilterEncaisseur, filterSection, setFilterSection, filterOption, setFilterOption, filterClasse, setFilterClasse, filterDateDebut, setFilterDateDebut, filterDateFin, setFilterDateFin, viewMode, setViewMode };
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilterType([]); setFilterStatut([]); setFilterMotifs([]); setFilterYear([]);
+    setFilterEncaisseur([]); setFilterSection([]); setFilterOption([]); setFilterClasse([]);
+    setFilterDateDebut(''); setFilterDateFin('');
+  };
+  return { searchTerm, setSearchTerm, filterType, setFilterType, filterStatut, setFilterStatut, filterMotifs, setFilterMotifs, filterYear, setFilterYear, filterEncaisseur, setFilterEncaisseur, filterSection, setFilterSection, filterOption, setFilterOption, filterClasse, setFilterClasse, filterDateDebut, setFilterDateDebut, filterDateFin, setFilterDateFin, viewMode, setViewMode, resetFilters };
 }
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -212,8 +218,10 @@ export default function Paiements() {
                 {canSupprimerPaiement() && <button onClick={bulkDelete} disabled={bulkDeleting} className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 text-sm disabled:opacity-50"><Trash2 className="w-4 h-4" /> Supprimer ({selectedIds.size})</button>}
               </>
             )}
-            <button onClick={expandAllDates} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"><ChevronsDownUp className="w-3 h-3" /> Tout déplier</button>
-            <button onClick={collapseAllDates} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"><RotateCcw className="w-3 h-3" /> Tout replier</button>
+            <button onClick={allExpanded ? collapseAllDates : expandAllDates} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700">
+              <ChevronsDownUp className="w-3 h-3" /> {allExpanded ? 'Tout replier' : 'Tout déplier'}
+            </button>
+            <button onClick={filters.resetFilters} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"><RotateCcw className="w-3 h-3" /> Réinitialiser</button>
           </div>
         </div>
 
