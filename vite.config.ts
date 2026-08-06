@@ -16,10 +16,7 @@ export default defineConfig({
         theme_color: '#1e2a5e',
         background_color: '#f9fafb',
         display: 'standalone',
-        icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-        ],
+        icons: [],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
