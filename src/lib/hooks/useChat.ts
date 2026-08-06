@@ -410,20 +410,21 @@ export function useChat() {
           .select()
           .single();
 
-        if (convError || !newConv) throw new Error('Échec de création de la conversation');
+        if (convError) throw new Error('Erreur création conversation: ' + convError.message);
+        if (!newConv) throw new Error('Échec de création de la conversation (pas de données)');
 
         // Insert self first so RLS allows inserting the other participant next
         const { error: selfError } = await db
           .from('chat_participants')
           .insert({ conversation_id: newConv.id, user_id: user.id });
 
-        if (selfError) throw new Error("Échec d'ajout à la conversation");
+        if (selfError) throw new Error("Erreur ajout self: " + selfError.message);
 
         const { error: otherError } = await db
           .from('chat_participants')
           .insert({ conversation_id: newConv.id, user_id: otherUserId });
 
-        if (otherError) throw new Error("Échec d'ajout du destinataire");
+        if (otherError) throw new Error("Erreur ajout destinataire: " + otherError.message);
 
         await loadConversations();
         return newConv.id;
