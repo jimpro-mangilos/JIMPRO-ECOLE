@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { FileText, Download, Loader2, RotateCcw, Filter } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import { useRapports } from '../lib/hooks/useRapports';
 import {
-  generateElevesReport, generateMinervalReport, generateFinancesReport,
-  generateFournituresElevesReport, generateFournituresBureauReport,
+  generateElevesReport, generateFinancesReport,
+  generateFournituresElevesReport,
   generateRapportComptable, generateRapportComparatifComptables,
 } from '../utils/pdfGenerator';
 

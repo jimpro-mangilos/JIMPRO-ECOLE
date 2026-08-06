@@ -6,7 +6,7 @@ import PaymentFormModal from '../components/PaymentFormModal';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import { useAuth } from '../contexts/AuthContext';
 import { usePaiements, getStatut, type Paiement } from '../lib/hooks/usePaiements';
-import { useSections, useOptions, useClasses, useTypesPaiement } from '../lib/hooks/useReferenceData';
+import { useSections, useOptions, useClasses } from '../lib/hooks/useReferenceData';
 
 // ─── Motif Multi-Select (local component) ────────────────────────────────────
 function MotifMultiSelect({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (v: string[]) => void }) {
