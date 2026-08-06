@@ -37,9 +37,19 @@ export function useFinances(filters: FinanceFilters) {
   const { data: transactions = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.finances.all,
     queryFn: async () => {
-      const { data, error } = await supabase.from('compte_courant').select('*').order('date_transaction', { ascending: false }).limit(10000);
-      if (error) throw error;
-      return (data ?? []) as Transaction[];
+      const PAGE = 1000;
+      let all: Transaction[] = [];
+      let from = 0;
+      while (true) {
+        const to = from + PAGE - 1;
+        const { data, error } = await supabase.from('compte_courant').select('*').order('date_transaction', { ascending: false }).range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all = all.concat(data as Transaction[]);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
     },
   });
 

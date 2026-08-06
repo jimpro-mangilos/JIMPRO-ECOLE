@@ -50,9 +50,19 @@ export function useEleves(filters: UseElevesOptions) {
   const { data: eleves = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.eleves.all,
     queryFn: async () => {
-      const { data, error } = await supabase.from('eleves').select('*').order('created_at', { ascending: false }).limit(10000);
-      if (error) throw error;
-      return data ?? [];
+      const PAGE = 1000;
+      let all: any[] = [];
+      let from = 0;
+      while (true) {
+        const to = from + PAGE - 1;
+        const { data, error } = await supabase.from('eleves').select('*').order('created_at', { ascending: false }).range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
     },
   });
 
