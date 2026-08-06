@@ -241,7 +241,7 @@ export default function Eleves() {
                 <tr><td colSpan={isItManager() ? 9 : 8} className="px-4 py-12 text-center text-gray-400">Aucun élève trouvé.</td></tr>
               )}
               {eleves.map(eleve => (
-                <tr key={eleve.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); handleViewDetails(eleve); }}>
+                <tr key={eleve.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleViewDetails(eleve)}>
                   {isItManager() && <td className="px-4 py-3"><input type="checkbox" checked={selectedIds.has(eleve.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(eleve.id); }} className="rounded" /></td>}
                   <td className="px-4 py-3 text-sm font-mono text-gray-900">{eleve.matricule}</td>
                   <td className="px-4 py-3">
@@ -259,7 +259,7 @@ export default function Eleves() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={(e) => { e.stopPropagation(); handleViewDetails(eleve); }} className="p-2 rounded-lg hover:bg-blue-50 text-blue-600" title="Détails"><Eye className="w-4 h-4" /></button>
+                      <button onClick={() => handleViewDetails(eleve)} className="p-2 rounded-lg hover:bg-blue-50 text-blue-600" title="Détails"><Eye className="w-4 h-4" /></button>
                       {!isReadOnly() && <button onClick={(e) => { e.stopPropagation(); handleEditClick(eleve); }} className="p-2 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Edit className="w-4 h-4" /></button>}
                       {!isReadOnly() && <button onClick={(e) => { e.stopPropagation(); handlePayment(eleve); }} className="p-2 rounded-lg hover:bg-green-50 text-green-600" title="Paiement"><Plus className="w-4 h-4" /></button>}
                       {isItManager() && <button onClick={(e) => { e.stopPropagation(); deleteEleve(eleve.id); }} className="p-2 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-4 h-4" /></button>}
