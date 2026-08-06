@@ -403,31 +403,30 @@ export function useChat() {
           }
         }
 
-        // Create new private conversation
-        const { data: newConv, error: convError } = await db
+        // Create new private conversation — generate ID client-side (avoids RLS SELECT issue)
+        const convId = crypto.randomUUID();
+        const { error: convError } = await db
           .from('chat_conversations')
-          .insert({ type: 'private' })
-          .select()
-          .single();
+          .insert({ id: convId, type: 'private' });
 
         if (convError) throw new Error('Erreur création conversation: ' + convError.message);
-        if (!newConv) throw new Error('Échec de création de la conversation (pas de données)');
 
-        // Insert self first so RLS allows inserting the other participant next
+        // Insert self as participant
         const { error: selfError } = await db
           .from('chat_participants')
-          .insert({ conversation_id: newConv.id, user_id: user.id });
+          .insert({ conversation_id: convId, user_id: user.id });
 
         if (selfError) throw new Error("Erreur ajout self: " + selfError.message);
 
+        // Insert other participant
         const { error: otherError } = await db
           .from('chat_participants')
-          .insert({ conversation_id: newConv.id, user_id: otherUserId });
+          .insert({ conversation_id: convId, user_id: otherUserId });
 
         if (otherError) throw new Error("Erreur ajout destinataire: " + otherError.message);
 
         await loadConversations();
-        return newConv.id;
+        return convId;
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Erreur lors de la création de la conversation';
         console.error('Error creating conversation:', err);
