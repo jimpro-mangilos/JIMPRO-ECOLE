@@ -40,9 +40,11 @@ export function useChat() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   // Track latest requested conversation to prevent stale updates
   const latestConvRef = useRef<string | null>(null);
+  const PAGE_SIZE = 50;
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -178,15 +180,17 @@ export function useChat() {
           .from('chat_messages')
           .select('id, conversation_id, sender_id, content, created_at, sender:profiles(id, nom, prenom)')
           .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: true })
-          .limit(200);
+          .order('created_at', { ascending: false })  // newest first, then reverse
+          .limit(PAGE_SIZE);
 
         // Only apply if this is still the latest requested conversation
         if (latestConvRef.current !== conversationId) return;
 
         if (msgErr) throw msgErr;
 
-        setMessages((data as ChatMessage[]) ?? []);
+        const msgs = (data as ChatMessage[]) ?? [];
+        setHasMore(msgs.length === PAGE_SIZE);
+        setMessages(msgs.reverse());  // put in ascending order
 
         // Mark all as read
         if (data && data.length > 0) {
@@ -213,6 +217,23 @@ export function useChat() {
     },
     [user]
   );
+
+  // Load older messages (pagination)
+  const loadMore = useCallback(async () => {
+    if (!user || !activeConversationId || messages.length === 0) return;
+    const oldestMsg = messages[0];
+    const { data } = await db
+      .from('chat_messages')
+      .select('id, conversation_id, sender_id, content, created_at, sender:profiles(id, nom, prenom)')
+      .eq('conversation_id', activeConversationId)
+      .lt('created_at', oldestMsg.created_at)
+      .order('created_at', { ascending: false })
+      .limit(PAGE_SIZE);
+    if (!data || data.length === 0) { setHasMore(false); return; }
+    const olderMsgs = (data as ChatMessage[]).reverse();
+    setHasMore(olderMsgs.length === PAGE_SIZE);
+    setMessages(prev => [...olderMsgs, ...prev]);
+  }, [user, activeConversationId, messages, PAGE_SIZE]);
 
   // Reset messages when changing active conversation
   useEffect(() => {
@@ -431,6 +452,8 @@ export function useChat() {
     sendMessage,
     openOrCreatePrivateConversation,
     totalUnread,
+    hasMore,
+    loadMore,
     refreshConversations: loadConversations,
   };
 }

@@ -231,6 +231,8 @@ export default function Chat() {
     clearError,
     sendMessage,
     openOrCreatePrivateConversation,
+    hasMore,
+    loadMore,
   } = useChat();
 
   const [input, setInput] = useState('');
@@ -441,6 +443,13 @@ export default function Chat() {
                   <MessageCircle className="w-10 h-10 mb-2 opacity-30" />
                   <p className="text-sm">Aucun message pour l'instant.</p>
                   <p className="text-xs mt-1">Soyez le premier à écrire!</p>
+                </div>
+              )}
+              {hasMore && !loadingMessages && messages.length > 0 && (
+                <div className="flex justify-center">
+                  <button onClick={loadMore} className="text-xs text-blue-600 hover:text-blue-800 font-medium py-1 px-3 rounded-full hover:bg-blue-50 transition-colors">
+                    Messages plus anciens...
+                  </button>
                 </div>
               )}
               {messageGroups.map((group) => (
