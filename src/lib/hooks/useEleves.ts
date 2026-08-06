@@ -48,7 +48,7 @@ export function useEleves(filters: UseElevesOptions) {
 
   // Load eleves
   const { data: eleves = [], isLoading: loading } = useQuery({
-    queryKey: queryKeys.eleves.all,
+    queryKey: [...queryKeys.eleves.all, 'v3'],
     queryFn: async () => {
       const PAGE = 1000;
       let all: any[] = [];

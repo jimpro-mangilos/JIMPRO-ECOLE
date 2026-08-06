@@ -35,7 +35,7 @@ export function useFinances(filters: FinanceFilters) {
 
   // ─── Data ───────────────────────────────────────────────────────────────────
   const { data: transactions = [], isLoading: loading } = useQuery({
-    queryKey: queryKeys.finances.all,
+    queryKey: [...queryKeys.finances.all, 'v3'],
     queryFn: async () => {
       const PAGE = 1000;
       let all: Transaction[] = [];

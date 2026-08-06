@@ -52,7 +52,7 @@ export function usePaiements(filters: PaiementFilters) {
 
   // ─── Data Queries ──────────────────────────────────────────────────────────
   const { data: paiements = [], isLoading: loading } = useQuery({
-    queryKey: queryKeys.paiements.all,
+    queryKey: [...queryKeys.paiements.all, 'v3'],
     queryFn: async () => {
       const PAGE = 1000;
       let all: Paiement[] = [];
