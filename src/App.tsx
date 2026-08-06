@@ -1,11 +1,22 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import { LogoProvider } from './contexts/LogoContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 30_000, // 30s default stale time
+    },
+  },
+});
 
 // Lazy-loaded pages — each is its own chunk, loaded on demand
 const Login = lazy(() => import('./pages/Login'));
@@ -51,6 +62,7 @@ function LazyPage({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
+    <QueryClientProvider client={queryClient}>
     <Router>
       <AuthProvider>
         <LogoProvider>
@@ -278,6 +290,7 @@ function App() {
         </LogoProvider>
       </AuthProvider>
     </Router>
+    </QueryClientProvider>
   );
 }
 
