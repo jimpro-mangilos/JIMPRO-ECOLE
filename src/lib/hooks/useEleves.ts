@@ -50,7 +50,7 @@ export function useEleves(filters: UseElevesOptions) {
   const { data: eleves = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.eleves.all,
     queryFn: async () => {
-      const { data, error } = await supabase.from('eleves').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('eleves').select('*').order('created_at', { ascending: false }).limit(10000);
       if (error) throw error;
       return data ?? [];
     },

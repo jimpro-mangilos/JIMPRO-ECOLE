@@ -54,8 +54,7 @@ export function usePaiements(filters: PaiementFilters) {
   const { data: paiements = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.paiements.all,
     queryFn: async () => {
-      const { data, error } = await supabase.from('paiements').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
+      const { data, error } = await supabase.from('paiements').select('*').order('created_at', { ascending: false }).limit(10000);
       return (data ?? []) as Paiement[];
     },
   });

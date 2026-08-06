@@ -37,7 +37,7 @@ export function useFinances(filters: FinanceFilters) {
   const { data: transactions = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.finances.all,
     queryFn: async () => {
-      const { data, error } = await supabase.from('compte_courant').select('*').order('date_transaction', { ascending: false });
+      const { data, error } = await supabase.from('compte_courant').select('*').order('date_transaction', { ascending: false }).limit(10000);
       if (error) throw error;
       return (data ?? []) as Transaction[];
     },
