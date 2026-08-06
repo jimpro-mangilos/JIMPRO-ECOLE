@@ -57,6 +57,7 @@ export function usePaiements(filters: PaiementFilters) {
       const { data, error } = await supabase.from('paiements').select('*').order('created_at', { ascending: false }).limit(10000);
       return (data ?? []) as Paiement[];
     },
+    staleTime: 0,
   });
 
   const { data: typesPaiement = [] } = useQuery({
