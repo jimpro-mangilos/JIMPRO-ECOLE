@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Plus, Search, Package, X, Loader2, Users, Trash2, RotateCcw, Calendar } from 'lucide-react';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { Plus, Search, Package, X, Loader2, Users, Trash2, RotateCcw, Calendar, QrCode } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { useAuth } from '../contexts/AuthContext';
@@ -446,6 +447,10 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
   const [eleves, setEleves] = useState<Eleve[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanError, setScanError] = useState('');
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerDivId = 'qr-scanner-fournitures';
 
   useEffect(() => {
     (async () => {
@@ -463,6 +468,43 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
       }
     })();
   }, []);
+
+  // QR Scanner lifecycle
+  useEffect(() => {
+    if (showScanner) {
+      const scanner = new Html5Qrcode(scannerDivId);
+      scannerRef.current = scanner;
+      scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          const match = decodedText.match(/GA[^|]*/i);
+          if (match) {
+            const matriculeExtrait = match[0].toUpperCase();
+            setSearch(matriculeExtrait);
+            setShowScanner(false);
+            setScanError('');
+            // Auto-select if single match
+            setTimeout(() => {
+              const found = eleves.filter(e => e.matricule.toUpperCase().includes(matriculeExtrait));
+              if (found.length === 1) onSelect(found[0]);
+            }, 200);
+          } else {
+            setScanError('Aucun matricule valide (GA...) trouvé dans ce QR code.');
+          }
+        },
+        () => { /* ignore */ }
+      ).catch(() => {
+        setScanError("Erreur d'accès à la caméra. Vérifiez les permissions.");
+      });
+    }
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
+    };
+  }, [showScanner, eleves, onSelect]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -487,18 +529,33 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
           </button>
         </div>
 
-        <div className="px-6 py-3 border-b">
-          <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3">
-            <Search className="w-5 h-5 text-gray-400" />
-            <input
-              autoFocus
-              type="text"
-              placeholder="Rechercher par matricule, nom, prénom..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 py-2 outline-none text-gray-700"
-            />
+        <div className="px-6 py-3 border-b space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 flex-1">
+              <Search className="w-5 h-5 text-gray-400" />
+              <input
+                autoFocus={!showScanner}
+                type="text"
+                placeholder="Rechercher par matricule, nom, prénom..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 py-2 outline-none text-gray-700"
+              />
+            </div>
+            <button
+              onClick={() => { setShowScanner(!showScanner); setScanError(''); }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                showScanner ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+              }`}
+            >
+              <QrCode className="w-4 h-4" />
+              {showScanner ? 'Fermer' : 'Scanner'}
+            </button>
           </div>
+          {scanError && <p className="text-sm text-red-600">{scanError}</p>}
+          {showScanner && (
+            <div id={scannerDivId} className="w-full max-w-sm mx-auto rounded-lg overflow-hidden" />
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
