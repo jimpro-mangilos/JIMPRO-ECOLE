@@ -1,70 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Users,
-  Wallet,
-  Package,
-  Briefcase,
-  FileText,
   Menu,
   X,
-  Settings,
-  Shield,
   User as UserIcon,
   LogOut,
   ChevronDown,
-  DollarSign,
-  BarChart3,
-  Archive,
-  MessageCircle,
-  BookOpen,
+  LayoutDashboard,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogo } from '../contexts/LogoContext';
 import { useMenuConfig } from '../lib/hooks/useMenuConfig';
+import { MENU_ICON_MAP, MENU_PATH_MAP } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { BROADCAST_CONVERSATION_ID } from '../lib/hooks/useChat';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db: any = supabase;
 
 interface LayoutProps {
   children: React.ReactNode;
 }
-
-const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  'dashboard': LayoutDashboard,
-  'eleves': Users,
-  'paiements': DollarSign,
-  'finances': Wallet,
-  'fournitures-eleves': Package,
-  'fournitures-bureau': Briefcase,
-  'stock-uniformes': Archive,
-  'rapports': FileText,
-  'tableau-bord-comptable': BarChart3,
-  'configuration': Settings,
-  'admin': Shield,
-  'chat': MessageCircle,
-  'portail-professeur': BookOpen,
-  'gestion-cours': BookOpen,
-  'gestion-devoirs': FileText,
-};
-
-const MENU_PATH_MAP: Record<string, string> = {
-  'dashboard': '/',
-  'eleves': '/eleves',
-  'paiements': '/paiements',
-  'finances': '/finances',
-  'fournitures-eleves': '/fournitures-eleves',
-  'fournitures-bureau': '/fournitures-bureau',
-  'stock-uniformes': '/stock-uniformes',
-  'rapports': '/rapports',
-  'tableau-bord-comptable': '/tableau-bord-comptable',
-  'configuration': '/configuration',
-  'admin': '/admin',
-  'chat': '/chat',
-  'portail-professeur': '/portail-professeur',
-  'gestion-cours': '/gestion-cours',
-  'gestion-devoirs': '/gestion-devoirs',
-};
 
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -80,13 +36,13 @@ export default function Layout({ children }: LayoutProps) {
     if (!user || isRevoque()) return;
 
     async function loadUnread() {
-      const { data: participantRows } = await supabase
+      const { data: participantRows } = await db
         .from('chat_participants')
         .select('conversation_id')
         .eq('user_id', user!.id);
-      const convIds = [BROADCAST_CONVERSATION_ID, ...(participantRows ?? []).map((p) => p.conversation_id)];
+      const convIds = [BROADCAST_CONVERSATION_ID, ...(participantRows ?? []).map((p: { conversation_id: string }) => p.conversation_id)];
 
-      const { data: msgs } = await supabase
+      const { data: msgs } = await db
         .from('chat_messages')
         .select('id')
         .in('conversation_id', convIds)
@@ -94,13 +50,13 @@ export default function Layout({ children }: LayoutProps) {
 
       if (!msgs || msgs.length === 0) { setChatUnread(0); return; }
 
-      const { data: reads } = await supabase
+      const { data: reads } = await db
         .from('chat_message_reads')
         .select('message_id')
         .eq('user_id', user!.id);
 
-      const readIds = new Set((reads ?? []).map((r) => r.message_id));
-      const unread = msgs.filter((m) => !readIds.has(m.id)).length;
+      const readIds = new Set((reads ?? []).map((r: { message_id: string }) => r.message_id));
+      const unread = msgs.filter((m: { id: string }) => !readIds.has(m.id)).length;
       setChatUnread(unread);
     }
 

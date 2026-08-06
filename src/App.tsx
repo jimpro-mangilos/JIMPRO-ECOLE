@@ -1,220 +1,280 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import { LogoProvider } from './contexts/LogoContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
-import Eleves from './pages/Eleves';
-import Finances from './pages/Finances';
-import FournituresEleves from './pages/FournituresEleves';
-import FournituresBureau from './pages/FournituresBureau';
-import Rapports from './pages/Rapports';
-import Configuration from './pages/Configuration';
-import Profile from './pages/Profile';
-import Admin from './pages/Admin';
-import Paiements from './pages/Paiements';
-import TableauBordComptable from './pages/TableauBordComptable';
-import StockUniforms from './pages/StockUniforms';
-import Chat from './pages/Chat';
-import PortailParent from './pages/PortailParent';
-import PortailProfesseur from './pages/PortailProfesseur';
-import GestionCours from './pages/GestionCours';
-import GestionDevoirs from './pages/GestionDevoirs';
+
+// Lazy-loaded pages — each is its own chunk, loaded on demand
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Eleves = lazy(() => import('./pages/Eleves'));
+const Finances = lazy(() => import('./pages/Finances'));
+const FournituresEleves = lazy(() => import('./pages/FournituresEleves'));
+const FournituresBureau = lazy(() => import('./pages/FournituresBureau'));
+const Rapports = lazy(() => import('./pages/Rapports'));
+const Configuration = lazy(() => import('./pages/Configuration'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Paiements = lazy(() => import('./pages/Paiements'));
+const TableauBordComptable = lazy(() => import('./pages/TableauBordComptable'));
+const StockUniforms = lazy(() => import('./pages/StockUniforms'));
+const Chat = lazy(() => import('./pages/Chat'));
+const PortailParent = lazy(() => import('./pages/PortailParent'));
+const PortailProfesseur = lazy(() => import('./pages/PortailProfesseur'));
+const GestionCours = lazy(() => import('./pages/GestionCours'));
+const GestionDevoirs = lazy(() => import('./pages/GestionDevoirs'));
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="mt-3 text-gray-500 text-sm">Chargement...</p>
+      </div>
+    </div>
+  );
+}
+
+function LazyPage({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingFallback />}>
+        {children}
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
 
 function App() {
   return (
     <Router>
       <AuthProvider>
         <LogoProvider>
-        <Routes>
-          <Route path="/portail-parent" element={<PortailParent />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </ProtectedRoute>
-            }
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            toastOptions={{
+              duration: 4000,
+            }}
           />
+          <Routes>
+            {/* Public routes */}
+            <Route
+              path="/portail-parent"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <PortailParent />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <Login />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <Signup />
+                </Suspense>
+              }
+            />
 
-          <Route
-            path="/eleves"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Eleves />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><Dashboard /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/minerval"
-            element={<Navigate to="/paiements" replace />}
-          />
+            <Route
+              path="/eleves"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><Eleves /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finances"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Finances />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/minerval"
+              element={<Navigate to="/paiements" replace />}
+            />
 
-          <Route
-            path="/fournitures-eleves"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <FournituresEleves />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finances"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><Finances /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/fournitures-bureau"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <FournituresBureau />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/fournitures-eleves"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><FournituresEleves /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/rapports"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Rapports />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/fournitures-bureau"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><FournituresBureau /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/configuration"
-            element={
-              <ProtectedRoute requireAdmin>
-                <Layout>
-                  <Configuration />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/rapports"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><Rapports /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Profile />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/configuration"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <LazyPage><Configuration /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requireAdmin>
-                <Layout>
-                  <Admin />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><Profile /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/paiements"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Paiements />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <LazyPage><Admin /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/tableau-bord-comptable"
-            element={
-              <ProtectedRoute requireAdminOrCoord>
-                <Layout>
-                  <TableauBordComptable />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/paiements"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><Paiements /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/stock-uniformes"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <StockUniforms />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/tableau-bord-comptable"
+              element={
+                <ProtectedRoute requireAdminOrCoord>
+                  <Layout>
+                    <LazyPage><TableauBordComptable /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Chat />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/stock-uniformes"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><StockUniforms /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/portail-professeur"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <PortailProfesseur />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><Chat /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/gestion-cours"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <GestionCours />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/gestion-devoirs"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <GestionDevoirs />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/portail-professeur"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><PortailProfesseur /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            <Route
+              path="/gestion-cours"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><GestionCours /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/gestion-devoirs"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><GestionDevoirs /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </LogoProvider>
       </AuthProvider>
     </Router>

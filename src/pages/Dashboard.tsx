@@ -1,23 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Users,
-  DollarSign,
-  TrendingUp,
-  Package,
-  LayoutDashboard,
-  Wallet,
-  Briefcase,
-  FileText,
-  BarChart3,
-  Settings,
-  Shield,
-  Archive,
-  MessageCircle,
-} from 'lucide-react';
+import { TrendingUp, LayoutDashboard, Users, DollarSign, Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useMenuConfig } from '../lib/hooks/useMenuConfig';
+import { MENU_ICON_MAP, MENU_PATH_MAP, QUICK_ACCESS_COLORS, DEFAULT_QUICK_ACCESS_COLOR } from '../lib/constants';
 
 interface Stats {
   totalEleves: number;
@@ -25,52 +12,6 @@ interface Stats {
   paiementsEnAttente: number;
   fournituresDistribuees: number;
 }
-
-const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  'dashboard': LayoutDashboard,
-  'eleves': Users,
-  'paiements': DollarSign,
-  'finances': Wallet,
-  'fournitures-eleves': Package,
-  'fournitures-bureau': Briefcase,
-  'stock-uniformes': Archive,
-  'rapports': FileText,
-  'tableau-bord-comptable': BarChart3,
-  'configuration': Settings,
-  'admin': Shield,
-  'chat': MessageCircle,
-};
-
-const MENU_PATH_MAP: Record<string, string> = {
-  'dashboard': '/',
-  'eleves': '/eleves',
-  'paiements': '/paiements',
-  'finances': '/finances',
-  'fournitures-eleves': '/fournitures-eleves',
-  'fournitures-bureau': '/fournitures-bureau',
-  'stock-uniformes': '/stock-uniformes',
-  'rapports': '/rapports',
-  'tableau-bord-comptable': '/tableau-bord-comptable',
-  'configuration': '/configuration',
-  'admin': '/admin',
-  'chat': '/chat',
-};
-
-const QUICK_ACCESS_COLORS: Record<string, { bg: string; hover: string; icon: string; border: string }> = {
-  'eleves': { bg: 'bg-blue-50', hover: 'hover:bg-blue-100 hover:border-blue-300', icon: 'text-blue-600', border: 'border-blue-100' },
-  'paiements': { bg: 'bg-emerald-50', hover: 'hover:bg-emerald-100 hover:border-emerald-300', icon: 'text-emerald-600', border: 'border-emerald-100' },
-  'finances': { bg: 'bg-amber-50', hover: 'hover:bg-amber-100 hover:border-amber-300', icon: 'text-amber-600', border: 'border-amber-100' },
-  'fournitures-eleves': { bg: 'bg-teal-50', hover: 'hover:bg-teal-100 hover:border-teal-300', icon: 'text-teal-600', border: 'border-teal-100' },
-  'fournitures-bureau': { bg: 'bg-cyan-50', hover: 'hover:bg-cyan-100 hover:border-cyan-300', icon: 'text-cyan-600', border: 'border-cyan-100' },
-  'stock-uniformes': { bg: 'bg-slate-50', hover: 'hover:bg-slate-100 hover:border-slate-300', icon: 'text-slate-600', border: 'border-slate-100' },
-  'rapports': { bg: 'bg-rose-50', hover: 'hover:bg-rose-100 hover:border-rose-300', icon: 'text-rose-600', border: 'border-rose-100' },
-  'tableau-bord-comptable': { bg: 'bg-sky-50', hover: 'hover:bg-sky-100 hover:border-sky-300', icon: 'text-sky-600', border: 'border-sky-100' },
-  'configuration': { bg: 'bg-gray-50', hover: 'hover:bg-gray-100 hover:border-gray-300', icon: 'text-gray-600', border: 'border-gray-100' },
-  'admin': { bg: 'bg-red-50', hover: 'hover:bg-red-100 hover:border-red-300', icon: 'text-red-600', border: 'border-red-100' },
-  'chat': { bg: 'bg-green-50', hover: 'hover:bg-green-100 hover:border-green-300', icon: 'text-green-600', border: 'border-green-100' },
-};
-
-const DEFAULT_COLOR = { bg: 'bg-gray-50', hover: 'hover:bg-gray-100 hover:border-gray-300', icon: 'text-gray-600', border: 'border-gray-100' };
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -94,28 +35,27 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const [elevesResult, minervalResult, compteCourantResult, fournituresResult] = await Promise.all([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const db: any = supabase;
+      const [elevesResult, paiementsResult, compteCourantResult, fournituresResult] = await Promise.all([
         supabase.from('eleves').select('*', { count: 'exact', head: true }),
-        supabase.from('minerval').select('montant_total, montant_paye'),
+        db.from('paiements').select('montant_paye').eq('statut', 'en_attente'),
         supabase.from('compte_courant').select('montant_chiffre, type_operation'),
-        supabase.from('gestion_fournitures').select('eps, pull'),
+        db.from('gestion_fournitures').select('eps, pull'),
       ]);
 
       const totalEleves = elevesResult.count || 0;
 
-      const paiementsEnAttente = minervalResult.data?.reduce((acc, curr) => {
-        const solde = (curr.montant_total || 0) - (curr.montant_paye || 0);
-        return acc + (solde > 0 ? 1 : 0);
-      }, 0) || 0;
+      const paiementsEnAttente = paiementsResult.data?.length || 0;
 
-      const totalRecettes = compteCourantResult.data?.reduce((acc, curr) => {
+      const totalRecettes = compteCourantResult.data?.reduce((acc: number, curr: { type_operation: string; montant_chiffre: number }) => {
         if (curr.type_operation === 'recette') {
           return acc + (curr.montant_chiffre || 0);
         }
         return acc;
       }, 0) || 0;
 
-      const fournituresDistribuees = fournituresResult.data?.reduce((acc, curr) => {
+      const fournituresDistribuees = fournituresResult.data?.reduce((acc: number, curr: { eps?: number; pull?: number }) => {
         return acc + (curr.eps || curr.pull ? 1 : 0);
       }, 0) || 0;
 
@@ -190,7 +130,7 @@ export default function Dashboard() {
       path: MENU_PATH_MAP[item.menu_key] || '/',
       icon: MENU_ICON_MAP[item.menu_key] || LayoutDashboard,
       label: item.label,
-      colors: QUICK_ACCESS_COLORS[item.menu_key] || DEFAULT_COLOR,
+      colors: QUICK_ACCESS_COLORS[item.menu_key] || DEFAULT_QUICK_ACCESS_COLOR,
     }));
 
   if (loading) {
