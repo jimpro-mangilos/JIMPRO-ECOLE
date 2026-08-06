@@ -207,18 +207,25 @@ export default function Finances() {
       {detailTransaction && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDetailTransaction(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Détails</h2><button onClick={() => setDetailTransaction(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
+            <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Détails transaction</h2><button onClick={() => setDetailTransaction(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
             <div className="p-6 space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-gray-500">Montant</span><p className="font-semibold text-gray-900">{detailTransaction.montant_chiffre.toLocaleString('fr-FR')} FC</p></div>
-                <div><span className="text-gray-500">Type</span><p className="font-semibold">{detailTransaction.type_operation}</p></div>
-                <div><span className="text-gray-500">Bénéficiaire</span><p className="font-semibold text-gray-900">{detailTransaction.beneficiaire}</p></div>
+                <div><span className="text-gray-500">Montant</span><p className={`font-bold ${detailTransaction.type_operation === 'recette' ? 'text-emerald-600' : 'text-red-600'}`}>{detailTransaction.montant_chiffre.toLocaleString('fr-FR')} FC</p></div>
+                <div><span className="text-gray-500">Type</span><p className="font-semibold">{detailTransaction.type_operation === 'recette' ? '💰 Recette' : '📤 Dépense'}</p></div>
                 <div><span className="text-gray-500">Statut</span><span className={`inline-flex text-xs font-medium px-2 py-1 rounded-full ${STATUT_COLORS[detailTransaction.statut || 'en_attente']}`}>{STATUT_LABELS[detailTransaction.statut || 'en_attente']}</span></div>
+                <div><span className="text-gray-500">Date</span><p className="font-medium">{new Date(detailTransaction.date_transaction).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div>
+                <div><span className="text-gray-500">Bénéficiaire</span><p className="font-medium text-gray-900">{detailTransaction.beneficiaire}</p></div>
+                <div><span className="text-gray-500">Téléphone</span><p className="font-medium">{detailTransaction.telephone || '—'}</p></div>
+                <div><span className="text-gray-500">Comptable</span><p className="font-medium">{detailTransaction.nom_comptable || '—'}</p></div>
+                {detailTransaction.nom_approbateur && <div><span className="text-gray-500">Approbateur</span><p className="font-medium text-blue-600">{detailTransaction.nom_approbateur}</p></div>}
+                {(detailTransaction as any).nom_encaisseur && <div><span className="text-gray-500">{detailTransaction.type_operation === 'recette' ? 'Encaisseur' : 'Décaissé par'}</span><p className="font-medium text-emerald-600">{(detailTransaction as any).nom_encaisseur}</p></div>}
               </div>
               <div><span className="text-gray-500">Libellé</span><p className="text-gray-700">{detailTransaction.libelle}</p></div>
-              <div className="flex gap-2 pt-2">
-                {detailTransaction.statut === 'en_attente' && canApprouverTransaction(detailTransaction.montant_chiffre) && <button onClick={() => updateStatut(detailTransaction.id, 'approuve').then(ok => ok && setDetailTransaction(null))} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700">Approuver</button>}
-                {detailTransaction.statut === 'approuve' && canDecaisserEncaisserTransaction(detailTransaction.montant_chiffre) && <button onClick={() => updateStatut(detailTransaction.id, detailTransaction.type_operation === 'recette' ? 'encaisse' : 'decaisse').then(ok => ok && setDetailTransaction(null))} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs hover:bg-green-700">{detailTransaction.type_operation === 'recette' ? 'Encaisser' : 'Décaisser'}</button>}
+              <div className="flex flex-wrap gap-2 pt-3 border-t">
+                {canModifier() && <button onClick={(e) => { e.stopPropagation(); openEditModal(detailTransaction); setDetailTransaction(null); }} className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs hover:bg-amber-200"><Pencil className="w-3.5 h-3.5 inline mr-1" />Modifier</button>}
+                {detailTransaction.statut === 'en_attente' && canApprouverTransaction(detailTransaction.montant_chiffre) && <button onClick={() => updateStatut(detailTransaction.id, 'approuve').then(ok => ok && setDetailTransaction(null))} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200"><CheckCircle className="w-3.5 h-3.5 inline mr-1" />Approuver</button>}
+                {detailTransaction.statut === 'approuve' && canDecaisserEncaisserTransaction(detailTransaction.montant_chiffre) && <button onClick={() => updateStatut(detailTransaction.id, detailTransaction.type_operation === 'recette' ? 'encaisse' : 'decaisse').then(ok => ok && setDetailTransaction(null))} className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200">{detailTransaction.type_operation === 'recette' ? <><ArrowUpCircle className="w-3.5 h-3.5 inline mr-1" />Encaisser</> : <><ArrowDownCircle className="w-3.5 h-3.5 inline mr-1" />Décaisser</>}</button>}
+                {canSupprimer() && <button onClick={(e) => { e.stopPropagation(); supprimer(detailTransaction.id); }} className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs hover:bg-red-200"><Trash2 className="w-3.5 h-3.5 inline mr-1" />Supprimer</button>}
               </div>
             </div>
           </div>
