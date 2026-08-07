@@ -169,30 +169,7 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   const classe = [e.section, e.classe, e.option].filter(Boolean).join('  ·  ');
   doc.text(classe, ix, iy + 15);
 
-  // ─── QR Code (right side, over bottom bar, full size) ────────────────────────
-  const qrData = `${e.matricule}|${nom}|${e.section}|${e.classe || ''}`;
-  const qrUrl = await QRCode.toDataURL(qrData, { width: 300, margin: 1, errorCorrectionLevel: 'M' });
-  const qs = 16;
-  const qx = ox + CARD_W - qs - PAD + 1;
-  const qy = oy + CARD_H - qs - 2; // sits on bottom bar, extends upward
-  doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
-
-  // White background behind QR so it pops over the dark bar
-  doc.setFillColor(WHITE);
-  doc.roundedRect(qx - 1.5, qy - 1.5, qs + 3, qs + 3, 1.5, 1.5, 'F');
-  doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
-
-  // Border
-  doc.setDrawColor('#cbd5e1');
-  doc.setLineWidth(0.2);
-  doc.roundedRect(qx - 1.5, qy - 1.5, qs + 3, qs + 3, 1.5, 1.5, 'S');
-
-  doc.setTextColor(MUTED);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(2.8);
-  doc.text('Scanner', qx + qs / 2, qy - 2.5, { align: 'center' });
-
-  // ─── Bottom info bar ────────────────────────────────────────────────────────
+  // ─── Bottom info bar (drawn FIRST so QR goes on top) ────────────────────────
   const by = oy + CARD_H;
   doc.setFillColor(DARK);
   doc.roundedRect(ox + PAD, by - 9, CARD_W - PAD * 2, 7, 1.5, 1.5, 'F');
@@ -209,6 +186,27 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(2.5);
   doc.text('Signature', ox + CARD_W / 4 - 5, by - 1.2, { align: 'center' });
+
+  // ─── QR Code (ON TOP of the bottom bar) ──────────────────────────────────────
+  const qrData = `${e.matricule}|${nom}|${e.section}|${e.classe || ''}`;
+  const qrUrl = await QRCode.toDataURL(qrData, { width: 400, margin: 1, errorCorrectionLevel: 'M' });
+  const qs = 24;
+  const qx = ox + CARD_W - qs - PAD;
+  const qy = oy + CARD_H - qs - 3;
+  // White card behind QR
+  doc.setFillColor(WHITE);
+  doc.roundedRect(qx - 2, qy - 2, qs + 4, qs + 4, 2, 2, 'F');
+  // QR image
+  doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
+  // Border
+  doc.setDrawColor('#cbd5e1');
+  doc.setLineWidth(0.3);
+  doc.roundedRect(qx - 2, qy - 2, qs + 4, qs + 4, 2, 2, 'S');
+  // Label above QR
+  doc.setTextColor(MUTED);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(2.8);
+  doc.text('Scanner', qx + qs / 2, qy - 3.5, { align: 'center' });
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
