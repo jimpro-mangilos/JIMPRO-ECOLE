@@ -74,7 +74,7 @@ export default function FournituresEleves() {
       const currentSessionId = ++scannerSessionId.current;
       scanner.start(
         { facingMode: 'environment' },
-        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
+        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1 },
         async (decodedText) => {
           // Only process if this callback belongs to the current scan session
           if (scannerSessionId.current !== currentSessionId) return;
@@ -545,7 +545,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
       scannerRunning2.current = false;
       scanner.start(
         { facingMode: 'environment' },
-        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
+        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1 },
         (decodedText) => {
           if (!scannerRunning2.current) return;
           scannerRunning2.current = false;

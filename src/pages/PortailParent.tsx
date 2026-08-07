@@ -62,7 +62,7 @@ export default function PortailParent() {
       scannerRunning.current = false;
       scanner.start(
         { facingMode: 'environment' },
-        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
+        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1 },
         (decodedText) => {
           if (!scannerRunning.current) return;
           scannerRunning.current = false;

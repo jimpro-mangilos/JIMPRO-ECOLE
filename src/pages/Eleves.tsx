@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import MultiSelectFilter from '../components/MultiSelectFilter';
-import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 import { calculateAverageAge } from '../utils/calculations';
 import EleveDetailsModal from '../components/EleveDetailsModal';
@@ -8,6 +8,8 @@ import PaymentFormModal from '../components/PaymentFormModal';
 import { useEleves } from '../lib/hooks/useEleves';
 import { useSections, useOptions, useClasses } from '../lib/hooks/useReferenceData';
 import { generateElevesReport } from '../utils/pdfGenerator';
+import { generateCartesEtudiants } from '../utils/carteEtudiantGenerator';
+import { useLogo } from '../contexts/LogoContext';
 import { useAuth } from '../contexts/AuthContext';
 
 type Eleve = Database['public']['Tables']['eleves']['Row'];
@@ -31,6 +33,7 @@ function useEleveFilters() {
 // ─── Page Component ───────────────────────────────────────────────────────────
 export default function Eleves() {
   const { isReadOnly, isItManager } = useAuth();
+  const { logoUrl } = useLogo();
   const filters = useEleveFilters();
   const { data: sections = [] } = useSections();
   const { data: options = [] } = useOptions();
@@ -127,6 +130,27 @@ export default function Eleves() {
             className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
           >
             <FileDown className="w-5 h-5" /> Imprimer
+          </button>
+          <button
+            onClick={async () => {
+              const cartes = eleves.map(e => ({
+                matricule: e.matricule,
+                nom: e.nom,
+                postnom: e.postnom,
+                prenom: e.prenom,
+                sexe: e.sexe,
+                section: e.section,
+                option: e.option,
+                classe: e.classe,
+                date_naissance: e.date_naissance,
+                photo_url: (e as any).photo_url,
+              }));
+              const doc = await generateCartesEtudiants(cartes, logoUrl);
+              window.open(doc.output('bloburl'));
+            }}
+            className="flex items-center gap-2 bg-teal-600 text-white px-4 py-3 rounded-lg hover:bg-teal-700 transition-colors font-medium shadow-sm"
+          >
+            <Contact className="w-5 h-5" /> Cartes
           </button>
           {!isReadOnly() && (
             <button onClick={handleOpenForm} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
