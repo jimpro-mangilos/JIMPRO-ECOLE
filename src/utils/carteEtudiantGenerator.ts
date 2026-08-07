@@ -169,23 +169,28 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   const classe = [e.section, e.classe, e.option].filter(Boolean).join('  ·  ');
   doc.text(classe, ix, iy + 15);
 
-  // ─── QR Code (right side, smaller than photo) ───────────────────────────────
+  // ─── QR Code (right side, over bottom bar, full size) ────────────────────────
   const qrData = `${e.matricule}|${nom}|${e.section}|${e.classe || ''}`;
-  const qrUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 1, errorCorrectionLevel: 'M' });
-  const qs = 13; // smaller than photo (18)
+  const qrUrl = await QRCode.toDataURL(qrData, { width: 300, margin: 1, errorCorrectionLevel: 'M' });
+  const qs = 16;
   const qx = ox + CARD_W - qs - PAD + 1;
-  const qy = oy + CARD_H - qs - PAD - 4;
-  doc.addImage(qrUrl, 'JPG', qx, qy, qs, qs);
+  const qy = oy + CARD_H - qs - 2; // sits on bottom bar, extends upward
+  doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
 
-  // QR border
+  // White background behind QR so it pops over the dark bar
+  doc.setFillColor(WHITE);
+  doc.roundedRect(qx - 1.5, qy - 1.5, qs + 3, qs + 3, 1.5, 1.5, 'F');
+  doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
+
+  // Border
   doc.setDrawColor('#cbd5e1');
-  doc.setLineWidth(0.15);
-  doc.roundedRect(qx - 1, qy - 1, qs + 2, qs + 2, 1, 1, 'S');
+  doc.setLineWidth(0.2);
+  doc.roundedRect(qx - 1.5, qy - 1.5, qs + 3, qs + 3, 1.5, 1.5, 'S');
 
   doc.setTextColor(MUTED);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(2.8);
-  doc.text('Vérifier', qx + qs / 2, qy + qs + 3, { align: 'center' });
+  doc.text('Scanner', qx + qs / 2, qy - 2.5, { align: 'center' });
 
   // ─── Bottom info bar ────────────────────────────────────────────────────────
   const by = oy + CARD_H;
