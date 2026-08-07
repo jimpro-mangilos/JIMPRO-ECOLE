@@ -15,359 +15,216 @@ interface CarteEtudiantEleve {
   annee_scolaire?: string;
 }
 
-const DARK = '#1e2a5e';      // bleu foncé
-const PRIMARY = '#1d4ed8';   // bleu école
-const LIGHT_GRAY = '#f8fafc';
-const ACCENT = '#f59e0b';    // doré
+// ─── Design System ─────────────────────────────────────────────────────────────
+const DARK    = '#0f172a';   // slate-900
+const PRIMARY = '#1e40af';   // blue-800
+const ACCENT  = '#d97706';   // amber-600
+const MUTED   = '#64748b';   // slate-500
+const SURFACE = '#f1f5f9';   // slate-100
+const BORDER  = '#e2e8f0';   // slate-200
+const WHITE   = '#ffffff';
 
-const CARD_W = 85;  // mm (credit card width)
-const CARD_H = 54;  // mm (credit card height)
-const MARGIN = 3;
+const CARD_W = 86; // mm
+const CARD_H = 54; // mm
+const PAD = 3.5;
+
+// ─── Public API ────────────────────────────────────────────────────────────────
 
 export async function generateCarteEtudiant(
   eleve: CarteEtudiantEleve,
   logoBase64?: string | null,
-  stampBase64?: string | null,
-  isDryRun = false
 ): Promise<jsPDF> {
-  const doc = new jsPDF({
-    orientation: 'landscape',
-    unit: 'mm',
-    format: [CARD_H, CARD_W],
-  });
-
-  const annee = eleve.annee_scolaire || new Date().getFullYear().toString();
-
-  // ─── Background ──────────────────────────────────────────────────────────────
-  doc.setFillColor('#ffffff');
-  doc.rect(0, 0, CARD_W, CARD_H, 'F');
-
-  // ─── Top band ─────────────────────────────────────────────────────────────────
-  doc.setFillColor(DARK);
-  doc.rect(0, 0, CARD_W, 12, 'F');
-
-  // School name in top band
-  doc.setTextColor('#ffffff');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
-  doc.text('GOLDEN ACADEMY', MARGIN, 6);
-
-  // School year badge
-  doc.setFillColor(PRIMARY);
-  doc.roundedRect(CARD_W - 18, 1.5, 16, 9, 1, 1, 'F');
-  doc.setTextColor('#ffffff');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4);
-  doc.text('ANNEE', CARD_W - 10, 5.5, { align: 'center' });
-  doc.setFontSize(5);
-  doc.text(annee, CARD_W - 10, 9, { align: 'center' });
-
-  // ─── Logo ─────────────────────────────────────────────────────────────────────
-  if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', MARGIN, 14, 10, 7);
-  }
-
-  // ─── CARD label ───────────────────────────────────────────────────────────────
-  doc.setFillColor(ACCENT);
-  doc.roundedRect(CARD_W - 28, 13, 26, 5, 1, 1, 'F');
-  doc.setTextColor('#ffffff');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4);
-  doc.text("CARTE D'ELEVE", CARD_W - 15, 16.3, { align: 'center' });
-
-  // ─── Photo placeholder ────────────────────────────────────────────────────────
-  const photoX = MARGIN + 2;
-  const photoY = 24;
-  const photoW = 18;
-  const photoH = 22;
-  doc.setDrawColor(PRIMARY);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(photoX, photoY, photoW, photoH, 1.5, 1.5, 'S');
-  doc.setFillColor(LIGHT_GRAY);
-  doc.roundedRect(photoX + 0.5, photoY + 0.5, photoW - 1, photoH - 1, 1, 1, 'F');
-
-  if (eleve.photo_url) {
-    try {
-      const img = await loadImage(eleve.photo_url);
-      if (img) doc.addImage(img, 'JPEG', photoX + 0.5, photoY + 0.5, photoW - 1, photoH - 1);
-    } catch { /* use placeholder */ }
-  }
-
-  // Initials in placeholder
-  if (!eleve.photo_url) {
-    const initials = (eleve.nom.charAt(0) + eleve.prenom.charAt(0)).toUpperCase();
-    doc.setTextColor(DARK);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text(initials, photoX + photoW / 2, photoY + photoH / 2 + 1.5, { align: 'center' });
-  }
-
-  // ─── Student info ─────────────────────────────────────────────────────────────
-  const infoX = photoX + photoW + 3;
-  const infoY = 25;
-
-  // Name
-  doc.setTextColor(DARK);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6);
-  const nomComplet = `${eleve.nom} ${eleve.postnom ? eleve.postnom + ' ' : ''}${eleve.prenom}`.toUpperCase();
-  doc.text(nomComplet, infoX, infoY);
-
-  // Matricule
-  doc.setTextColor(PRIMARY);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
-  doc.text(eleve.matricule, infoX, infoY + 5);
-
-  // Sexe
-  doc.setTextColor('#6b7280');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(4);
-  doc.text(`${eleve.sexe === 'M' ? 'Masculin' : 'Féminin'}`, infoX, infoY + 8);
-
-  // Section - Classe
-  doc.setTextColor('#374151');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4.5);
-  const classeInfo = [eleve.section, eleve.classe, eleve.option].filter(Boolean).join(' - ');
-  doc.text(classeInfo, infoX, infoY + 10.5);
-
-  // Date naissance
-  if (eleve.date_naissance) {
-    doc.setTextColor('#9ca3af');
-    doc.setFontSize(4);
-    doc.text(`Né(e): ${eleve.date_naissance}`, infoX, infoY + 13);
-  }
-
-  // ─── QR Code ──────────────────────────────────────────────────────────────────
-  const qrData = `${eleve.matricule}|${nomComplet}|${eleve.section}|${eleve.classe || ''}`;
-  const qrUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 1, errorCorrectionLevel: 'M' });
-  const qrX = CARD_W - 19;
-  const qrY = 32;
-  const qrSize = 14;
-  doc.addImage(qrUrl, 'PNG', qrX, qrY, qrSize, qrSize);
-
-  doc.setTextColor('#6b7280');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(3);
-  doc.text('Scanner pour vérifier', qrX + qrSize / 2, qrY + qrSize + 2.5, { align: 'center' });
-
-  // ─── Bottom line ──────────────────────────────────────────────────────────────
-  doc.setDrawColor(DARK);
-  doc.setLineWidth(0.3);
-  doc.line(MARGIN, CARD_H - 9, CARD_W - MARGIN, CARD_H - 9);
-
-  // Stamp area
-  if (stampBase64) {
-    doc.addImage(stampBase64, 'PNG', CARD_W - 25, CARD_H - 8, 12, 8);
-  } else {
-    doc.setFillColor(DARK);
-    doc.roundedRect(CARD_W - 25, CARD_H - 8, 12, 7, 1, 1, 'S');
-    doc.setTextColor(DARK);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(3.5);
-    doc.text('CACHET', CARD_W - 19, CARD_H - 3.5, { align: 'center' });
-  }
-
-  // Signature line
-  doc.setDrawColor('#9ca3af');
-  doc.setLineWidth(0.2);
-  doc.line(MARGIN, CARD_H - 3, CARD_W / 2 - 2, CARD_H - 3);
-  doc.setTextColor('#9ca3af');
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(3);
-  doc.text('Signature du titulaire', CARD_W / 2 - 3, CARD_H - 1.2, { align: 'center' });
-
-  if (isDryRun) return doc;
-
-  // ─── Page backend ────────────────────────────────────────────────────────────
-  doc.addPage([CARD_H, CARD_W]);
-  doc.setFillColor(LIGHT_GRAY);
-  doc.rect(0, 0, CARD_W, CARD_H, 'F');
-
-  doc.setFillColor(DARK);
-  doc.rect(0, 0, CARD_W, 10, 'F');
-  doc.setTextColor('#ffffff');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
-  doc.text('INFORMATIONS DE VALIDATION', CARD_W / 2, 6.5, { align: 'center' });
-
-  doc.setTextColor('#374151');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(4);
-  const backLines = [
-    'Cette carte est la propriete de Golden Academy.',
-    'Elle doit etre presentee a toute demande.',
-    `Delivree le: ${new Date().toLocaleDateString('fr-FR')}`,
-    `Valide pour l'annee scolaire: ${annee}`,
-    `Matricule: ${eleve.matricule}`,
-    'En cas de perte, signalez immediatement.',
-  ];
-  backLines.forEach((line, i) => doc.text(line, MARGIN + 1, 14 + i * 5));
-
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [CARD_H, CARD_W] });
+  await drawCard(doc, eleve, 0, 0, logoBase64);
   return doc;
-}
-
-async function loadImage(url: string): Promise<string | null> {
-  try {
-    // Public URLs from Supabase storage
-    if (url.includes('supabase.co')) {
-      return url;
-    }
-    // Data URLs
-    if (url.startsWith('data:')) return url;
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 export async function generateCartesEtudiants(
   eleves: CarteEtudiantEleve[],
   logoBase64?: string | null,
-  stampBase64?: string | null
 ): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const cardsPerRow = 2;
-  const cardsPerCol = 4;
-  const cardsPerPage = cardsPerRow * cardsPerCol;
-  const pageW = 210;
-  const pageH = 297;
-  const spacingX = (pageW - cardsPerRow * CARD_W) / (cardsPerRow + 1);
-  const spacingY = (pageH - cardsPerCol * CARD_H) / (cardsPerCol + 1);
+  const perRow = 2, perCol = 4, perPage = perRow * perCol;
+  const pw = 210, ph = 297;
+  const sx = (pw - perRow * CARD_W) / (perRow + 1);
+  const sy = (ph - perCol * CARD_H) / (perCol + 1);
 
   for (let i = 0; i < eleves.length; i++) {
-    if (i > 0 && i % cardsPerPage === 0) doc.addPage();
+    if (i > 0 && i % perPage === 0) doc.addPage();
+    const idx = i % perPage;
+    const x = sx + (idx % perRow) * (CARD_W + sx);
+    const y = sy + Math.floor(idx / perRow) * (CARD_H + sy);
 
-    const idx = i % cardsPerPage;
-    const col = idx % cardsPerRow;
-    const row = Math.floor(idx / cardsPerRow);
-    const x = spacingX + col * (CARD_W + spacingX);
-    const y = spacingY + row * (CARD_H + spacingY);
+    // Draw cut guides
+    doc.setDrawColor('#cbd5e1');
+    doc.setLineWidth(0.05);
+    const cm = 5;
+    [[x, y], [x + CARD_W, y], [x, y + CARD_H], [x + CARD_W, y + CARD_H]].forEach(([cx, cy]) => {
+      const hw = cx === x ? 1 : -1, vw = cy === y ? 1 : -1;
+      doc.line(cx, cy + vw * cm, cx, cy + vw * 1);  // vertical
+      doc.line(cx + hw * cm, cy, cx + hw * 1, cy);  // horizontal
+    });
 
-    await drawCardOnDoc(doc, eleves[i], x, y, logoBase64, stampBase64);
+    await drawCard(doc, eleves[i], x, y, logoBase64);
   }
 
   return doc;
 }
 
-async function drawCardOnDoc(
-  doc: jsPDF,
-  eleve: CarteEtudiantEleve,
-  offsetX: number,
-  offsetY: number,
-  logoBase64?: string | null,
-  stampBase64?: string | null
-) {
-  const annee = eleve.annee_scolaire || new Date().getFullYear().toString();
-  const MARGIN_C = 3;
-  const photoX = MARGIN_C + 2;
-  const photoY = 24;
-  const photoW = 18;
-  const photoH = 22;
-  const infoX = photoX + photoW + 3;
-  const nomComplet = `${eleve.nom} ${eleve.postnom ? eleve.postnom + ' ' : ''}${eleve.prenom}`.toUpperCase();
+// ─── Core Card Drawing ─────────────────────────────────────────────────────────
 
-  // Background
-  doc.setFillColor('#ffffff');
-  doc.rect(offsetX, offsetY, CARD_W, CARD_H, 'F');
+async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: number, logo?: string | null) {
+  const annee = e.annee_scolaire || new Date().getFullYear().toString();
+  const nom = `${e.nom} ${e.postnom ? e.postnom + ' ' : ''}${e.prenom}`.toUpperCase();
 
-  // Top band
+  // ─── Background with subtle gradient effect via layered rectangles ────────
+  doc.setFillColor(WHITE);
+  doc.roundedRect(ox, oy, CARD_W, CARD_H, 2, 2, 'F');
+
+  // ─── Left accent stripe ─────────────────────────────────────────────────────
   doc.setFillColor(DARK);
-  doc.rect(offsetX, offsetY, CARD_W, 12, 'F');
-  doc.setTextColor('#ffffff');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
-  doc.text('GOLDEN ACADEMY', offsetX + MARGIN_C, offsetY + 6);
-  doc.setFillColor(PRIMARY);
-  doc.roundedRect(offsetX + CARD_W - 18, offsetY + 1.5, 16, 9, 1, 1, 'F');
-  doc.setFontSize(4);
-  doc.text('ANNEE', offsetX + CARD_W - 10, offsetY + 5.5, { align: 'center' });
-  doc.setFontSize(5);
-  doc.text(annee, offsetX + CARD_W - 10, offsetY + 9, { align: 'center' });
+  doc.roundedRect(ox, oy, 4, CARD_H, 2, 2, 'F');
+  doc.rect(ox + 2, oy, 2, CARD_H, 'F'); // fill the rounded gap on right side
 
-  // Logo
-  if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', offsetX + MARGIN_C, offsetY + 14, 10, 7);
+  // ─── Top-right decorative triangle ──────────────────────────────────────────
+  doc.setFillColor('#f8fafc');
+  doc.triangle(ox + CARD_W, oy, ox + CARD_W - 22, oy, ox + CARD_W, oy + 16, 'F');
+
+  // ─── Header: school name ────────────────────────────────────────────────────
+  doc.setTextColor(DARK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.text('GOLDEN', ox + PAD + 5, oy + 8);
+  doc.setTextColor(PRIMARY);
+  doc.setFontSize(5.5);
+  doc.text('A C A D E M Y', ox + PAD + 5, oy + 12);
+
+  // ─── Logo ────────────────────────────────────────────────────────────────────
+  if (logo) {
+    doc.addImage(logo, 'PNG', ox + CARD_W - 18, oy + PAD, 9, 6);
   }
 
-  // Badge
-  doc.setFillColor(ACCENT);
-  doc.roundedRect(offsetX + CARD_W - 28, offsetY + 13, 26, 5, 1, 1, 'F');
-  doc.setTextColor('#ffffff');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4);
-  doc.text("CARTE D'ELEVE", offsetX + CARD_W - 15, offsetY + 16.3, { align: 'center' });
+  // ─── Thin separator ─────────────────────────────────────────────────────────
+  doc.setDrawColor(BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(ox + PAD + 5, oy + 15, ox + CARD_W - PAD, oy + 15);
 
-  // Photo placeholder
+  // ─── Photo area ─────────────────────────────────────────────────────────────
+  const px = ox + PAD + 5;
+  const py = oy + 17.5;
+  const pw = 18;
+  const ph = 24;
+
+  // Outer border
   doc.setDrawColor(PRIMARY);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(offsetX + photoX, offsetY + photoY, photoW, photoH, 1.5, 1.5, 'S');
-  doc.setFillColor(LIGHT_GRAY);
-  doc.roundedRect(offsetX + photoX + 0.5, offsetY + photoY + 0.5, photoW - 1, photoH - 1, 1, 1, 'F');
+  doc.setLineWidth(0.6);
+  doc.roundedRect(px, py, pw, ph, 2, 2, 'S');
+  // Inner background
+  doc.setFillColor(SURFACE);
+  doc.roundedRect(px + 0.5, py + 0.5, pw - 1, ph - 1, 1.5, 1.5, 'F');
 
-  if (eleve.photo_url) {
+  // Photo or initials
+  if (e.photo_url) {
     try {
-      const img = await loadImage(eleve.photo_url);
-      if (img) doc.addImage(img, 'JPEG', offsetX + photoX + 0.5, offsetY + photoY + 0.5, photoW - 1, photoH - 1);
+      const img = await loadImage(e.photo_url);
+      if (img) doc.addImage(img, 'JPEG', px + 0.5, py + 0.5, pw - 1, ph - 1);
     } catch {}
-  } else {
-    const initials = (eleve.nom.charAt(0) + eleve.prenom.charAt(0)).toUpperCase();
+  }
+  if (!e.photo_url) {
+    const init = (e.nom.charAt(0) + e.prenom.charAt(0)).toUpperCase();
     doc.setTextColor(DARK);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text(initials, offsetX + photoX + photoW / 2, offsetY + photoY + photoH / 2 + 1.5, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text(init, px + pw / 2, py + ph / 2 + 2, { align: 'center' });
   }
 
-  // Student info
+  // ─── Info section ───────────────────────────────────────────────────────────
+  const ix = px + pw + 3.5;
+  const iy = py + 2;
+
+  // Name
   doc.setTextColor(DARK);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6);
-  doc.text(nomComplet, offsetX + infoX, offsetY + 25);
+  doc.setFontSize(5.5);
+  doc.text(nom, ix, iy);
+
+  // Matricule badge
+  doc.setFillColor('#eef2ff');
+  doc.roundedRect(ix, iy + 3.5, 36, 5, 1, 1, 'F');
   doc.setTextColor(PRIMARY);
-  doc.setFontSize(5);
-  doc.text(eleve.matricule, offsetX + infoX, offsetY + 30);
-  doc.setTextColor('#6b7280');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(4);
-  doc.text(`${eleve.sexe === 'M' ? 'Masculin' : 'Féminin'}`, offsetX + infoX, offsetY + 33);
-  doc.setTextColor('#374151');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(4.5);
-  doc.text([eleve.section, eleve.classe, eleve.option].filter(Boolean).join(' - '), offsetX + infoX, offsetY + 35.5);
-  if (eleve.date_naissance) {
-    doc.setTextColor('#9ca3af');
-    doc.setFontSize(4);
-    doc.text(`Né(e): ${eleve.date_naissance}`, offsetX + infoX, offsetY + 38);
-  }
+  doc.text(e.matricule, ix + 1, iy + 7);
 
-  // QR Code
-  const qrData = `${eleve.matricule}|${nomComplet}|${eleve.section}|${eleve.classe || ''}`;
-  const qrUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 1, errorCorrectionLevel: 'M' });
-  const qrX = offsetX + CARD_W - 19;
-  const qrY = offsetY + 32;
-  const qrSize = 14;
-  doc.addImage(qrUrl, 'PNG', qrX, qrY, qrSize, qrSize);
-  doc.setTextColor('#6b7280');
+  // Sexe + Age
+  doc.setTextColor(MUTED);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(3);
-  doc.text('Scanner pour verifier', qrX + qrSize / 2, qrY + qrSize + 2.5, { align: 'center' });
+  doc.setFontSize(3.8);
+  const sexeLabel = e.sexe === 'M' ? 'Masculin' : 'Féminin';
+  const ageInfo = e.date_naissance ? ` • Né(e) ${e.date_naissance}` : '';
+  doc.text(`${sexeLabel}${ageInfo}`, ix, iy + 12);
 
-  // Bottom line + stamp + signature
-  doc.setDrawColor(DARK);
-  doc.setLineWidth(0.3);
-  doc.line(offsetX + MARGIN_C, offsetY + CARD_H - 9, offsetX + CARD_W - MARGIN_C, offsetY + CARD_H - 9);
-  doc.setDrawColor(DARK);
-  doc.roundedRect(offsetX + CARD_W - 25, offsetY + CARD_H - 8, 12, 7, 1, 1, 'S');
-  doc.setTextColor(DARK);
+  // Section - Classe - Option
+  doc.setTextColor('#334155');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4.2);
+  const classe = [e.section, e.classe, e.option].filter(Boolean).join('  ·  ');
+  doc.text(classe, ix, iy + 15);
+
+  // ─── Bottom panel ───────────────────────────────────────────────────────────
+  const by = oy + CARD_H;
+
+  // Dark bar at bottom
+  doc.setFillColor(DARK);
+  doc.roundedRect(ox + PAD, by - 10.5, CARD_W - PAD * 2, 8, 1.5, 1.5, 'F');
+
+  // School year inside bar
+  doc.setTextColor('#ffffff');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4.5);
+  doc.text(`ANNÉE SCOLAIRE ${annee}`, ox + CARD_W / 2, by - 5.5, { align: 'center' });
+
+  // ─── Badge ──────────────────────────────────────────────────────────────────
+  doc.setFillColor(ACCENT);
+  doc.roundedRect(ox + CARD_W - 23, by - 13, 19, 4.5, 1, 1, 'F');
+  doc.setTextColor('#ffffff');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(3.5);
-  doc.text('CACHET', offsetX + CARD_W - 19, offsetY + CARD_H - 3.5, { align: 'center' });
-  doc.setDrawColor('#9ca3af');
-  doc.setLineWidth(0.2);
-  doc.line(offsetX + MARGIN_C, offsetY + CARD_H - 3, offsetX + CARD_W / 2 - 2, offsetY + CARD_H - 3);
-  doc.setTextColor('#9ca3af');
+  doc.text("CARTE D'ÉLÈVE", ox + CARD_W - 13.5, by - 10.2, { align: 'center' });
+
+  // ─── QR Code ────────────────────────────────────────────────────────────────
+  const qrData = `${e.matricule}|${nom}|${e.section}|${e.classe || ''}`;
+  const qrUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 1, errorCorrectionLevel: 'M' });
+  const qx = px + pw / 2 - 6;
+  const qy = by - 18;
+  const qs = 12;
+  doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
+  // white padding behind QR
+  doc.setFillColor('#ffffff');
+  doc.roundedRect(qx - 0.5, qy - 0.5, qs + 1, qs + 1, 1, 1, 'S');
+  doc.setDrawColor('#cbd5e1');
+  doc.setLineWidth(0.1);
+  doc.roundedRect(qx - 0.5, qy - 0.5, qs + 1, qs + 1, 1, 1, 'S');
+
+  // QR Label
+  doc.setTextColor(MUTED);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(2.8);
+  doc.text('Vérifier', qx + qs / 2, qy + qs + 2.5, { align: 'center' });
+
+  // ─── Signature line ─────────────────────────────────────────────────────────
+  doc.setDrawColor('#94a3b8');
+  doc.setLineWidth(0.15);
+  doc.line(ox + PAD + 5, by - 3.5, ox + CARD_W / 2 + 5, by - 3.5);
+  doc.setTextColor('#94a3b8');
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(3);
-  doc.text('Signature du titulaire', offsetX + CARD_W / 2 - 3, offsetY + CARD_H - 1.2, { align: 'center' });
+  doc.setFontSize(2.8);
+  doc.text('Signature du titulaire', ox + CARD_W / 4, by - 2, { align: 'center' });
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+async function loadImage(url: string): Promise<string | null> {
+  if (url.includes('supabase.co') || url.startsWith('data:')) return url;
+  return null;
 }
