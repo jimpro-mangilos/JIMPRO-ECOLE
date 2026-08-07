@@ -48,6 +48,7 @@ export default function FournituresEleves() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerRunning = useRef(false);
   const scannerDivId = 'qr-scanner-fournitures-main';
 
   useEffect(() => {
@@ -70,10 +71,12 @@ export default function FournituresEleves() {
     if (showScanner) {
       const scanner = new Html5Qrcode(scannerDivId);
       scannerRef.current = scanner;
+      scannerRunning.current = false;
       scanner.start(
         { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         async (decodedText) => {
+          scannerRunning.current = false;
           const match = decodedText.match(/GA[^|]*/i);
           if (match) {
             const matriculeExtrait = match[0].toUpperCase();
@@ -91,10 +94,15 @@ export default function FournituresEleves() {
           }
         },
         () => {}
-      ).catch(() => setScanError("Erreur d'acces camera. Verifiez les permissions."));
+      ).then(() => { scannerRunning.current = true; }).catch(() => setScanError("Erreur d'acces camera. Verifiez les permissions."));
     }
     return () => {
-      if (scannerRef.current) { try { scannerRef.current.stop().catch(() => {}); } catch (_) {} scannerRef.current = null; }
+      const s = scannerRef.current;
+      scannerRef.current = null;
+      if (s && scannerRunning.current) {
+        scannerRunning.current = false;
+        s.stop().catch(() => {});
+      }
     };
   }, [showScanner]);
 
@@ -510,6 +518,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerRunning2 = useRef(false);
   const scannerDivId = 'qr-scanner-fournitures';
 
   useEffect(() => {
@@ -534,17 +543,18 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
     if (showScanner) {
       const scanner = new Html5Qrcode(scannerDivId);
       scannerRef.current = scanner;
+      scannerRunning2.current = false;
       scanner.start(
         { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         (decodedText) => {
+          scannerRunning2.current = false;
           const match = decodedText.match(/GA[^|]*/i);
           if (match) {
             const matriculeExtrait = match[0].toUpperCase();
             setSearch(matriculeExtrait);
             setShowScanner(false);
             setScanError('');
-            // Auto-select if single match
             setTimeout(() => {
               const found = eleves.filter(e => e.matricule.toUpperCase().includes(matriculeExtrait));
               if (found.length === 1) onSelect(found[0]);
@@ -553,15 +563,17 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
             setScanError('Aucun matricule valide (GA...) trouvé dans ce QR code.');
           }
         },
-        () => { /* ignore */ }
-      ).catch(() => {
+        () => {}
+      ).then(() => { scannerRunning2.current = true; }).catch(() => {
         setScanError("Erreur d'accès à la caméra. Vérifiez les permissions.");
       });
     }
     return () => {
-      if (scannerRef.current) {
-        try { scannerRef.current.stop().catch(() => {}); } catch (_) {}
-        scannerRef.current = null;
+      const s = scannerRef.current;
+      scannerRef.current = null;
+      if (s && scannerRunning2.current) {
+        scannerRunning2.current = false;
+        s.stop().catch(() => {});
       }
     };
   }, [showScanner, eleves, onSelect]);

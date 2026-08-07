@@ -51,6 +51,7 @@ export default function PortailParent() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerRunning = useRef(false);
   const scannerDivId = 'qr-scanner-reader';
 
   // QR Scanner lifecycle
@@ -58,18 +59,18 @@ export default function PortailParent() {
     if (showScanner) {
       const scanner = new Html5Qrcode(scannerDivId);
       scannerRef.current = scanner;
+      scannerRunning.current = false;
       scanner.start(
         { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         (decodedText) => {
-          // Extract matricule: text starting with "GA" until "|"
+          scannerRunning.current = false;
           const match = decodedText.match(/GA[^|]*/i);
           if (match) {
             const matriculeExtrait = match[0].toUpperCase();
             setMatricule(matriculeExtrait);
             setShowScanner(false);
             setScanError('');
-            // Auto-trigger search
             setTimeout(() => {
               const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
               handleSearchWithMatricule(matriculeExtrait, fakeEvent);
@@ -78,16 +79,15 @@ export default function PortailParent() {
             setScanError('Aucun matricule valide (GA...) trouve dans ce QR code.');
           }
         },
-        () => { /* ignore scan errors */ }
-      ).catch((err) => {
-        console.error('Scanner error:', err);
-        setScanError('Erreur d\'acces a la camera. Verifiez les permissions.');
-      });
+        () => {}
+      ).then(() => { scannerRunning.current = true; }).catch(() => setScanError('Erreur d\'acces a la camera. Verifiez les permissions.'));
     }
     return () => {
-      if (scannerRef.current) {
-        try { scannerRef.current.stop().catch(() => {}); } catch (_) {}
-        scannerRef.current = null;
+      const s = scannerRef.current;
+      scannerRef.current = null;
+      if (s && scannerRunning.current) {
+        scannerRunning.current = false;
+        s.stop().catch(() => {});
       }
     };
   }, [showScanner]);
