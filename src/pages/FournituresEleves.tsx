@@ -48,10 +48,8 @@ export default function FournituresEleves() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerRunning = useRef(false);
   const scannerSessionId = useRef(0);
   const scannerDivId = 'qr-scanner-fournitures-main';
-  const formClosedRef = useRef(false);
 
   useEffect(() => {
     loadDistributions();
@@ -73,23 +71,22 @@ export default function FournituresEleves() {
     if (showScanner) {
       const scanner = new Html5Qrcode(scannerDivId);
       scannerRef.current = scanner;
-      scannerRunning.current = false;
       const currentSessionId = ++scannerSessionId.current;
       scanner.start(
         { facingMode: 'environment' },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         async (decodedText) => {
-          if (!scannerRunning.current) return;
-          scannerRunning.current = false;
+          // Only process if this callback belongs to the current scan session
+          if (scannerSessionId.current !== currentSessionId) return;
           const match = decodedText.match(/GA[^|]*/i);
           if (match) {
             const matriculeExtrait = match[0].toUpperCase();
             setShowScanner(false);
             setScanError('');
             const { data } = await supabase.from('eleves').select('*').ilike('matricule', matriculeExtrait).maybeSingle();
+            // Double-check session is still current after async fetch
             if (data && scannerSessionId.current === currentSessionId) {
               setSelectedEleve(data);
-              formClosedRef.current = false;
               setShowUniformeForm(true);
             }
           } else {
@@ -97,13 +94,12 @@ export default function FournituresEleves() {
           }
         },
         () => {}
-      ).then(() => { scannerRunning.current = true; }).catch(() => setScanError("Erreur d'acces camera. Verifiez les permissions."));
+      ).catch(() => setScanError("Erreur d'acces camera. Verifiez les permissions."));
     }
     return () => {
       const s = scannerRef.current;
       scannerRef.current = null;
-      if (s && scannerRunning.current) {
-        scannerRunning.current = false;
+      if (s) {
         s.stop().catch(() => {});
       }
     };
@@ -498,7 +494,6 @@ export default function FournituresEleves() {
         <UniformeFormModal
           isOpen={showUniformeForm}
           onClose={() => {
-            formClosedRef.current = true;
             setShowUniformeForm(false);
             setSelectedEleve(null);
           }}
