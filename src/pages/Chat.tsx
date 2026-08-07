@@ -34,7 +34,7 @@ function avatarColor(userId: string): string {
 }
 
 function Avatar({ user, size = 'md' }: { user: { id: string; nom: string; prenom: string }; size?: 'sm' | 'md' | 'lg' }) {
-  const sizeClass = size === 'sm' ? 'w-7 h-7 text-xs' : size === 'lg' ? 'w-12 h-12 text-base' : 'w-9 h-9 text-sm';
+  const sizeClass = size === 'sm' ? 'w-7 h-7 text-xs' : size === 'lg' ? 'w-10 h-10 text-base' : 'w-9 h-9 text-sm';
   return (
     <div className={`${sizeClass} ${avatarColor(user.id)} rounded-full flex items-center justify-center flex-shrink-0 text-white font-semibold`}>
       {user.nom.charAt(0)}{user.prenom.charAt(0)}
@@ -113,7 +113,7 @@ function ConversationItem({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-3 py-3 rounded-xl transition-all flex items-center gap-3 group ${
+      className={`w-full text-left px-3 py-3 rounded-lg transition-all flex items-center gap-3 group ${
         active ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50 border border-transparent'
       }`}
     >
@@ -171,7 +171,7 @@ function NewConversationModal({
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-sm"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b">
@@ -192,7 +192,7 @@ function NewConversationModal({
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <ul className="mt-3 space-y-1 max-h-64 overflow-y-auto">
+          <ul className="mt-2 space-y-1 max-h-64 overflow-y-auto">
             {filtered.length === 0 && (
               <li className="text-center text-sm text-gray-400 py-4">Aucun utilisateur trouvé</li>
             )}
@@ -200,7 +200,7 @@ function NewConversationModal({
               <li key={u.id}>
                 <button
                   onClick={() => onSelect(u.id)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors text-left"
                 >
                   <Avatar user={u} size="sm" />
                   <div>
@@ -329,7 +329,7 @@ export default function Chat() {
   if (!user || !profile) return null;
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+    <div className="h-[calc(100vh-8rem)] flex rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
       {/* Sidebar - conversations list */}
       <aside
         className={`w-80 flex-shrink-0 border-r border-gray-100 flex flex-col bg-white ${
@@ -338,11 +338,11 @@ export default function Chat() {
       >
         {/* Sidebar header */}
         <div className="px-4 pt-5 pb-3 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-bold text-gray-900">Messages</h2>
             <button
               onClick={() => setShowNewConv(true)}
-              className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+              className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
               title="Nouvelle conversation"
             >
               <Plus className="w-4 h-4" />
@@ -387,7 +387,7 @@ export default function Chat() {
       >
         {!activeConversationId ? (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-            <MessageCircle className="w-12 h-12 mb-3 opacity-30" />
+            <MessageCircle className="w-10 h-10 mb-2 opacity-30" />
             <p className="text-sm">Sélectionnez une conversation</p>
           </div>
         ) : (
@@ -422,7 +422,7 @@ export default function Chat() {
 
             {/* Error banner */}
             {error && (
-              <div className="mx-4 mt-3 px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-sm text-red-700">
+              <div className="mx-4 mt-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-700">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span className="flex-1">{error}</span>
                 <button onClick={clearError} className="p-0.5 rounded hover:bg-red-100 transition-colors">
@@ -432,7 +432,7 @@ export default function Chat() {
             )}
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6 bg-gray-50">
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-gray-50">
               {loadingMessages && (
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
@@ -455,7 +455,7 @@ export default function Chat() {
               {messageGroups.map((group) => (
                 <div key={group.day}>
                   {/* Day separator */}
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-3">
                     <div className="flex-1 h-px bg-gray-200" />
                     <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2">{group.day}</span>
                     <div className="flex-1 h-px bg-gray-200" />
@@ -491,7 +491,7 @@ export default function Chat() {
                               </span>
                             )}
                             <div
-                              className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                              className={`px-4 py-2 rounded-xl text-sm leading-relaxed ${
                                 isOwn
                                   ? 'bg-blue-600 text-white rounded-br-sm'
                                   : 'bg-white text-gray-800 border border-gray-200 shadow-sm rounded-bl-sm'
@@ -532,13 +532,13 @@ export default function Chat() {
                   placeholder="Écrivez un message... (Entrée pour envoyer)"
                   rows={1}
                   disabled={sending}
-                  className="flex-1 resize-none px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors disabled:opacity-50 overflow-hidden"
+                  className="flex-1 resize-none px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors disabled:opacity-50 overflow-hidden"
                   style={{ minHeight: '46px', maxHeight: '160px' }}
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || sending}
-                  className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
+                  className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
                   title="Envoyer"
                 >
                   {sending ? (

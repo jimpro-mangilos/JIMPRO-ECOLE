@@ -273,7 +273,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
@@ -297,7 +297,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
             <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="p-4 space-y-5">
             {/* Common fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -305,14 +305,14 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
                   Annee Scolaire
                 </label>
                 {anneeScolaires.length <= 1 ? (
-                  <div className="w-full px-4 py-2.5 border border-gray-200 rounded-md bg-gray-50 text-gray-800 font-medium">
+                  <div className="w-full px-4 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-800 font-medium">
                     {annee || 'Aucune annee active'}
                   </div>
                 ) : (
                   <select
                     value={annee}
                     onChange={(e) => handleAnneeChange(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   >
                     {anneeScolaires.map((a) => (
                       <option key={a.id} value={a.annee}>{a.annee}</option>
@@ -329,14 +329,14 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
                   type="date"
                   value={dateDistribution}
                   onChange={(e) => setDateDistribution(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   required
                 />
               </div>
             </div>
 
             {/* Articles list */}
-            <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 space-y-3">
+            <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Package className="w-4 h-4 text-teal-600" />
                 <h3 className="font-semibold text-teal-900 text-sm">
@@ -366,7 +366,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
                         <select
                           value={item.type_uniforme_id}
                           onChange={(e) => updateItem(index, { type_uniforme_id: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                           disabled={!annee}
                         >
                           <option value="">
@@ -410,7 +410,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
                           min="1"
                           value={item.quantite}
                           onChange={(e) => updateItem(index, { quantite: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                         />
                       </div>
 
@@ -438,7 +438,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
                 type="button"
                 onClick={addItem}
                 disabled={!annee}
-                className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-teal-300 rounded-lg text-sm text-teal-600 hover:border-teal-500 hover:bg-teal-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-teal-300 rounded-lg text-sm text-teal-600 hover:border-teal-500 hover:bg-teal-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
                 Ajouter un article
@@ -454,7 +454,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 placeholder="Ex: Taille L, remplacement..."
               />
             </div>
@@ -484,7 +484,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
                 Annuler
               </button>

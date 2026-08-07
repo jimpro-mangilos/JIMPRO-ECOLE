@@ -132,9 +132,9 @@ export default function PortailProfesseur() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
           <GraduationCap className="w-8 h-8 text-purple-600" />
           Portail Professeur
         </h1>
@@ -143,10 +143,10 @@ export default function PortailProfesseur() {
 
       {success && <div className="p-4 bg-green-50 text-green-800 rounded-lg flex items-center gap-2 text-sm">{success}</div>}
 
-      <div className="flex gap-2 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
         {(['cours', 'devoirs'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
             {tab === 'cours' ? <BookOpen className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
             {tab === 'cours' ? 'Mes Cours' : 'Mes Devoirs'}
           </button>
@@ -154,10 +154,10 @@ export default function PortailProfesseur() {
       </div>
 
       <div className="flex items-center gap-3">
-        <button onClick={openCreate} className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
+        <button onClick={openCreate} className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
           <Plus className="w-4 h-4" /> {activeTab === 'cours' ? 'Nouveau cours' : 'Nouveau devoir'}
         </button>
-        <button onClick={() => { setLoading(true); loadCours(); loadDevoirs(); }} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors">
+        <button onClick={() => { setLoading(true); loadCours(); loadDevoirs(); }} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
           <Loader2 className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
         </button>
       </div>
@@ -167,10 +167,10 @@ export default function PortailProfesseur() {
         : (activeTab === 'cours' ? cours : devoirs).length === 0 ? <p className="text-gray-400 py-12 text-center">Aucun {activeTab === 'cours' ? 'cours' : 'devoir'} pour le moment.</p>
         : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {(activeTab === 'cours' ? cours : devoirs).map(item => (
-            <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+            <div key={item.id} className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 hover:shadow-md transition-shadow">
               <h3 className="font-bold text-gray-900 mb-1">{item.titre}</h3>
-              <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description || '—'}</p>
-              <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+              <p className="text-sm text-gray-500 mb-2 line-clamp-2">{item.description || '—'}</p>
+              <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
                 <Calendar className="w-3.5 h-3.5" />
                 {classLabel(item)}
               </div>
@@ -181,11 +181,11 @@ export default function PortailProfesseur() {
                 <div className="text-xs text-blue-600 mb-2">Cours : {(item as DevoirItem).cours!.titre}</div>
               )}
               {item.fichier_url && (
-                <a href={item.fichier_url} target="_blank" rel="noopener" className="text-xs text-purple-600 hover:underline flex items-center gap-1 mb-3">
+                <a href={item.fichier_url} target="_blank" rel="noopener" className="text-xs text-purple-600 hover:underline flex items-center gap-1 mb-2">
                   <Upload className="w-3 h-3" /> {item.fichier_nom || 'Fichier'}
                 </a>
               )}
-              <div className="text-xs text-gray-400 mb-3">{new Date(item.created_at).toLocaleDateString('fr-FR')}</div>
+              <div className="text-xs text-gray-400 mb-2">{new Date(item.created_at).toLocaleDateString('fr-FR')}</div>
               {isOwner(item.professeur_id) && (
                 <div className="flex gap-2 pt-3 border-t border-gray-50">
                   <button onClick={() => openEdit(item, activeTab === 'devoirs')} className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 font-medium"><Edit className="w-3.5 h-3.5" /> Modifier</button>
@@ -199,38 +199,38 @@ export default function PortailProfesseur() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-2xl">
               <h3 className="text-lg font-bold">{editingId ? 'Modifier' : 'Créer'} {activeTab === 'cours' ? 'un cours' : 'un devoir'}</h3>
               <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-500" /></button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {error && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
-                <input value={form.titre} onChange={e => setForm(p => ({ ...p, titre: e.target.value }))} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" required />
+                <input value={form.titre} onChange={e => setForm(p => ({ ...p, titre: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
+                <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} className="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
-                <select value={form.section_id} onChange={e => setForm(p => ({ ...p, section_id: e.target.value, option_id: '', classe_id: '' }))} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                <select value={form.section_id} onChange={e => setForm(p => ({ ...p, section_id: e.target.value, option_id: '', classe_id: '' }))} className="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
                   <option value="">Toutes les sections</option>
                   {sections.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Option</label>
-                <select value={form.option_id} onChange={e => setForm(p => ({ ...p, option_id: e.target.value, classe_id: '' }))} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                <select value={form.option_id} onChange={e => setForm(p => ({ ...p, option_id: e.target.value, classe_id: '' }))} className="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
                   <option value="">Toutes les options</option>
                   {options.filter(o => !form.section_id || o.section_id === form.section_id).map(o => <option key={o.id} value={o.id}>{o.nom}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Classe</label>
-                <select value={form.classe_id} onChange={e => setForm(p => ({ ...p, classe_id: e.target.value }))} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                <select value={form.classe_id} onChange={e => setForm(p => ({ ...p, classe_id: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
                   <option value="">Toutes les classes</option>
                   {classes.filter(c => {
                     if (!form.option_id) return true;
@@ -242,14 +242,14 @@ export default function PortailProfesseur() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cours lié (optionnel)</label>
-                    <select value={form.cours_id} onChange={e => setForm(p => ({ ...p, cours_id: e.target.value }))} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                    <select value={form.cours_id} onChange={e => setForm(p => ({ ...p, cours_id: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
                       <option value="">Aucun</option>
                       {cours.map(c => <option key={c.id} value={c.id}>{c.titre}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Date limite</label>
-                    <input type="date" value={form.date_limite} onChange={e => setForm(p => ({ ...p, date_limite: e.target.value }))} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
+                    <input type="date" value={form.date_limite} onChange={e => setForm(p => ({ ...p, date_limite: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
                   </div>
                 </>
               )}
@@ -258,10 +258,10 @@ export default function PortailProfesseur() {
                 <input type="file" ref={fileRef} onChange={e => setForm(p => ({ ...p, fichier: e.target.files?.[0] || null }))} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={saving} className="flex-1 bg-purple-600 text-white px-4 py-2.5 rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2">
+                <button type="submit" disabled={saving} className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2">
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />} {editingId ? 'Enregistrer' : 'Créer'}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 border rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Annuler</button>
+                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Annuler</button>
               </div>
             </form>
           </div>

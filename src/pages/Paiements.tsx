@@ -19,7 +19,7 @@ function MotifMultiSelect({ options, selected, onChange }: { options: string[]; 
   const toggle = (v: string) => selected.includes(v) ? onChange(selected.filter(x => x !== v)) : onChange([...selected, v]);
   return (
     <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen(!open)} className={`px-3 py-2 border rounded-md text-sm flex items-center gap-2 min-w-[160px] ${selected.length > 0 ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-gray-300 text-gray-700'}`}>
+      <button type="button" onClick={() => setOpen(!open)} className={`px-2 py-1.5 border rounded-md text-sm flex items-center gap-2 min-w-[160px] ${selected.length > 0 ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-gray-300 text-gray-700'}`}>
         <span className="truncate">{selected.length === 0 ? 'Tous motifs' : `${selected.length} motif${selected.length > 1 ? 's' : ''}`}</span>
         <div className="flex items-center gap-1 ml-auto shrink-0">
           {selected.length > 0 && <span role="button" onClick={e => { e.stopPropagation(); onChange([]); }} className="p-0.5 rounded hover:bg-blue-100"><X className="w-3 h-3 text-blue-500" /></span>}
@@ -28,12 +28,12 @@ function MotifMultiSelect({ options, selected, onChange }: { options: string[]; 
       </button>
       {open && (
         <div className="absolute z-50 mt-1 w-64 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
-          <div className="sticky top-0 bg-white border-b px-3 py-2 flex items-center justify-between">
+          <div className="sticky top-0 bg-white border-b px-2 py-1.5 flex items-center justify-between">
             <button type="button" onClick={() => onChange([...options])} className="text-xs text-blue-600 hover:text-blue-800 font-medium">Tout sélectionner</button>
             <button type="button" onClick={() => onChange([])} className="text-xs text-gray-500 hover:text-gray-700 font-medium">Tout effacer</button>
           </div>
-          {options.length === 0 ? <div className="px-3 py-2 text-sm text-gray-400 italic">Aucun motif</div> : options.map(o => (
-            <button key={o} type="button" onClick={() => toggle(o)} className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-blue-50 ${selected.includes(o) ? 'bg-blue-50/50' : ''}`}>
+          {options.length === 0 ? <div className="px-2 py-1.5 text-sm text-gray-400 italic">Aucun motif</div> : options.map(o => (
+            <button key={o} type="button" onClick={() => toggle(o)} className={`w-full px-2 py-1.5 text-left text-sm flex items-center gap-2 hover:bg-blue-50 ${selected.includes(o) ? 'bg-blue-50/50' : ''}`}>
               <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selected.includes(o) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>{selected.includes(o) && <Check className="w-3 h-3 text-white" />}</span>
               <span className="truncate">{o}</span>
             </button>
@@ -156,18 +156,18 @@ export default function Paiements() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Gestion des Paiements</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Gestion des Paiements</h1>
         {canCreatePaiement() && (
-          <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-md">
+          <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-md">
             <Plus className="w-5 h-5" /> Nouveau Paiement
           </button>
         )}
       </div>
 
       {/* View Mode Tabs */}
-      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl w-fit flex-wrap">
+      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg w-fit flex-wrap">
         {(['compte_actif', 'journalier', 'jour_precedent', 'mois', 'mois_precedent', 'general'] as const).map(mode => (
           <button key={mode} onClick={() => filters.setViewMode(mode)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${filters.viewMode === mode ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
@@ -190,15 +190,15 @@ export default function Paiements() {
           { label: 'Total Annulé', value: `${stats.totalAnnule.toLocaleString('fr-FR')} FC`, icon: XCircle, color: 'rose', bg: 'bg-rose-50', text: 'text-rose-700', iconBg: 'bg-red-50', iconTxt: 'text-rose-600' },
           { label: 'Total Paiements', value: `${stats.total}`, icon: DollarSign, color: 'sky', bg: 'bg-sky-50', text: 'text-sky-700', iconBg: 'bg-blue-50', iconTxt: 'text-sky-600' },
         ].map(card => (
-          <div key={card.label} className={`relative overflow-hidden rounded-xl shadow-sm p-6 border transition-all bg-white border-gray-100`}>
+          <div key={card.label} className={`relative overflow-hidden rounded-lg shadow-sm p-4 border transition-all bg-white border-gray-100`}>
             <div className="absolute top-0 right-0 w-16 h-16 bg-current/5 rounded-full -mr-4 -mt-4" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }} />
             <div className="relative flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{card.label}</p>
-                <p className={`text-2xl font-bold mt-1 ${card.text}`}>{card.value}</p>
+                <p className={`text-xl font-bold mt-1 ${card.text}`}>{card.value}</p>
                 {isDateFilterActive && <p className="text-[10px] text-gray-500 mt-1 font-medium">Période filtrée</p>}
               </div>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${card.iconBg}`}>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${card.iconBg}`}>
                 <card.icon className={`w-6 h-6 ${card.iconTxt}`} />
               </div>
             </div>
@@ -208,7 +208,7 @@ export default function Paiements() {
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-bold">Liste des Paiements</h2>
           <div className="flex items-center gap-2">
             <button onClick={handlePrintReport} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm"><FileDown className="w-4 h-4" /> Rapport</button>
@@ -241,8 +241,8 @@ export default function Paiements() {
             <MultiSelectFilter label="Classe" placeholder="Toutes" options={classes.map((c: any) => c.nom)} selected={filters.filterClasse} onChange={filters.setFilterClasse} />
           </div>
           <div className="flex gap-3">
-            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date début</label><input type="date" value={filters.filterDateDebut} onChange={e => filters.setFilterDateDebut(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date fin</label><input type="date" value={filters.filterDateFin} onChange={e => filters.setFilterDateFin(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date début</label><input type="date" value={filters.filterDateDebut} onChange={e => filters.setFilterDateDebut(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date fin</label><input type="date" value={filters.filterDateFin} onChange={e => filters.setFilterDateFin(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
           </div>
         </div>
       </div>
@@ -266,30 +266,30 @@ export default function Paiements() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead><tr className="border-b border-gray-200 bg-gray-50">
-                      {isItManager() && <th className="px-3 py-2 text-left"><input type="checkbox" checked={groupPaiements.length > 0 && groupPaiements.every(p => selectedIds.has(p.id))} onChange={() => groupPaiements.forEach(p => toggleSelectOne(p.id))} className="rounded" /></th>}
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">N° Reçu</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Élève</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Classe</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Type/Motif</th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th>
-                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                      {isItManager() && <th className="px-2 py-1.5 text-left"><input type="checkbox" checked={groupPaiements.length > 0 && groupPaiements.every(p => selectedIds.has(p.id))} onChange={() => groupPaiements.forEach(p => toggleSelectOne(p.id))} className="rounded" /></th>}
+                      <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">N° Reçu</th>
+                      <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Élève</th>
+                      <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Classe</th>
+                      <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Type/Motif</th>
+                      <th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th>
+                      <th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th>
+                      <th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr></thead>
                     <tbody className="divide-y divide-gray-50">
                       {groupPaiements.map(p => (
                         <tr key={p.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setDetailPaiement(p)}>
-                          {isItManager() && <td className="px-3 py-2"><input type="checkbox" checked={selectedIds.has(p.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(p.id); }} className="rounded" /></td>}
-                          <td className="px-3 py-2 text-sm font-mono text-gray-900">{p.numero_recu}</td>
-                          <td className="px-3 py-2"><p className="text-sm font-medium text-gray-900">{p.nom_eleve} {p.prenom}</p><p className="text-xs text-gray-400">{p.matricule}</p></td>
-                          <td className="px-3 py-2 text-sm text-gray-600">{p.classe}</td>
-                          <td className="px-3 py-2"><p className="text-sm text-gray-800">{p.type_paiement}</p><p className="text-xs text-gray-400">{p.motif_libelle || '—'}</p></td>
-                          <td className="px-3 py-2 text-sm font-semibold text-right text-gray-900">{p.montant_paye.toLocaleString('fr-FR')} FC</td>
-                          <td className="px-3 py-2 text-center">
+                          {isItManager() && <td className="px-2 py-1.5"><input type="checkbox" checked={selectedIds.has(p.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(p.id); }} className="rounded" /></td>}
+                          <td className="px-2 py-1.5 text-sm font-mono text-gray-900">{p.numero_recu}</td>
+                          <td className="px-2 py-1.5"><p className="text-sm font-medium text-gray-900">{p.nom_eleve} {p.prenom}</p><p className="text-xs text-gray-400">{p.matricule}</p></td>
+                          <td className="px-2 py-1.5 text-sm text-gray-600">{p.classe}</td>
+                          <td className="px-2 py-1.5"><p className="text-sm text-gray-800">{p.type_paiement}</p><p className="text-xs text-gray-400">{p.motif_libelle || '—'}</p></td>
+                          <td className="px-2 py-1.5 text-sm font-semibold text-right text-gray-900">{p.montant_paye.toLocaleString('fr-FR')} FC</td>
+                          <td className="px-2 py-1.5 text-center">
                             {getStatut(p) === 'encaisse' ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full"><CheckCircle className="w-3 h-3" /> Encaissé</span>
                               : getStatut(p) === 'annule' ? <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full"><XCircle className="w-3 h-3" /> Annulé</span>
                                 : <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full"><Clock className="w-3 h-3" /> En attente</span>}
                           </td>
-                          <td className="px-3 py-2 text-right">
+                          <td className="px-2 py-1.5 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <button onClick={(e) => { e.stopPropagation(); handlePrintRecu(p); }} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600" title="Reçu"><Printer className="w-3.5 h-3.5" /></button>
                               {(canCreatePaiement() || isItManager()) && getStatut(p) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openEditModal(p); }} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>}
@@ -316,10 +316,10 @@ export default function Paiements() {
       {/* Annulation Modal */}
       {annulationModal.open && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closeAnnulation}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Annuler le paiement</h2><button onClick={closeAnnulation} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
             <div className="p-6"><label className="block text-sm font-medium text-gray-700 mb-2">Motif d'annulation *</label>
-              <textarea value={annulationModal.motif} onChange={e => setAnnulationModal(p => ({ ...p, motif: e.target.value }))} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500" placeholder="Raison de l'annulation..." />
+              <textarea value={annulationModal.motif} onChange={e => setAnnulationModal(p => ({ ...p, motif: e.target.value }))} rows={3} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500" placeholder="Raison de l'annulation..." />
             </div>
             <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
               <button onClick={closeAnnulation} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
@@ -332,15 +332,15 @@ export default function Paiements() {
       {/* Edit Modal */}
       {editModal.open && editModal.paiement && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditModal({ open: false, paiement: null, loading: false })}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Modifier le paiement</h2><button onClick={() => setEditModal({ open: false, paiement: null, loading: false })} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant *</label><input type="number" value={editFormData.montant_paye} onChange={e => setEditFormData(p => ({ ...p, montant_paye: Number(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant en lettres</label><input type="text" value={editFormData.montant_en_lettre} onChange={e => setEditFormData(p => ({ ...p, montant_en_lettre: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Motif</label><input type="text" value={editFormData.motif_libelle} onChange={e => setEditFormData(p => ({ ...p, motif_libelle: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Mode</label><input type="text" value={editFormData.mode_paiement} onChange={e => setEditFormData(p => ({ ...p, mode_paiement: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Date</label><input type="date" value={editFormData.date_paiement} onChange={e => setEditFormData(p => ({ ...p, date_paiement: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Année scolaire</label><input type="text" value={editFormData.annee_scolaire} onChange={e => setEditFormData(p => ({ ...p, annee_scolaire: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant *</label><input type="number" value={editFormData.montant_paye} onChange={e => setEditFormData(p => ({ ...p, montant_paye: Number(e.target.value) }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant en lettres</label><input type="text" value={editFormData.montant_en_lettre} onChange={e => setEditFormData(p => ({ ...p, montant_en_lettre: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Motif</label><input type="text" value={editFormData.motif_libelle} onChange={e => setEditFormData(p => ({ ...p, motif_libelle: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Mode</label><input type="text" value={editFormData.mode_paiement} onChange={e => setEditFormData(p => ({ ...p, mode_paiement: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Date</label><input type="date" value={editFormData.date_paiement} onChange={e => setEditFormData(p => ({ ...p, date_paiement: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Année scolaire</label><input type="text" value={editFormData.annee_scolaire} onChange={e => setEditFormData(p => ({ ...p, annee_scolaire: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
             </div>
             <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
               <button onClick={() => setEditModal({ open: false, paiement: null, loading: false })} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
@@ -353,9 +353,9 @@ export default function Paiements() {
       {/* Detail Modal */}
       {detailPaiement && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDetailPaiement(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Détails du paiement</h2><button onClick={() => setDetailPaiement(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
-            <div className="p-6 space-y-3 text-sm">
+            <div className="p-4 space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-gray-500">N° Reçu</span><p className="font-medium text-gray-900">{detailPaiement.numero_recu}</p></div>
                 <div><span className="text-gray-500">Statut</span><p className="font-medium">{getStatut(detailPaiement) === 'encaisse' ? <span className="text-green-600">Encaissé</span> : getStatut(detailPaiement) === 'annule' ? <span className="text-red-600">Annulé</span> : <span className="text-amber-600">En attente</span>}</p></div>

@@ -59,7 +59,7 @@ export function PieChart({ data, title, size = 160 }: PieChartProps) {
   return (
     <div className="w-full">
       {title && (
-        <h4 className="text-sm font-semibold text-gray-700 mb-3">{title}</h4>
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">{title}</h4>
       )}
       <div className="flex items-center gap-4">
         <div className="relative flex-shrink-0">

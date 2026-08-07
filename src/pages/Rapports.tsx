@@ -33,31 +33,31 @@ export default function Rapports() {
   const loadComptables = async () => { const { data } = await supabase.from('compte_courant').select('*'); setComptables(data || []); };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Rapports</h1>
-      {message && <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}><FileText className="w-4 h-4" />{message.text}</div>}
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold text-gray-900">Rapports</h1>
+      {message && <div className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}><FileText className="w-4 h-4" />{message.text}</div>}
 
       {/* Quick Reports */}
-      <section className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-bold mb-4" onClick={() => setExpandedSection(expandedSection === 'quick' ? null : 'quick')} style={{ cursor: 'pointer' }}>Rapports Rapides</h2>
+      <section className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-lg font-bold mb-3" onClick={() => setExpandedSection(expandedSection === 'quick' ? null : 'quick')} style={{ cursor: 'pointer' }}>Rapports Rapides</h2>
         {expandedSection === 'quick' && <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button onClick={() => generate(generateElevesReport, [])} disabled={loading} className="p-4 border rounded-xl text-left hover:bg-blue-50 transition-colors"><FileText className="w-5 h-5 text-blue-600 mb-2" /><p className="font-medium">Liste Élèves</p></button>
-          <button onClick={() => generate(generateFinancesReport, [])} disabled={loading} className="p-4 border rounded-xl text-left hover:bg-green-50 transition-colors"><FileText className="w-5 h-5 text-green-600 mb-2" /><p className="font-medium">Finances</p></button>
-          <button onClick={() => generate(generateFournituresElevesReport, [])} disabled={loading} className="p-4 border rounded-xl text-left hover:bg-purple-50 transition-colors"><FileText className="w-5 h-5 text-purple-600 mb-2" /><p className="font-medium">Fournitures Élèves</p></button>
+          <button onClick={() => generate(generateElevesReport, [])} disabled={loading} className="p-4 border rounded-lg text-left hover:bg-blue-50 transition-colors"><FileText className="w-5 h-5 text-blue-600 mb-2" /><p className="font-medium">Liste Élèves</p></button>
+          <button onClick={() => generate(generateFinancesReport, [])} disabled={loading} className="p-4 border rounded-lg text-left hover:bg-green-50 transition-colors"><FileText className="w-5 h-5 text-green-600 mb-2" /><p className="font-medium">Finances</p></button>
+          <button onClick={() => generate(generateFournituresElevesReport, [])} disabled={loading} className="p-4 border rounded-lg text-left hover:bg-purple-50 transition-colors"><FileText className="w-5 h-5 text-purple-600 mb-2" /><p className="font-medium">Fournitures Élèves</p></button>
         </div>}
       </section>
 
       {/* Élèves Report */}
-      <section className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-bold mb-4" onClick={() => setExpandedSection(expandedSection === 'eleves' ? null : 'eleves')} style={{ cursor: 'pointer' }}>Rapport Élèves</h2>
+      <section className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-lg font-bold mb-3" onClick={() => setExpandedSection(expandedSection === 'eleves' ? null : 'eleves')} style={{ cursor: 'pointer' }}>Rapport Élèves</h2>
         {expandedSection === 'eleves' && <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <div><label className="text-xs font-medium">Date début</label><input type="date" value={ef.startDate} onChange={e => setEf(p => ({ ...p, startDate: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-            <div><label className="text-xs font-medium">Date fin</label><input type="date" value={ef.endDate} onChange={e => setEf(p => ({ ...p, endDate: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-            <div><label className="text-xs font-medium">Montant min</label><input type="number" value={ef.montantMin} onChange={e => setEf(p => ({ ...p, montantMin: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-            <div><label className="text-xs font-medium">Montant max</label><input type="number" value={ef.montantMax} onChange={e => setEf(p => ({ ...p, montantMax: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            <div><label className="text-xs font-medium">Date début</label><input type="date" value={ef.startDate} onChange={e => setEf(p => ({ ...p, startDate: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg text-sm" /></div>
+            <div><label className="text-xs font-medium">Date fin</label><input type="date" value={ef.endDate} onChange={e => setEf(p => ({ ...p, endDate: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg text-sm" /></div>
+            <div><label className="text-xs font-medium">Montant min</label><input type="number" value={ef.montantMin} onChange={e => setEf(p => ({ ...p, montantMin: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg text-sm" /></div>
+            <div><label className="text-xs font-medium">Montant max</label><input type="number" value={ef.montantMax} onChange={e => setEf(p => ({ ...p, montantMax: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg text-sm" /></div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             <MultiSelectFilter label="Section" placeholder="Toutes" options={sections} selected={ef.section} onChange={v => setEf(p => ({ ...p, section: v }))} />
             <MultiSelectFilter label="Option" placeholder="Toutes" options={filteredOptions} selected={ef.option} onChange={v => setEf(p => ({ ...p, option: v }))} />
             <MultiSelectFilter label="Classe" placeholder="Toutes" options={filteredClasses} selected={ef.classe} onChange={v => setEf(p => ({ ...p, classe: v }))} />
@@ -71,12 +71,12 @@ export default function Rapports() {
       </section>
 
       {/* Comptable Report */}
-      <section className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-bold mb-4" onClick={() => { setExpandedSection(expandedSection === 'comptable' ? null : 'comptable'); if (expandedSection !== 'comptable') loadComptables(); }} style={{ cursor: 'pointer' }}>Rapport Comptable</h2>
+      <section className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-lg font-bold mb-3" onClick={() => { setExpandedSection(expandedSection === 'comptable' ? null : 'comptable'); if (expandedSection !== 'comptable') loadComptables(); }} style={{ cursor: 'pointer' }}>Rapport Comptable</h2>
         {expandedSection === 'comptable' && <>
-          <div className="flex gap-3 mb-4">
-            <div className="flex-1"><label className="text-xs font-medium">Date début</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-            <div className="flex-1"><label className="text-xs font-medium">Date fin</label><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
+          <div className="flex gap-3 mb-3">
+            <div className="flex-1"><label className="text-xs font-medium">Date début</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-2 py-1.5 border rounded-lg text-sm" /></div>
+            <div className="flex-1"><label className="text-xs font-medium">Date fin</label><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-2 py-1.5 border rounded-lg text-sm" /></div>
           </div>
           <div className="flex gap-2">
             <button onClick={() => generate(generateRapportComparatifComptables, comptables, startDate ? new Date(startDate) : undefined, endDate ? new Date(endDate) : undefined)} disabled={loading} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}Comparatif</button>

@@ -39,7 +39,7 @@ export default function ProtectedRoute({
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Erreur Code 0x000000477833</h2>
+          <h2 className="text-xl font-bold text-red-600 mb-3">Erreur Code 0x000000477833</h2>
           <p className="text-gray-600">
             oups! Votre licence a éxpiré. Veuillez contacter l'administrateur.
           </p>

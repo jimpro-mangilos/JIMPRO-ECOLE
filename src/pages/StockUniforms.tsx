@@ -338,11 +338,11 @@ function StockUniforms() {
   ])).sort((a, b) => b.localeCompare(a));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <Archive className="w-8 h-8 text-teal-600" />
             Stock des Uniformes
           </h1>
@@ -359,7 +359,7 @@ function StockUniforms() {
           {canWrite && (
             <button
               onClick={openApprovisionner}
-              className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2.5 rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-medium"
+              className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2 rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-medium"
             >
               <Plus className="w-5 h-5" />
               Approvisionner
@@ -370,38 +370,38 @@ function StockUniforms() {
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
           <div className="flex items-center gap-4">
-            <div className="bg-teal-100 p-3 rounded-xl">
+            <div className="bg-teal-100 p-3 rounded-lg">
               <Package className="w-6 h-6 text-teal-600" />
             </div>
             <div>
               <p className="text-sm text-gray-500">Articles en stock</p>
-              <p className="text-2xl font-bold text-gray-900">{totalArticles}</p>
+              <p className="text-xl font-bold text-gray-900">{totalArticles}</p>
               <p className="text-xs text-gray-400">{filteredStocks.length} références</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
           <div className="flex items-center gap-4">
-            <div className="bg-orange-100 p-3 rounded-xl">
+            <div className="bg-orange-100 p-3 rounded-lg">
               <AlertTriangle className="w-6 h-6 text-orange-500" />
             </div>
             <div>
               <p className="text-sm text-gray-500">Alertes stock faible</p>
-              <p className="text-2xl font-bold text-orange-600">{alertes}</p>
+              <p className="text-xl font-bold text-orange-600">{alertes}</p>
               <p className="text-xs text-gray-400">en dessous du seuil</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
           <div className="flex items-center gap-4">
-            <div className="bg-red-100 p-3 rounded-xl">
+            <div className="bg-red-100 p-3 rounded-lg">
               <XCircle className="w-6 h-6 text-red-500" />
             </div>
             <div>
               <p className="text-sm text-gray-500">Ruptures de stock</p>
-              <p className="text-2xl font-bold text-red-600">{ruptures}</p>
+              <p className="text-xl font-bold text-red-600">{ruptures}</p>
               <p className="text-xs text-gray-400">distribution bloquée</p>
             </div>
           </div>
@@ -410,7 +410,7 @@ function StockUniforms() {
 
       {/* Form panel */}
       {formMode && (
-        <div className="bg-white rounded-xl shadow-md border border-teal-200 p-6">
+        <div className="bg-white rounded-lg shadow-md border border-teal-200 p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="bg-teal-100 p-2 rounded-lg">
               {formMode === 'approvisionner' ? (
@@ -425,13 +425,13 @@ function StockUniforms() {
           </div>
 
           {formError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
+            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {formError}
             </div>
           )}
           {formSuccess && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700 text-sm">
+            <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700 text-sm">
               <CheckCircle className="w-4 h-4 flex-shrink-0" />
               {formSuccess}
             </div>
@@ -445,7 +445,7 @@ function StockUniforms() {
                   <select
                     value={formData.type_uniforme_id}
                     onChange={(e) => setFormData({ ...formData, type_uniforme_id: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
                     required
                   >
                     <option value="">Sélectionner un article</option>
@@ -459,7 +459,7 @@ function StockUniforms() {
                   <select
                     value={formData.section}
                     onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
                     required
                   >
                     <option value="">Sélectionner une section</option>
@@ -474,7 +474,7 @@ function StockUniforms() {
                     type="text"
                     value={formData.annee_scolaire}
                     onChange={(e) => setFormData({ ...formData, annee_scolaire: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     placeholder="Ex: 2025-2026"
                     list="annees-stock-list"
                     required
@@ -495,7 +495,7 @@ function StockUniforms() {
                 min="0"
                 value={formData.quantite}
                 onChange={(e) => setFormData({ ...formData, quantite: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 placeholder="Ex: 50"
                 required
               />
@@ -513,7 +513,7 @@ function StockUniforms() {
                 min="0"
                 value={formData.seuil_alerte}
                 onChange={(e) => setFormData({ ...formData, seuil_alerte: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 placeholder="Ex: 5"
               />
               <p className="text-xs text-gray-500 mt-1">Alerte affichée quand le stock atteint ce niveau</p>
@@ -525,7 +525,7 @@ function StockUniforms() {
                 type="text"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 placeholder="Ex: Livraison fournisseur X, correction inventaire..."
               />
             </div>
@@ -534,7 +534,7 @@ function StockUniforms() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="bg-teal-600 text-white px-6 py-2.5 rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {submitting ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -548,7 +548,7 @@ function StockUniforms() {
               <button
                 type="button"
                 onClick={cancelForm}
-                className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
                 Annuler
               </button>
@@ -558,9 +558,9 @@ function StockUniforms() {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+      <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-2 py-1.5">
             <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <input
               type="text"
@@ -573,7 +573,7 @@ function StockUniforms() {
           <select
             value={filterAnnee}
             onChange={(e) => setFilterAnnee(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+            className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
           >
             <option value="">Toutes les années</option>
             {allAnnees.map(a => (
@@ -583,7 +583,7 @@ function StockUniforms() {
           <select
             value={filterSection}
             onChange={(e) => setFilterSection(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+            className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
           >
             <option value="">Toutes les sections</option>
             {sections.map(sec => (
@@ -593,7 +593,7 @@ function StockUniforms() {
           <select
             value={filterArticle}
             onChange={(e) => setFilterArticle(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+            className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
           >
             <option value="">Tous les articles</option>
             {typesUniforme.map(t => (
@@ -604,7 +604,7 @@ function StockUniforms() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         {isItManager() && selectedIds.size > 0 && (
           <div className="px-5 py-3 bg-red-50 border-b border-red-200 flex items-center justify-between">
             <span className="text-sm font-medium text-red-700">
@@ -622,12 +622,12 @@ function StockUniforms() {
         )}
         {loading ? (
           <div className="py-16 text-center text-gray-500">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-teal-500" />
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-teal-500" />
             Chargement du stock...
           </div>
         ) : filteredStocks.length === 0 ? (
           <div className="py-16 text-center text-gray-500">
-            <Archive className="w-12 h-12 mx-auto mb-3 opacity-20 text-teal-600" />
+            <Archive className="w-10 h-10 mx-auto mb-2 opacity-20 text-teal-600" />
             <p className="font-medium">Aucun stock configuré</p>
             {canWrite && (
               <p className="text-sm text-gray-400 mt-1">
@@ -703,7 +703,7 @@ function StockUniforms() {
                     </td>
                     <td className="px-5 py-4 text-sm text-gray-700">{stock.annee_scolaire}</td>
                     <td className="px-5 py-4">
-                      <span className={`text-2xl font-bold ${
+                      <span className={`text-xl font-bold ${
                         stock.quantite_stock === 0 ? 'text-red-600' :
                         stock.seuil_alerte != null && stock.quantite_stock <= stock.seuil_alerte ? 'text-orange-600' :
                         'text-gray-900'

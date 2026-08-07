@@ -235,21 +235,21 @@ export default function MenuConfigTab() {
   return (
     <div>
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+        <div className="mb-3 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
           <p className="text-red-800">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+        <div className="mb-3 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
           <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
           <p className="text-green-800">{success}</p>
         </div>
       )}
 
       {/* Role selector */}
-      <div className="mb-6">
+      <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Selectionner un role a configurer
         </label>
@@ -273,17 +273,17 @@ export default function MenuConfigTab() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Menu items list */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Elements du menu</h3>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleReset}
                   disabled={saving}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
                   <RotateCcw className="w-4 h-4" />
                   Reinitialiser
@@ -322,7 +322,7 @@ export default function MenuConfigTab() {
                       onDragOver={(e) => handleDragOver(e, index)}
                       onDrop={() => handleDrop(index)}
                       onDragEnd={handleDragEnd}
-                      className={`flex items-center gap-4 px-6 py-3 transition-all ${
+                      className={`flex items-center gap-4 px-4 py-2 transition-all ${
                         isDragging ? 'opacity-50 bg-blue-50' : ''
                       } ${isDragOver ? 'border-t-2 border-blue-500' : ''} ${
                         !item.is_visible ? 'bg-gray-50' : 'hover:bg-gray-50'
@@ -391,7 +391,7 @@ export default function MenuConfigTab() {
         {/* Preview sidebar */}
         <div className="lg:col-span-1">
           <div className="sticky top-24">
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
                 <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                   Apercu du menu
@@ -412,7 +412,7 @@ export default function MenuConfigTab() {
                       return (
                         <li
                           key={item.id}
-                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
+                          className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm transition-all ${
                             idx === 0
                               ? 'bg-white text-blue-900 shadow-sm'
                               : 'text-blue-100'
@@ -436,7 +436,7 @@ export default function MenuConfigTab() {
       </div>
 
       {/* Info box for non-configurable roles */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+      <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
         <p className="text-sm text-blue-800">
           <strong>Note :</strong> Les roles "IT Manager" et "Revoque" ne sont pas configurables.
           L'IT Manager voit toujours tous les menus. Le role Revoque n'a acces a aucun menu.

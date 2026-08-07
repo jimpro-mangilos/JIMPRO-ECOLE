@@ -89,12 +89,12 @@ export default function Profile() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="max-w-4xl mx-auto p-4 space-y-4">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-blue-600 text-3xl font-bold">
+              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-blue-600 text-2xl font-bold">
                 {profile.nom.charAt(0)}{profile.prenom.charAt(0)}
               </div>
               <button className="absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 p-2 rounded-full transition-colors">
@@ -102,7 +102,7 @@ export default function Profile() {
               </button>
             </div>
             <div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-xl font-bold">
                 {profile.nom} {profile.prenom}
               </h1>
               <p className="text-blue-100 mt-1">{profile.email}</p>
@@ -115,29 +115,29 @@ export default function Profile() {
 
         <div className="p-6">
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+            <div className="mb-3 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-red-600" />
               <p className="text-red-800">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+            <div className="mb-3 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-green-600" />
               <p className="text-green-800">{success}</p>
             </div>
           )}
 
           {isReadOnly() && (
-            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
+            <div className="mb-3 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
               <p className="text-amber-800 text-sm">En tant que coordinateur, votre profil est en lecture seule. Contactez l'administrateur pour toute modification.</p>
             </div>
           )}
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-semibold text-gray-800">Informations personnelles</h2>
                 {!editing && !isReadOnly() && (
                   <button
@@ -202,7 +202,7 @@ export default function Profile() {
                   </div>
                 </form>
               ) : (
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-gray-600">Nom</label>
                     <p className="text-lg font-medium text-gray-900">{profile.nom}</p>
@@ -224,7 +224,7 @@ export default function Profile() {
             </div>
 
             <div className="border-t pt-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-semibold text-gray-800">Sécurité</h2>
                 {!changingPassword && !isReadOnly() && (
                   <button

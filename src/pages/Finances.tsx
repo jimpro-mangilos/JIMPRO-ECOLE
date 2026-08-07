@@ -57,14 +57,14 @@ export default function Finances() {
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Gestion Financière</h1>
-        {canCreer() && <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors shadow-md"><Plus className="w-5 h-5" /> Nouvelle Transaction</button>}
+        <h1 className="text-2xl font-bold text-gray-900">Gestion Financière</h1>
+        {canCreer() && <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-md"><Plus className="w-5 h-5" /> Nouvelle Transaction</button>}
       </div>
 
       {/* View Mode Tabs */}
-      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl w-fit flex-wrap">
+      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg w-fit flex-wrap">
         {(['compte_actif', 'journalier', 'jour_precedent', 'mois', 'mois_precedent', 'general'] as const).map(mode => (
           <button key={mode} onClick={() => filters.setViewMode(mode)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${filters.viewMode === mode ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
             {mode === 'compte_actif' && <User className="w-4 h-4" />}{mode === 'journalier' && <Calendar className="w-4 h-4" />}{mode === 'jour_precedent' && <CalendarDays className="w-4 h-4" />}{mode === 'mois' && <Calendar className="w-4 h-4" />}{mode === 'mois_precedent' && <CalendarDays className="w-4 h-4" />}{mode === 'general' && <LayoutDashboard className="w-4 h-4" />}
@@ -78,19 +78,19 @@ export default function Finances() {
         <div className="lg:col-span-2 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[{ label: 'Recettes', value: `${stats.totalRecettes.toLocaleString('fr-FR')} FC`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' }, { label: 'Dépenses', value: `${stats.totalDepenses.toLocaleString('fr-FR')} FC`, icon: TrendingDown, color: 'text-red-600', bg: 'bg-red-50' }, { label: 'Solde', value: `${stats.solde.toLocaleString('fr-FR')} FC`, icon: stats.solde >= 0 ? CheckCircle : Clock, color: stats.solde >= 0 ? 'text-blue-600' : 'text-amber-600', bg: stats.solde >= 0 ? 'bg-blue-50' : 'bg-amber-50' }, { label: 'Transactions', value: String(stats.count), icon: Filter, color: 'text-purple-600', bg: 'bg-purple-50' }].map(c => (
-              <div key={c.label} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+              <div key={c.label} className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
                 <div className="flex items-center justify-between mb-2"><span className="text-xs font-medium text-gray-500 uppercase">{c.label}</span><div className={`${c.bg} p-2 rounded-lg`}><c.icon className={`w-4 h-4 ${c.color}`} /></div></div>
                 <p className="text-lg font-bold text-gray-900">{c.value}</p>
               </div>
             ))}
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100"><h3 className="text-sm font-semibold text-gray-700 mb-3">Répartition</h3><PieChart data={pieData} /></div>
+        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100"><h3 className="text-sm font-semibold text-gray-700 mb-2">Répartition</h3><PieChart data={pieData} /></div>
       </div>
 
       {/* Filters + Table */}
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-bold">Transactions</h2>
           <div className="flex items-center gap-2">
             <button onClick={() => generateFinancesReport(transactions as any)} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm"><FileDown className="w-4 h-4" /> Rapport</button>
@@ -98,20 +98,20 @@ export default function Finances() {
           </div>
         </div>
 
-        <div className="space-y-3 mb-4">
+        <div className="space-y-3 mb-3">
           <div className="flex items-center gap-2"><Search className="w-4 h-4 text-gray-400" /><input type="text" placeholder="Rechercher..." value={filters.searchTerm} onChange={e => filters.setSearchTerm(e.target.value)} className="flex-1 p-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" /></div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <select value={filters.filterStatut} onChange={e => filters.setFilterStatut(e.target.value as any)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="all">Tous statuts</option>{Object.entries(STATUT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-            <select value={filters.filterComptable} onChange={e => filters.setFilterComptable(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="all">Tous intervenants</option>{comptableOptions.map(n => <option key={n} value={n}>{n}</option>)}</select>
-            <select value={filters.filterYear} onChange={e => filters.setFilterYear(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="all">Toutes années</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+            <select value={filters.filterStatut} onChange={e => filters.setFilterStatut(e.target.value as any)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="all">Tous statuts</option>{Object.entries(STATUT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+            <select value={filters.filterComptable} onChange={e => filters.setFilterComptable(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="all">Tous intervenants</option>{comptableOptions.map(n => <option key={n} value={n}>{n}</option>)}</select>
+            <select value={filters.filterYear} onChange={e => filters.setFilterYear(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="all">Toutes années</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
             <div className="flex items-center gap-2">
               <button onClick={() => filters.setSortDir(d => d === 'asc' ? 'desc' : 'asc')} className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">{filters.sortDir === 'asc' ? <ChevronUp className="w-4 h-4 text-gray-600" /> : <ChevronDown className="w-4 h-4 text-gray-600" />}</button>
-              <select value={filters.sortField} onChange={e => filters.setSortField(e.target.value as any)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="date_transaction">Date</option><option value="montant_chiffre">Montant</option></select>
+              <select value={filters.sortField} onChange={e => filters.setSortField(e.target.value as any)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="date_transaction">Date</option><option value="montant_chiffre">Montant</option></select>
             </div>
           </div>
           <div className="flex gap-3">
-            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date début</label><input type="date" value={filters.filterDateDebut} onChange={e => filters.setFilterDateDebut(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date fin</label><input type="date" value={filters.filterDateFin} onChange={e => filters.setFilterDateFin(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date début</label><input type="date" value={filters.filterDateDebut} onChange={e => filters.setFilterDateDebut(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date fin</label><input type="date" value={filters.filterDateFin} onChange={e => filters.setFilterDateFin(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
           </div>
         </div>
 
@@ -125,19 +125,19 @@ export default function Finances() {
                 <span className={`text-sm font-semibold ${groupTotal(group) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{groupTotal(group) >= 0 ? '+' : ''}{groupTotal(group).toLocaleString('fr-FR')} FC</span>
               </button>
               {isExpanded && <table className="w-full"><thead><tr className="border-b border-gray-200 bg-gray-50">
-                {canSupprimer() && <th className="px-3 py-2"><input type="checkbox" checked={group.length > 0 && group.every(t => selectedIds.has(t.id))} onChange={() => toggleSelectAll(group.map(t => t.id))} className="rounded" /></th>}
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Bénéficiaire</th><th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Libellé</th><th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th><th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Type</th><th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th><th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Signataires</th><th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                {canSupprimer() && <th className="px-2 py-1.5"><input type="checkbox" checked={group.length > 0 && group.every(t => selectedIds.has(t.id))} onChange={() => toggleSelectAll(group.map(t => t.id))} className="rounded" /></th>}
+                <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Bénéficiaire</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Libellé</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Type</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Signataires</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
               </tr></thead><tbody className="divide-y divide-gray-50">
                 {group.map(t => (
                   <tr key={t.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setDetailTransaction(t)}>
-                    {canSupprimer() && <td className="px-3 py-2"><input type="checkbox" checked={selectedIds.has(t.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(t.id); }} className="rounded" /></td>}
-                    <td className="px-3 py-2"><p className="text-sm font-medium text-gray-900">{t.beneficiaire}</p><p className="text-xs text-gray-400">{t.telephone}</p></td>
-                    <td className="px-3 py-2 text-sm text-gray-600">{t.libelle}</td>
-                    <td className="px-3 py-2 text-sm font-semibold text-right"><span className={t.type_operation === 'recette' ? 'text-emerald-600' : 'text-red-600'}>{t.type_operation === 'recette' ? '+' : '-'}{t.montant_chiffre.toLocaleString('fr-FR')} FC</span></td>
-                    <td className="px-3 py-2 text-center">{t.type_operation === 'recette' ? <ArrowUpCircle className="w-4 h-4 text-emerald-500 mx-auto" /> : <ArrowDownCircle className="w-4 h-4 text-red-500 mx-auto" />}</td>
-                    <td className="px-3 py-2 text-center"><span className={`inline-flex text-xs font-medium px-2 py-1 rounded-full ${STATUT_COLORS[t.statut || 'en_attente']}`}>{STATUT_LABELS[t.statut || 'en_attente']}</span></td>
-                    <td className="px-3 py-2"><div className="text-xs space-y-0.5"><span className="text-gray-500">Ord: </span><span className="text-gray-700">{t.nom_comptable || '—'}</span>{t.nom_approbateur && <><br /><span className="text-blue-500">Appr: </span><span className="text-blue-700">{t.nom_approbateur}</span></>}{((t as any).nom_encaisseur) && <><br /><span className="text-emerald-500">{t.type_operation === 'recette' ? 'Enc:' : 'Déc:'} </span><span className="text-emerald-700">{(t as any).nom_encaisseur}</span></>}</div></td>
-                    <td className="px-3 py-2 text-right">
+                    {canSupprimer() && <td className="px-2 py-1.5"><input type="checkbox" checked={selectedIds.has(t.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(t.id); }} className="rounded" /></td>}
+                    <td className="px-2 py-1.5"><p className="text-sm font-medium text-gray-900">{t.beneficiaire}</p><p className="text-xs text-gray-400">{t.telephone}</p></td>
+                    <td className="px-2 py-1.5 text-sm text-gray-600">{t.libelle}</td>
+                    <td className="px-2 py-1.5 text-sm font-semibold text-right"><span className={t.type_operation === 'recette' ? 'text-emerald-600' : 'text-red-600'}>{t.type_operation === 'recette' ? '+' : '-'}{t.montant_chiffre.toLocaleString('fr-FR')} FC</span></td>
+                    <td className="px-2 py-1.5 text-center">{t.type_operation === 'recette' ? <ArrowUpCircle className="w-4 h-4 text-emerald-500 mx-auto" /> : <ArrowDownCircle className="w-4 h-4 text-red-500 mx-auto" />}</td>
+                    <td className="px-2 py-1.5 text-center"><span className={`inline-flex text-xs font-medium px-2 py-1 rounded-full ${STATUT_COLORS[t.statut || 'en_attente']}`}>{STATUT_LABELS[t.statut || 'en_attente']}</span></td>
+                    <td className="px-2 py-1.5"><div className="text-xs space-y-0.5"><span className="text-gray-500">Ord: </span><span className="text-gray-700">{t.nom_comptable || '—'}</span>{t.nom_approbateur && <><br /><span className="text-blue-500">Appr: </span><span className="text-blue-700">{t.nom_approbateur}</span></>}{((t as any).nom_encaisseur) && <><br /><span className="text-emerald-500">{t.type_operation === 'recette' ? 'Enc:' : 'Déc:'} </span><span className="text-emerald-700">{(t as any).nom_encaisseur}</span></>}</div></td>
+                    <td className="px-2 py-1.5 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => setDetailTransaction(t)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600" title="Détails"><ChevronRight className="w-3.5 h-3.5" /></button>
                         {canModifier() && <button onClick={(e) => { e.stopPropagation(); openEditModal(t); }} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>}
@@ -158,19 +158,19 @@ export default function Finances() {
       {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <form onSubmit={handleCreate}>
               <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Nouvelle Transaction</h2><button type="button" onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
-              <div className="p-6 space-y-4">
+              <div className="p-4 space-y-4">
                 <div className="flex gap-2">
                   <button type="button" onClick={() => { setActiveTab('recette'); setFormData(p => ({ ...p, type_operation: 'recette' })); }} className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === 'recette' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>Recette</button>
                   <button type="button" onClick={() => { setActiveTab('depense'); setFormData(p => ({ ...p, type_operation: 'dépense' })); }} className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === 'depense' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>Dépense</button>
                 </div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant *</label><input type="number" value={formData.montant_chiffre || ''} onChange={e => setFormData(p => ({ ...p, montant_chiffre: Number(e.target.value) }))} onBlur={handleMontantBlur} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant en lettres</label><input type="text" value={formData.montant_lettre} onChange={e => setFormData(p => ({ ...p, montant_lettre: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Bénéficiaire *</label><input type="text" value={formData.beneficiaire} onChange={e => setFormData(p => ({ ...p, beneficiaire: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Libellé *</label><input type="text" value={formData.libelle} onChange={e => setFormData(p => ({ ...p, libelle: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label><input type="text" value={formData.telephone} onChange={e => setFormData(p => ({ ...p, telephone: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant *</label><input type="number" value={formData.montant_chiffre || ''} onChange={e => setFormData(p => ({ ...p, montant_chiffre: Number(e.target.value) }))} onBlur={handleMontantBlur} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant en lettres</label><input type="text" value={formData.montant_lettre} onChange={e => setFormData(p => ({ ...p, montant_lettre: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Bénéficiaire *</label><input type="text" value={formData.beneficiaire} onChange={e => setFormData(p => ({ ...p, beneficiaire: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Libellé *</label><input type="text" value={formData.libelle} onChange={e => setFormData(p => ({ ...p, libelle: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label><input type="text" value={formData.telephone} onChange={e => setFormData(p => ({ ...p, telephone: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
               </div>
               <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
@@ -184,16 +184,16 @@ export default function Finances() {
       {/* Edit Modal */}
       {editModal.open && editModal.transaction && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditModal({ open: false, transaction: null, loading: false })}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <form onSubmit={handleEditSubmit}>
               <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Modifier Transaction</h2><button type="button" onClick={() => setEditModal({ open: false, transaction: null, loading: false })} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
-              <div className="p-6 grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant</label><input type="number" value={editFormData.montant_chiffre} onChange={e => setEditFormData(p => ({ ...p, montant_chiffre: Number(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Type</label><select value={editFormData.type_operation} onChange={e => setEditFormData(p => ({ ...p, type_operation: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="recette">Recette</option><option value="dépense">Dépense</option></select></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Bénéficiaire</label><input type="text" value={editFormData.beneficiaire} onChange={e => setEditFormData(p => ({ ...p, beneficiaire: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Libellé</label><input type="text" value={editFormData.libelle} onChange={e => setEditFormData(p => ({ ...p, libelle: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Date</label><input type="date" value={editFormData.date_transaction} onChange={e => setEditFormData(p => ({ ...p, date_transaction: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Statut</label><select value={editFormData.statut} onChange={e => setEditFormData(p => ({ ...p, statut: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">{Object.entries(STATUT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+              <div className="p-4 grid grid-cols-2 gap-4">
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Montant</label><input type="number" value={editFormData.montant_chiffre} onChange={e => setEditFormData(p => ({ ...p, montant_chiffre: Number(e.target.value) }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Type</label><select value={editFormData.type_operation} onChange={e => setEditFormData(p => ({ ...p, type_operation: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm"><option value="recette">Recette</option><option value="dépense">Dépense</option></select></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Bénéficiaire</label><input type="text" value={editFormData.beneficiaire} onChange={e => setEditFormData(p => ({ ...p, beneficiaire: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Libellé</label><input type="text" value={editFormData.libelle} onChange={e => setEditFormData(p => ({ ...p, libelle: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Date</label><input type="date" value={editFormData.date_transaction} onChange={e => setEditFormData(p => ({ ...p, date_transaction: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Statut</label><select value={editFormData.statut} onChange={e => setEditFormData(p => ({ ...p, statut: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm">{Object.entries(STATUT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
               </div>
               <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
                 <button type="button" onClick={() => setEditModal({ open: false, transaction: null, loading: false })} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
@@ -207,9 +207,9 @@ export default function Finances() {
       {/* Detail Modal */}
       {detailTransaction && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDetailTransaction(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Détails transaction</h2><button onClick={() => setDetailTransaction(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
-            <div className="p-6 space-y-3 text-sm">
+            <div className="p-4 space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-gray-500">Montant</span><p className={`font-bold ${detailTransaction.type_operation === 'recette' ? 'text-emerald-600' : 'text-red-600'}`}>{detailTransaction.montant_chiffre.toLocaleString('fr-FR')} FC</p></div>
                 <div><span className="text-gray-500">Type</span><p className="font-semibold">{detailTransaction.type_operation === 'recette' ? '💰 Recette' : '📤 Dépense'}</p></div>

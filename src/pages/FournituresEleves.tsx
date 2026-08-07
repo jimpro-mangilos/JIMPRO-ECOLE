@@ -226,10 +226,10 @@ export default function FournituresEleves() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Fournitures Élèves</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Fournitures Élèves</h1>
           <p className="text-gray-600 mt-1">Distributions d'uniformes aux élèves (gratuit)</p>
         </div>
         <div className="flex items-center gap-3">
@@ -247,7 +247,7 @@ export default function FournituresEleves() {
           {(!isReadOnly() || isGestionnaireUniforme()) && (
             <button
               onClick={() => setShowEleveSelector(true)}
-              className="flex items-center gap-2 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors shadow-md"
+              className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors shadow-md"
             >
               <Plus className="w-5 h-5" />
               Nouvelle distribution
@@ -257,21 +257,21 @@ export default function FournituresEleves() {
       </div>
 
       {scanError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{scanError}</div>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{scanError}</div>
       )}
       {showScanner && (
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <p className="text-sm text-gray-500 mb-3">Scannez le QR code de l'élève pour distribuer un uniforme</p>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <p className="text-sm text-gray-500 mb-2">Scannez le QR code de l'élève pour distribuer un uniforme</p>
           <div id={scannerDivId} className="w-full max-w-sm mx-auto rounded-lg overflow-hidden" />
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total distributions</p>
-              <p className="text-2xl font-bold text-teal-600 mt-1">{totalDistributions}</p>
+              <p className="text-xl font-bold text-teal-600 mt-1">{totalDistributions}</p>
             </div>
             <div className="bg-teal-50 p-3 rounded-lg">
               <Package className="w-6 h-6 text-teal-600" />
@@ -279,11 +279,11 @@ export default function FournituresEleves() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Articles distribués</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">{totalArticles}</p>
+              <p className="text-xl font-bold text-green-600 mt-1">{totalArticles}</p>
             </div>
             <div className="bg-green-50 p-3 rounded-lg">
               <Package className="w-6 h-6 text-green-600" />
@@ -291,11 +291,11 @@ export default function FournituresEleves() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Élèves servis</p>
-              <p className="text-2xl font-bold text-blue-600 mt-1">{elevesUniques}</p>
+              <p className="text-xl font-bold text-blue-600 mt-1">{elevesUniques}</p>
             </div>
             <div className="bg-blue-50 p-3 rounded-lg">
               <Users className="w-6 h-6 text-blue-600" />
@@ -304,7 +304,7 @@ export default function FournituresEleves() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="bg-white rounded-lg shadow-sm p-4">
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3 border border-gray-200 rounded-lg px-3">
             <Search className="w-5 h-5 text-gray-400" />
@@ -358,7 +358,7 @@ export default function FournituresEleves() {
                     type="date"
                     value={filterDateDebut}
                     onChange={(e) => setFilterDateDebut(e.target.value)}
-                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm"
                   />
                 </div>
                 <div>
@@ -367,7 +367,7 @@ export default function FournituresEleves() {
                     type="date"
                     value={filterDateFin}
                     onChange={(e) => setFilterDateFin(e.target.value)}
-                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm"
                   />
                 </div>
               </div>
@@ -392,7 +392,7 @@ export default function FournituresEleves() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {isItManager() && selectedIds.size > 0 && (
           <div className="px-4 py-3 bg-red-50 border-b border-red-200 flex items-center justify-between">
             <span className="text-sm font-medium text-red-700">
@@ -590,7 +590,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-3xl w-full max-h-[85vh] flex flex-col">
+      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between border-b px-6 py-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Choisir un élève</h2>
@@ -601,7 +601,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
           </button>
         </div>
 
-        <div className="px-6 py-3 border-b space-y-3">
+        <div className="px-4 py-2 border-b space-y-3">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 flex-1">
               <Search className="w-5 h-5 text-gray-400" />
@@ -616,7 +616,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
             </div>
             <button
               onClick={() => { setShowScanner(!showScanner); setScanError(''); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 showScanner ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-teal-100 text-teal-700 hover:bg-teal-200'
               }`}
             >

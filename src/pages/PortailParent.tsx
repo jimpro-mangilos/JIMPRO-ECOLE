@@ -177,10 +177,10 @@ export default function PortailParent() {
         {/* Hero / Search */}
         {!eleve && (
           <div className="text-center mb-12 pt-8">
-            <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-6">
+            <div className="w-16 h-16 rounded-xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-blue-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Portail Élève</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Portail Élève</h2>
             <p className="text-gray-500 mb-8 max-w-md mx-auto">
               Entrez votre matricule pour consulter vos paiements, cours et devoirs.
             </p>
@@ -193,14 +193,14 @@ export default function PortailParent() {
                     value={matricule}
                     onChange={(e) => { setMatricule(e.target.value.toUpperCase()); setError(''); }}
                     placeholder="Ex: MAT2025-001"
-                    className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-gray-900 font-mono text-lg tracking-wider placeholder:text-gray-400 transition-all"
+                    className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-gray-900 font-mono text-lg tracking-wider placeholder:text-gray-400 transition-all"
                     autoFocus
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
                   {loading ? 'Recherche...' : 'Verifier'}
@@ -212,7 +212,7 @@ export default function PortailParent() {
                 <button
                   type="button"
                   onClick={() => { setShowScanner(true); setScanError(''); }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all text-sm font-medium"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all text-sm font-medium"
                 >
                   <QrCode className="w-5 h-5" />
                   Scanner un QR Code
@@ -222,7 +222,7 @@ export default function PortailParent() {
               {/* QR Scanner modal */}
               {showScanner && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+                  <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
                     <div className="flex items-center justify-between px-5 py-4 border-b">
                       <h3 className="font-bold text-gray-900 flex items-center gap-2">
                         <QrCode className="w-5 h-5 text-blue-600" />
@@ -236,13 +236,13 @@ export default function PortailParent() {
                       </button>
                     </div>
                     <div className="p-4">
-                      <div id={scannerDivId} className="w-full aspect-square rounded-xl overflow-hidden bg-black" />
+                      <div id={scannerDivId} className="w-full aspect-square rounded-lg overflow-hidden bg-black" />
                       {scanError && (
-                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                           {scanError}
                         </div>
                       )}
-                      <p className="text-xs text-gray-400 text-center mt-3">
+                      <p className="text-xs text-gray-400 text-center mt-2">
                         Placez le QR Code dans le cadre. Le matricule sera extrait automatiquement.
                       </p>
                     </div>
@@ -253,14 +253,14 @@ export default function PortailParent() {
           </div>
         )}
               {error && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2 max-w-md mx-auto">
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2 max-w-md mx-auto">
                   <span className="text-red-500">⚠</span> {error}
                 </div>
               )}
 
         {/* Student found */}
         {eleve && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 animate-fadeIn">
             {/* Back button */}
             <button
               onClick={() => { setEleve(null); setMatricule(''); setError(''); }}
@@ -271,16 +271,16 @@ export default function PortailParent() {
             </button>
 
             {/* Student info card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
                 <div className="flex items-start gap-5">
-                  <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center text-white text-2xl font-bold shrink-0">
+                  <div className="w-16 h-16 rounded-lg bg-white/20 flex items-center justify-center text-white text-xl font-bold shrink-0">
                     {eleve.prenom?.charAt(0)}{eleve.nom?.charAt(0)}
                   </div>
                   <div className="text-white flex-1">
                     <h3 className="text-xl font-bold">{eleve.nom} {eleve.postnom} {eleve.prenom}</h3>
                     <p className="text-blue-100 text-sm mt-0.5">Matricule : {eleve.matricule}</p>
-                    <div className="flex flex-wrap gap-3 mt-3">
+                    <div className="flex flex-wrap gap-3 mt-2">
                       <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">{eleve.section}</span>
                       {eleve.option && <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">{eleve.option}</span>}
                       {eleve.classe && <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">{eleve.classe}</span>}
@@ -290,7 +290,7 @@ export default function PortailParent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-gray-50/50">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-gray-50/50">
                 <div className="flex items-center gap-3">
                   <User className="w-5 h-5 text-gray-400" />
                   <div>
@@ -317,7 +317,7 @@ export default function PortailParent() {
 
             {/* Financial summary */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                     <DollarSign className="w-5 h-5 text-green-600" />
@@ -328,7 +328,7 @@ export default function PortailParent() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                     <FileText className="w-5 h-5 text-blue-600" />
@@ -339,7 +339,7 @@ export default function PortailParent() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
                     <Calendar className="w-5 h-5 text-amber-600" />
@@ -355,7 +355,7 @@ export default function PortailParent() {
             </div>
 
             {/* Payment history */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-blue-600" />
@@ -366,7 +366,7 @@ export default function PortailParent() {
 
               {paiements.length === 0 ? (
                 <div className="px-5 py-12 text-center text-gray-400">
-                  <Package className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                  <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">Aucun paiement enregistre pour cet eleve.</p>
                 </div>
               ) : (
@@ -374,12 +374,12 @@ export default function PortailParent() {
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">N Reçu</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Motif</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Mode</th>
-                        <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Montant</th>
-                        <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase">Statut</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">N Reçu</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Motif</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Mode</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Montant</th>
+                        <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Statut</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -413,14 +413,14 @@ export default function PortailParent() {
             </div>
 
             {/* Cours & Devoirs */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-4">
               <div className="px-5 py-4 border-b border-gray-100">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-purple-600" />
                   Cours & Devoirs
                 </h3>
               </div>
-              <div className="p-5 space-y-4">
+              <div className="p-3 space-y-4">
                 {cours.length === 0 && devoirs.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-4">Aucun cours ou devoir disponible pour votre classe.</p>
                 ) : (

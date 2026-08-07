@@ -296,9 +296,9 @@ export default function Admin() {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
             <Shield className="w-8 h-8 text-blue-600" />
             Administration
           </h1>
@@ -316,20 +316,20 @@ export default function Admin() {
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+        <div className="mb-3 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-red-600" />
           <p className="text-red-800">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+        <div className="mb-3 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
           <Check className="w-5 h-5 text-green-600" />
           <p className="text-green-800">{success}</p>
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-3">
         <div className="flex items-center gap-3">
           <Search className="w-5 h-5 text-gray-400" />
           <input
@@ -343,7 +343,7 @@ export default function Admin() {
       </div>
 
       {canManageUsers && filteredProfiles.length > 0 && (
-        <div className={`mb-4 px-4 py-3 rounded-xl flex items-center justify-between transition-colors ${
+        <div className={`mb-3 px-4 py-3 rounded-lg flex items-center justify-between transition-colors ${
           selectedIds.size > 0 ? 'bg-red-50 border border-red-200' : 'bg-white shadow-sm border border-gray-100'
         }`}>
           <label className="flex items-center gap-3 cursor-pointer select-none text-sm font-medium text-gray-700">
@@ -370,15 +370,15 @@ export default function Admin() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredProfiles.map((profile) => (
           <div
             key={profile.id}
-            className={`bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow ${
+            className={`bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow ${
               selectedIds.has(profile.id) ? 'ring-2 ring-red-400 bg-red-50' : ''
             }`}
           >
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 {canManageUsers && (
                   <input
@@ -388,7 +388,7 @@ export default function Admin() {
                     className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500 mt-1 flex-shrink-0"
                   />
                 )}
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold flex-shrink-0">
                   {profile.nom.charAt(0)}{profile.prenom.charAt(0)}
                 </div>
                 <div>
@@ -407,7 +407,7 @@ export default function Admin() {
                   value={profile.role_id || ''}
                   onChange={(e) => changeUserRole(profile.id, e.target.value, profile.email)}
                   disabled={!canManageUsers}
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full mt-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">Sélectionner un rôle</option>
                   {roles.map((role) => (
@@ -472,14 +472,14 @@ export default function Admin() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full">
+          <div className="bg-white rounded-lg max-w-md w-full">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white rounded-t-xl">
               <h2 className="text-xl font-bold">
                 {editingProfile ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur'}
               </h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {!editingProfile && (
                 <>
                   <div>
@@ -548,14 +548,14 @@ export default function Admin() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
                   {editingProfile ? 'Mettre à jour' : 'Créer'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); resetForm(); }}
-                  className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                 >
                   Annuler
                 </button>

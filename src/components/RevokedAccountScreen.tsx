@@ -25,27 +25,27 @@ export default function RevokedAccountScreen() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
         <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-8 py-10 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full mb-4 ring-4 ring-white/20">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full mb-3 ring-4 ring-white/20">
             <Hourglass className="w-10 h-10 text-white animate-pulse" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Accès en attente</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Accès en attente</h1>
           <p className="text-blue-100 text-sm">Votre compte est en cours de validation</p>
         </div>
 
-        <div className="px-8 py-8 space-y-6">
+        <div className="px-8 py-8 space-y-4">
           <div className="text-center">
             <p className="text-gray-700 text-base leading-relaxed">
               Veuillez patienter qu'un rôle vous soit attribué par l'administrateur.
             </p>
-            <p className="text-gray-500 text-sm mt-3">
+            <p className="text-gray-500 text-sm mt-2">
               Vous recevrez automatiquement l'accès aux fonctionnalités dès que votre rôle sera défini.
             </p>
           </div>
 
           {profile && (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-3 text-gray-700">
                 <Mail className="w-4 h-4 text-blue-600 flex-shrink-0" />
                 <span className="text-sm font-medium truncate">{profile.email}</span>

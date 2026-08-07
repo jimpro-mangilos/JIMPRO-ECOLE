@@ -116,16 +116,16 @@ export default function FournituresBureau() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Fournitures Bureau</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Fournitures Bureau</h1>
           <p className="text-gray-600 mt-1">Gestion des fournitures de bureau</p>
         </div>
         {!isReadOnly() && (
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors shadow-md"
+            className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors shadow-md"
           >
             <Plus className="w-5 h-5" />
             Nouvelle Distribution
@@ -133,12 +133,12 @@ export default function FournituresBureau() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Distributions</p>
-              <p className="text-2xl font-bold text-teal-600 mt-1">{fournitures.length}</p>
+              <p className="text-xl font-bold text-teal-600 mt-1">{fournitures.length}</p>
             </div>
             <div className="bg-teal-50 p-3 rounded-lg">
               <Briefcase className="w-6 h-6 text-teal-600" />
@@ -146,11 +146,11 @@ export default function FournituresBureau() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Articles Distribués</p>
-              <p className="text-2xl font-bold text-blue-600 mt-1">{totalArticles}</p>
+              <p className="text-xl font-bold text-blue-600 mt-1">{totalArticles}</p>
             </div>
             <div className="bg-blue-50 p-3 rounded-lg">
               <Briefcase className="w-6 h-6 text-blue-600" />
@@ -158,11 +158,11 @@ export default function FournituresBureau() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Types d'Articles</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">
+              <p className="text-xl font-bold text-green-600 mt-1">
                 {new Set(fournitures.map(f => f.article)).size}
               </p>
             </div>
@@ -173,7 +173,7 @@ export default function FournituresBureau() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="bg-white rounded-lg shadow-sm p-4">
         <div className="flex items-center gap-3">
           <Search className="w-5 h-5 text-gray-400" />
           <input
@@ -186,9 +186,9 @@ export default function FournituresBureau() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {isItManager() && selectedIds.size > 0 && (
-          <div className="px-6 py-3 bg-red-50 border-b border-red-200 flex items-center justify-between">
+          <div className="px-4 py-2 bg-red-50 border-b border-red-200 flex items-center justify-between">
             <span className="text-sm font-medium text-red-700">
               {selectedIds.size} distribution(s) sélectionnée(s)
             </span>
@@ -269,12 +269,12 @@ export default function FournituresBureau() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full">
+          <div className="bg-white rounded-lg max-w-2xl w-full">
             <div className="border-b px-6 py-4">
               <h2 className="text-xl font-bold text-gray-900">Distribution de Fournitures</h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -334,7 +334,7 @@ export default function FournituresBureau() {
               <div className="flex items-center gap-3 pt-4 border-t">
                 <button
                   type="submit"
-                  className="flex-1 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                  className="flex-1 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium"
                 >
                   Enregistrer
                 </button>
@@ -344,7 +344,7 @@ export default function FournituresBureau() {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="flex-1 bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                 >
                   Annuler
                 </button>

@@ -66,12 +66,12 @@ export default function Signup() {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center">
-          <div className="bg-green-100 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <CheckCircle className="w-12 h-12 text-green-600" />
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 text-center">
+          <div className="bg-green-100 rounded-full p-4 w-20 h-20 mx-auto mb-3 flex items-center justify-center">
+            <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Compte créé avec succès !</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-3">Compte créé avec succès !</h2>
+          <p className="text-gray-600 mb-4">
             Votre compte a été créé. Vous pouvez maintenant vous connecter.
           </p>
           <p className="text-sm text-gray-500">Redirection en cours...</p>
@@ -82,17 +82,17 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 py-8 px-4 text-white text-center">
           <img src={logoUrl} alt="JIMPRO" className="w-56 mx-auto drop-shadow-xl" />
           <p className="text-blue-100 mt-2 text-sm tracking-wide">Système de Gestion Scolaire</p>
         </div>
 
         <div className="p-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Créer un compte</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">Créer un compte</h2>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-red-800 text-sm">{error}</p>
             </div>
@@ -201,7 +201,7 @@ export default function Signup() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <p className="text-gray-600">
               Déjà un compte ?{' '}
               <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">

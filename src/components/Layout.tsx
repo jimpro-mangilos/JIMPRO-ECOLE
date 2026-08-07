@@ -173,7 +173,7 @@ export default function Layout({ children }: LayoutProps) {
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors"
+                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-2 py-1.5 transition-colors"
               >
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">
@@ -214,7 +214,7 @@ export default function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="p-6 overflow-hidden">
+        <main className="p-4 overflow-hidden">
           {children}
         </main>
       </div>

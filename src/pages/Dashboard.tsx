@@ -135,12 +135,12 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-xl p-6 h-32"></div>
+              <div key={i} className="bg-white rounded-lg p-4 h-32"></div>
             ))}
           </div>
         </div>
@@ -149,26 +149,26 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Tableau de Bord</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Tableau de Bord</h1>
         <p className="text-gray-600 mt-1">Vue d'ensemble de votre etablissement scolaire</p>
       </div>
 
       {/* Stats Cards */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${canSeeRecettes ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${canSeeRecettes ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
         {statCards.map((card, index) => {
           const Icon = card.icon;
           return (
             <div
               key={index}
-              className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 p-6"
+              className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 p-6"
             >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                  <p className="text-xl font-bold text-gray-900">{card.value}</p>
                 </div>
                 <div className={`${card.bgColor} p-3 rounded-lg`}>
                   <Icon className={`w-6 h-6 ${card.textColor}`} />
@@ -180,9 +180,9 @@ export default function Dashboard() {
       </div>
 
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-8 text-white">
-        <h2 className="text-2xl font-bold mb-2">Bienvenue sur JIMPRO</h2>
-        <p className="text-blue-100 mb-4">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-8 text-white">
+        <h2 className="text-xl font-bold mb-2">Bienvenue sur JIMPRO</h2>
+        <p className="text-blue-100 mb-3">
           Systeme de gestion scolaire moderne et complet pour votre etablissement
         </p>
         <div className="flex gap-4">
@@ -202,10 +202,10 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent Activity */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Activites Recentes</h3>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-3">Activites Recentes</h3>
           <div className="space-y-4">
             {recentActivities.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">Aucune activite recente</p>
@@ -240,8 +240,8 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Access - role-based */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Acces Rapide</h3>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-3">Acces Rapide</h3>
           {menuLoading ? (
             <div className="grid grid-cols-2 gap-3">
               {[1, 2, 3, 4].map((i) => (

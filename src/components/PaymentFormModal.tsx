@@ -443,9 +443,9 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 space-y-5">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3">
               <Search className="w-5 h-5 text-blue-600" />
               <h3 className="font-semibold text-blue-900">Rechercher l'Élève</h3>
             </div>
@@ -471,7 +471,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                     onKeyDown={handleEleveKeyDown}
                     disabled={!!preselectedEleve}
                     placeholder="Tapez un matricule, un nom, un prénom..."
-                    className="w-full pl-9 pr-20 py-2.5 border border-blue-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full pl-9 pr-20 py-2 border border-blue-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     autoComplete="off"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -517,7 +517,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => selectEleve(eleve)}
                             onMouseEnter={() => setHighlightedIndex(index)}
-                            className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 last:border-b-0 transition-colors ${
+                            className={`w-full text-left px-4 py-2 text-sm border-b border-gray-50 last:border-b-0 transition-colors ${
                               isActive ? 'bg-blue-50' : 'bg-white'
                             } ${isSelected ? 'font-semibold text-blue-700' : 'text-gray-800'}`}
                           >
@@ -549,15 +549,15 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
           </div>
 
           {selectedEleve && (
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-6 shadow-md">
-              <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 shadow-md">
+              <h3 className="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
                 <User className="w-5 h-5" />
                 Informations Complètes de l'Élève
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center text-2xl font-bold text-blue-700">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center text-xl font-bold text-blue-700">
                       {selectedEleve.nom.charAt(0)}{selectedEleve.postnom.charAt(0)}
                     </div>
                     <div>
@@ -594,7 +594,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                 </div>
 
                 <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
                     <GraduationCap className="w-4 h-4" />
                     Scolarité
                   </h4>
@@ -619,7 +619,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                 </div>
 
                 <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
                     <Users className="w-4 h-4" />
                     Contact
                   </h4>
@@ -649,7 +649,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
           )}
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-5">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3">
               <DollarSign className="w-5 h-5 text-green-600" />
               <h3 className="font-semibold text-green-900">Informations de Paiement</h3>
             </div>
@@ -660,7 +660,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                 <select
                   value={formData.type_paiement}
                   onChange={(e) => setFormData({ ...formData, type_paiement: e.target.value, motif_id: '', mois_minerval: '' })}
-                  className="w-full px-4 py-2.5 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
                 >
                   <option value="">Sélectionner un type</option>
@@ -677,7 +677,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                 <select
                   value={formData.annee_scolaire}
                   onChange={(e) => setFormData({ ...formData, annee_scolaire: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
+                  className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
                   required
                   disabled={anneeScolaires.length === 0}
                 >
@@ -707,11 +707,11 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                       Selectionnez d'abord un eleve et une annee scolaire
                     </p>
                   ) : loadingMonths ? (
-                    <p className="text-sm text-gray-500 px-4 py-2.5 border border-green-300 rounded-md bg-gray-50">
+                    <p className="text-sm text-gray-500 px-4 py-2 border border-green-300 rounded-md bg-gray-50">
                       Verification des paiements...
                     </p>
                   ) : nextAllowedMonth === null ? (
-                    <p className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-md px-4 py-2.5 flex items-center gap-2">
+                    <p className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-md px-4 py-2 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4" />
                       Cet eleve est a jour pour toute l'annee scolaire (Septembre a Juillet)
                     </p>
@@ -720,7 +720,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                       <select
                         value={formData.mois_minerval}
                         onChange={(e) => setFormData({ ...formData, mois_minerval: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         required
                       >
                         <option value="">Selectionner le mois</option>
@@ -734,7 +734,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                           );
                         })}
                       </select>
-                      <div className="mt-3 flex flex-wrap gap-1.5">
+                      <div className="mt-2 flex flex-wrap gap-1.5">
                         {MOIS_SCOLAIRES.map((mois) => {
                           const isPaid = paidMonths.includes(mois);
                           return (
@@ -767,7 +767,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                   <select
                     value={formData.motif_id}
                     onChange={(e) => setFormData({ ...formData, motif_id: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     required
                   >
                     <option value="">Sélectionner un motif</option>
@@ -786,7 +786,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                   type="number"
                   value={formData.montant_paye}
                   onChange={(e) => setFormData({ ...formData, montant_paye: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-4 py-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   placeholder="Ex: 50000"
                   min="0"
                   step="0.01"
@@ -799,7 +799,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                 <textarea
                   value={formData.montant_en_lettre}
                   readOnly
-                  className="w-full px-4 py-2.5 border border-green-300 rounded-md bg-green-100 text-green-900 font-medium"
+                  className="w-full px-4 py-2 border border-green-300 rounded-md bg-green-100 text-green-900 font-medium"
                   rows={2}
                   placeholder="Le montant en lettres apparaîtra automatiquement"
                 />
@@ -810,7 +810,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                 <select
                   value={formData.mode_paiement}
                   onChange={(e) => setFormData({ ...formData, mode_paiement: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
                 >
                   {modesPaiement.map((mode) => (
@@ -827,7 +827,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                   type="date"
                   value={formData.date_paiement}
                   onChange={(e) => setFormData({ ...formData, date_paiement: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-4 py-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
                 />
               </div>
@@ -837,7 +837,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-4 py-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   rows={2}
                   placeholder="Informations supplémentaires (optionnel)"
                 />
@@ -875,7 +875,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Annuler
             </button>

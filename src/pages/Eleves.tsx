@@ -107,11 +107,11 @@ export default function Eleves() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestion des Élèves</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Gestion des Élèves</h1>
           <p className="text-gray-600 mt-1">{eleves.length} élève(s) trouvé(s)</p>
         </div>
         <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function Eleves() {
             <FileDown className="w-5 h-5" /> Imprimer
           </button>
           {!isReadOnly() && (
-            <button onClick={handleOpenForm} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+            <button onClick={handleOpenForm} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
               <Plus className="w-5 h-5" /> Ajouter un Élève
             </button>
           )}
@@ -138,10 +138,10 @@ export default function Eleves() {
 
       {/* Section Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div onClick={() => filters.setSelectedSection([])} className={`bg-white rounded-xl shadow-sm p-5 cursor-pointer transition-all hover:shadow-md ${filters.selectedSection.length === 0 ? 'ring-2 ring-blue-500' : ''}`}>
-          <div className="flex items-center justify-between mb-3">
+        <div onClick={() => filters.setSelectedSection([])} className={`bg-white rounded-lg shadow-sm p-3 cursor-pointer transition-all hover:shadow-md ${filters.selectedSection.length === 0 ? 'ring-2 ring-blue-500' : ''}`}>
+          <div className="flex items-center justify-between mb-2">
             <div className="bg-blue-100 p-3 rounded-lg"><Users className="w-6 h-6 text-blue-600" /></div>
-            <span className="text-2xl font-bold text-gray-900">{getSectionStats('').total}</span>
+            <span className="text-xl font-bold text-gray-900">{getSectionStats('').total}</span>
           </div>
           <h3 className="text-sm font-semibold text-gray-900 mb-1">Tous les Élèves</h3>
           <div className="flex items-center gap-3 text-xs text-gray-600">
@@ -152,10 +152,10 @@ export default function Eleves() {
           const stats = getSectionStats(section.nom);
           return (
             <div key={section.id} onClick={() => filters.setSelectedSection(prev => prev.includes(section.nom) ? prev.filter(s => s !== section.nom) : [...prev, section.nom])}
-              className={`bg-white rounded-xl shadow-sm p-5 cursor-pointer transition-all hover:shadow-md ${filters.selectedSection.includes(section.nom) ? 'ring-2 ring-blue-500' : ''}`}>
-              <div className="flex items-center justify-between mb-3">
+              className={`bg-white rounded-lg shadow-sm p-3 cursor-pointer transition-all hover:shadow-md ${filters.selectedSection.includes(section.nom) ? 'ring-2 ring-blue-500' : ''}`}>
+              <div className="flex items-center justify-between mb-2">
                 <div className="bg-green-100 p-3 rounded-lg"><User className="w-6 h-6 text-green-600" /></div>
-                <span className="text-2xl font-bold text-gray-900">{stats.total}</span>
+                <span className="text-xl font-bold text-gray-900">{stats.total}</span>
               </div>
               <h3 className="text-sm font-semibold text-gray-900 mb-1">{section.nom}</h3>
               <div className="flex items-center gap-3 text-xs text-gray-600">
@@ -167,8 +167,8 @@ export default function Eleves() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <div className="flex items-center gap-3 mb-3">
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="flex items-center gap-3 mb-2">
           <Search className="w-5 h-5 text-gray-400" />
           <input type="text" placeholder="Rechercher un élève..." value={filters.searchTerm}
             onChange={e => filters.setSearchTerm(e.target.value)} className="flex-1 outline-none text-gray-700" />
@@ -185,31 +185,31 @@ export default function Eleves() {
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Paiement {getCurrentMoisMinerval()}</label>
             <select value={filters.filterOrdre} onChange={e => filters.setFilterOrdre(e.target.value as any)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
               <option value="">Tous</option><option value="en_ordre">En ordre</option><option value="pas_en_ordre">Pas en ordre</option>
             </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Tri</label>
             <select value={filters.sortAlpha} onChange={e => filters.setSortAlpha(e.target.value as any)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
               <option value="">Sans tri</option><option value="asc">A → Z</option><option value="desc">Z → A</option>
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 mt-3">
+        <div className="grid grid-cols-2 gap-3 mt-2">
           <div><label className="block text-xs font-medium text-gray-700 mb-1">Date début</label>
             <input type="date" value={filters.filterDateDebut} onChange={e => filters.setFilterDateDebut(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
           <div><label className="block text-xs font-medium text-gray-700 mb-1">Date fin</label>
             <input type="date" value={filters.filterDateFin} onChange={e => filters.setFilterDateFin(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
         </div>
       </div>
 
       {/* Bulk actions */}
       {isItManager() && selectedIds.size > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center justify-between">
           <span className="text-sm font-medium text-red-700">{selectedIds.size} élève(s) sélectionné(s)</span>
           <button onClick={bulkDelete} disabled={bulkDeleting}
             className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm">
@@ -220,7 +220,7 @@ export default function Eleves() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -275,17 +275,17 @@ export default function Eleves() {
       {/* Create/Edit Modal (inline form) */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <form onSubmit={handleFormSubmit}>
               <div className="px-6 py-4 border-b flex items-center justify-between">
                 <h2 className="text-lg font-bold text-gray-900">{selectedEleve ? 'Modifier' : 'Ajouter'} un élève</h2>
                 <button type="button" onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-gray-100"><XCircle className="w-5 h-5 text-gray-400" /></button>
               </div>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Section *</label>
                   <select value={formData.section} onChange={e => handleSectionChange(e.target.value)} required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
                     <option value="">Sélectionner</option>
                     {sectionList.map(s => <option key={s.id} value={s.nom}>{s.nom}</option>)}
                   </select>
@@ -293,7 +293,7 @@ export default function Eleves() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Option</label>
                   <select value={formData.option} onChange={e => { setFormData(p => ({ ...p, option: e.target.value, classe_id: '' })); }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
                     <option value="">Sélectionner</option>
                     {optionList.filter(o => !formData.section || sectionList.find(s => s.nom === formData.section)?.id === o.section_id).map(o => <option key={o.id} value={o.nom}>{o.nom}</option>)}
                   </select>
@@ -302,9 +302,9 @@ export default function Eleves() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Matricule *</label>
                   <div className="flex gap-2">
                     <input type="text" value={formData.matricule} onChange={e => { setFormData(p => ({ ...p, matricule: e.target.value })); setAutoGenerateMatricule(false); }}
-                      placeholder="Auto-généré" className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
+                      placeholder="Auto-généré" className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
                     <button type="button" onClick={() => handleGenerateMatricule(formData.section)} disabled={generatingMatricule || !formData.section}
-                      className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm disabled:opacity-50">
+                      className="px-2 py-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm disabled:opacity-50">
                       {generatingMatricule ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                     </button>
                   </div>
@@ -312,20 +312,20 @@ export default function Eleves() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Classe</label>
                   <select value={formData.classe_id} onChange={e => setFormData(p => ({ ...p, classe_id: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
                     <option value="">Sélectionner</option>
                     {classeList.filter(c => { if (formData.section) { const s = sectionList.find(x => x.nom === formData.section); if (s && c.section_id !== s.id) return false; } if (formData.option) { const o = optionList.find(x => x.nom === formData.option); if (o && c.option_id && c.option_id !== o.id) return false; } return true; }).map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
                   </select>
                 </div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label><input type="text" value={formData.nom} onChange={e => setFormData(p => ({ ...p, nom: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Postnom</label><input type="text" value={formData.postnom} onChange={e => setFormData(p => ({ ...p, postnom: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Prénom *</label><input type="text" value={formData.prenom} onChange={e => setFormData(p => ({ ...p, prenom: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Sexe *</label><select value={formData.sexe} onChange={e => setFormData(p => ({ ...p, sexe: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="M">Masculin</option><option value="F">Féminin</option></select></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Date naissance</label><input type="date" value={formData.date_naissance} onChange={e => setFormData(p => ({ ...p, date_naissance: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Lieu naissance</label><input type="text" value={formData.lieu_naissance} onChange={e => setFormData(p => ({ ...p, lieu_naissance: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Responsable *</label><input type="text" value={formData.responsable} onChange={e => setFormData(p => ({ ...p, responsable: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label><input type="text" value={formData.telephone} onChange={e => setFormData(p => ({ ...p, telephone: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Domicile</label><input type="text" value={formData.domicile} onChange={e => setFormData(p => ({ ...p, domicile: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label><input type="text" value={formData.nom} onChange={e => setFormData(p => ({ ...p, nom: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Postnom</label><input type="text" value={formData.postnom} onChange={e => setFormData(p => ({ ...p, postnom: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Prénom *</label><input type="text" value={formData.prenom} onChange={e => setFormData(p => ({ ...p, prenom: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Sexe *</label><select value={formData.sexe} onChange={e => setFormData(p => ({ ...p, sexe: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"><option value="M">Masculin</option><option value="F">Féminin</option></select></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Date naissance</label><input type="date" value={formData.date_naissance} onChange={e => setFormData(p => ({ ...p, date_naissance: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Lieu naissance</label><input type="text" value={formData.lieu_naissance} onChange={e => setFormData(p => ({ ...p, lieu_naissance: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Responsable *</label><input type="text" value={formData.responsable} onChange={e => setFormData(p => ({ ...p, responsable: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label><input type="text" value={formData.telephone} onChange={e => setFormData(p => ({ ...p, telephone: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Domicile</label><input type="text" value={formData.domicile} onChange={e => setFormData(p => ({ ...p, domicile: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
               </div>
               <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
