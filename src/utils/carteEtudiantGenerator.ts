@@ -82,6 +82,16 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   doc.setFillColor(WHITE);
   doc.roundedRect(ox, oy, CARD_W, CARD_H, 2, 2, 'F');
 
+  // ─── Watermark logo (semi-transparent, centered) ────────────────────────────
+  if (logo) {
+    doc.saveGraphicsState();
+    doc.setGState(new (doc as any).GState({ opacity: 0.06 }));
+    const logoWm = CARD_W * 0.7;
+    const logoHm = CARD_H * 0.5;
+    doc.addImage(logo, 'PNG', ox + (CARD_W - logoWm) / 2, oy + (CARD_H - logoHm) / 2, logoWm, logoHm);
+    doc.restoreGraphicsState();
+  }
+
   // ─── Top band ────────────────────────────────────────────────────────────────
   doc.setFillColor(DARK);
   doc.roundedRect(ox, oy, CARD_W, 13, 2, 2, 'F');
