@@ -76,6 +76,8 @@ export default function FournituresEleves() {
         { facingMode: 'environment' },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         async (decodedText) => {
+          // Prevent duplicate scans while processing
+          if (!scannerRunning.current) return;
           scannerRunning.current = false;
           const match = decodedText.match(/GA[^|]*/i);
           if (match) {
@@ -548,6 +550,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
         { facingMode: 'environment' },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         (decodedText) => {
+          if (!scannerRunning2.current) return;
           scannerRunning2.current = false;
           const match = decodedText.match(/GA[^|]*/i);
           if (match) {

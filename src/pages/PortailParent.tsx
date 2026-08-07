@@ -64,6 +64,7 @@ export default function PortailParent() {
         { facingMode: 'environment' },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         (decodedText) => {
+          if (!scannerRunning.current) return;
           scannerRunning.current = false;
           const match = decodedText.match(/GA[^|]*/i);
           if (match) {
