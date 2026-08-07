@@ -49,7 +49,9 @@ export default function FournituresEleves() {
   const [scanError, setScanError] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
+  const scannerSessionId = useRef(0);
   const scannerDivId = 'qr-scanner-fournitures-main';
+  const formClosedRef = useRef(false);
 
   useEffect(() => {
     loadDistributions();
@@ -72,11 +74,11 @@ export default function FournituresEleves() {
       const scanner = new Html5Qrcode(scannerDivId);
       scannerRef.current = scanner;
       scannerRunning.current = false;
+      const currentSessionId = ++scannerSessionId.current;
       scanner.start(
         { facingMode: 'environment' },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         async (decodedText) => {
-          // Prevent duplicate scans while processing
           if (!scannerRunning.current) return;
           scannerRunning.current = false;
           const match = decodedText.match(/GA[^|]*/i);
@@ -85,11 +87,10 @@ export default function FournituresEleves() {
             setShowScanner(false);
             setScanError('');
             const { data } = await supabase.from('eleves').select('*').ilike('matricule', matriculeExtrait).maybeSingle();
-            if (data) {
+            if (data && scannerSessionId.current === currentSessionId) {
               setSelectedEleve(data);
+              formClosedRef.current = false;
               setShowUniformeForm(true);
-            } else {
-              setScanError('Aucun eleve trouve avec le matricule ' + matriculeExtrait);
             }
           } else {
             setScanError('Aucun matricule valide (GA...) trouve.');
@@ -497,6 +498,7 @@ export default function FournituresEleves() {
         <UniformeFormModal
           isOpen={showUniformeForm}
           onClose={() => {
+            formClosedRef.current = true;
             setShowUniformeForm(false);
             setSelectedEleve(null);
           }}
