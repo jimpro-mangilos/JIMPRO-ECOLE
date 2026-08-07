@@ -94,7 +94,7 @@ export default function FournituresEleves() {
       ).catch(() => setScanError("Erreur d'acces camera. Verifiez les permissions."));
     }
     return () => {
-      if (scannerRef.current) { scannerRef.current.stop().catch(() => {}); scannerRef.current = null; }
+      if (scannerRef.current) { try { scannerRef.current.stop().catch(() => {}); } catch (_) {} scannerRef.current = null; }
     };
   }, [showScanner]);
 
@@ -560,7 +560,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
     }
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        try { scannerRef.current.stop().catch(() => {}); } catch (_) {}
         scannerRef.current = null;
       }
     };

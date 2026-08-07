@@ -86,7 +86,7 @@ export default function PortailParent() {
     }
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        try { scannerRef.current.stop().catch(() => {}); } catch (_) {}
         scannerRef.current = null;
       }
     };
