@@ -72,7 +72,7 @@ export default function FournituresEleves() {
       scannerRef.current = scanner;
       scanner.start(
         { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1 },
+        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         async (decodedText) => {
           const match = decodedText.match(/GA[^|]*/i);
           if (match) {
@@ -536,7 +536,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
       scannerRef.current = scanner;
       scanner.start(
         { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1 },
+        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         (decodedText) => {
           const match = decodedText.match(/GA[^|]*/i);
           if (match) {

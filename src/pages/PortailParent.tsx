@@ -60,7 +60,7 @@ export default function PortailParent() {
       scannerRef.current = scanner;
       scanner.start(
         { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1 },
+        { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         (decodedText) => {
           // Extract matricule: text starting with "GA" until "|"
           const match = decodedText.match(/GA[^|]*/i);
