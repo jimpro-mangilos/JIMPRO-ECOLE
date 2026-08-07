@@ -230,32 +230,144 @@ export async function generateCartesEtudiants(
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const cardsPerRow = 2;
   const cardsPerCol = 4;
+  const cardsPerPage = cardsPerRow * cardsPerCol;
   const pageW = 210;
   const pageH = 297;
   const spacingX = (pageW - cardsPerRow * CARD_W) / (cardsPerRow + 1);
   const spacingY = (pageH - cardsPerCol * CARD_H) / (cardsPerCol + 1);
 
   for (let i = 0; i < eleves.length; i++) {
-    if (i > 0 && i % (cardsPerRow * cardsPerCol) === 0) doc.addPage();
+    if (i > 0 && i % cardsPerPage === 0) doc.addPage();
 
-    const idx = i % (cardsPerRow * cardsPerCol);
+    const idx = i % cardsPerPage;
     const col = idx % cardsPerRow;
     const row = Math.floor(idx / cardsPerRow);
     const x = spacingX + col * (CARD_W + spacingX);
     const y = spacingY + row * (CARD_H + spacingY);
 
-    const cardDoc = await generateCarteEtudiant(eleves[i], logoBase64, stampBase64, true);
-    const cardImg = cardDoc.output('datauristring');
-
-    // Use PNG format for data URI images
-    const format = cardImg.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-    doc.addImage(cardImg, format, x, y, CARD_W, CARD_H);
-
-    // Card outline
-    doc.setDrawColor('#d1d5db');
-    doc.setLineWidth(0.1);
-    doc.roundedRect(x - 0.5, y - 0.5, CARD_W + 1, CARD_H + 1, 1.5, 1.5, 'S');
+    await drawCardOnDoc(doc, eleves[i], x, y, logoBase64, stampBase64);
   }
 
   return doc;
+}
+
+async function drawCardOnDoc(
+  doc: jsPDF,
+  eleve: CarteEtudiantEleve,
+  offsetX: number,
+  offsetY: number,
+  logoBase64?: string | null,
+  stampBase64?: string | null
+) {
+  const annee = eleve.annee_scolaire || new Date().getFullYear().toString();
+  const MARGIN_C = 3;
+  const photoX = MARGIN_C + 2;
+  const photoY = 24;
+  const photoW = 18;
+  const photoH = 22;
+  const infoX = photoX + photoW + 3;
+  const nomComplet = `${eleve.nom} ${eleve.postnom ? eleve.postnom + ' ' : ''}${eleve.prenom}`.toUpperCase();
+
+  // Background
+  doc.setFillColor('#ffffff');
+  doc.rect(offsetX, offsetY, CARD_W, CARD_H, 'F');
+
+  // Top band
+  doc.setFillColor(DARK);
+  doc.rect(offsetX, offsetY, CARD_W, 12, 'F');
+  doc.setTextColor('#ffffff');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(5);
+  doc.text('GOLDEN ACADEMY', offsetX + MARGIN_C, offsetY + 6);
+  doc.setFillColor(PRIMARY);
+  doc.roundedRect(offsetX + CARD_W - 18, offsetY + 1.5, 16, 9, 1, 1, 'F');
+  doc.setFontSize(4);
+  doc.text('ANNEE', offsetX + CARD_W - 10, offsetY + 5.5, { align: 'center' });
+  doc.setFontSize(5);
+  doc.text(annee, offsetX + CARD_W - 10, offsetY + 9, { align: 'center' });
+
+  // Logo
+  if (logoBase64) {
+    doc.addImage(logoBase64, 'PNG', offsetX + MARGIN_C, offsetY + 14, 10, 7);
+  }
+
+  // Badge
+  doc.setFillColor(ACCENT);
+  doc.roundedRect(offsetX + CARD_W - 28, offsetY + 13, 26, 5, 1, 1, 'F');
+  doc.setTextColor('#ffffff');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4);
+  doc.text("CARTE D'ELEVE", offsetX + CARD_W - 15, offsetY + 16.3, { align: 'center' });
+
+  // Photo placeholder
+  doc.setDrawColor(PRIMARY);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(offsetX + photoX, offsetY + photoY, photoW, photoH, 1.5, 1.5, 'S');
+  doc.setFillColor(LIGHT_GRAY);
+  doc.roundedRect(offsetX + photoX + 0.5, offsetY + photoY + 0.5, photoW - 1, photoH - 1, 1, 1, 'F');
+
+  if (eleve.photo_url) {
+    try {
+      const img = await loadImage(eleve.photo_url);
+      if (img) doc.addImage(img, 'JPEG', offsetX + photoX + 0.5, offsetY + photoY + 0.5, photoW - 1, photoH - 1);
+    } catch {}
+  } else {
+    const initials = (eleve.nom.charAt(0) + eleve.prenom.charAt(0)).toUpperCase();
+    doc.setTextColor(DARK);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(initials, offsetX + photoX + photoW / 2, offsetY + photoY + photoH / 2 + 1.5, { align: 'center' });
+  }
+
+  // Student info
+  doc.setTextColor(DARK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.text(nomComplet, offsetX + infoX, offsetY + 25);
+  doc.setTextColor(PRIMARY);
+  doc.setFontSize(5);
+  doc.text(eleve.matricule, offsetX + infoX, offsetY + 30);
+  doc.setTextColor('#6b7280');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(4);
+  doc.text(`${eleve.sexe === 'M' ? 'Masculin' : 'Féminin'}`, offsetX + infoX, offsetY + 33);
+  doc.setTextColor('#374151');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4.5);
+  doc.text([eleve.section, eleve.classe, eleve.option].filter(Boolean).join(' - '), offsetX + infoX, offsetY + 35.5);
+  if (eleve.date_naissance) {
+    doc.setTextColor('#9ca3af');
+    doc.setFontSize(4);
+    doc.text(`Né(e): ${eleve.date_naissance}`, offsetX + infoX, offsetY + 38);
+  }
+
+  // QR Code
+  const qrData = `${eleve.matricule}|${nomComplet}|${eleve.section}|${eleve.classe || ''}`;
+  const qrUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 1, errorCorrectionLevel: 'M' });
+  const qrX = offsetX + CARD_W - 19;
+  const qrY = offsetY + 32;
+  const qrSize = 14;
+  doc.addImage(qrUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+  doc.setTextColor('#6b7280');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(3);
+  doc.text('Scanner pour verifier', qrX + qrSize / 2, qrY + qrSize + 2.5, { align: 'center' });
+
+  // Bottom line + stamp + signature
+  doc.setDrawColor(DARK);
+  doc.setLineWidth(0.3);
+  doc.line(offsetX + MARGIN_C, offsetY + CARD_H - 9, offsetX + CARD_W - MARGIN_C, offsetY + CARD_H - 9);
+  doc.setDrawColor(DARK);
+  doc.roundedRect(offsetX + CARD_W - 25, offsetY + CARD_H - 8, 12, 7, 1, 1, 'S');
+  doc.setTextColor(DARK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(3.5);
+  doc.text('CACHET', offsetX + CARD_W - 19, offsetY + CARD_H - 3.5, { align: 'center' });
+  doc.setDrawColor('#9ca3af');
+  doc.setLineWidth(0.2);
+  doc.line(offsetX + MARGIN_C, offsetY + CARD_H - 3, offsetX + CARD_W / 2 - 2, offsetY + CARD_H - 3);
+  doc.setTextColor('#9ca3af');
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(3);
+  doc.text('Signature du titulaire', offsetX + CARD_W / 2 - 3, offsetY + CARD_H - 1.2, { align: 'center' });
 }
