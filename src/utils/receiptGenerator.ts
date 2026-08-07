@@ -142,7 +142,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   doc.setTextColor(muted[0], muted[1], muted[2]);
   doc.text(S(`Emis le ${dateStr}`), pageWidth - margin, 39, { align: 'right' });
 
-  doc.addImage(qrAuthUrl, 'PNG', pageWidth - margin - 26, 52, 26, 26);
+  doc.addImage(qrAuthUrl, 'PNG', pageWidth - margin - 35, 50, 35, 35);
 
   let yPos = 58;
 
@@ -265,7 +265,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   doc.text(S('DIRECTION'), margin + colWidth + colWidth / 2, yPos + 5, { align: 'center' });
   doc.text(S('CAISSE'), margin + 2 * colWidth + colWidth / 2, yPos + 5, { align: 'center' });
 
-  doc.addImage(qrValidationUrl, 'PNG', margin + colWidth + (colWidth - 20) / 2, yPos + 10, 20, 20);
+  doc.addImage(qrValidationUrl, 'PNG', margin + colWidth + (colWidth - 28) / 2, yPos + 6, 28, 28);
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
