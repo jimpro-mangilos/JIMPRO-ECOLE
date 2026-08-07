@@ -56,6 +56,8 @@ export default function Eleves() {
 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [generatingCartes, setGeneratingCartes] = useState(false);
+  const [generatingProgress, setGeneratingProgress] = useState({ current: 0, total: 0 });
 
   const sectionList = sections as { id: string; nom: string }[];
   const optionList = options as { id: string; nom: string; section_id: string }[];
@@ -132,32 +134,40 @@ export default function Eleves() {
             <FileDown className="w-5 h-5" /> Imprimer
           </button>
           <button
+            disabled={generatingCartes}
             onClick={async () => {
+              setGeneratingCartes(true);
               try {
-                const max = 40; // limit to avoid memory issues
-                const toPrint = eleves.slice(0, max);
-                const cartes = toPrint.map(e => ({
-                  matricule: e.matricule,
-                  nom: e.nom,
-                  postnom: e.postnom,
-                  prenom: e.prenom,
-                  sexe: e.sexe,
-                  section: e.section,
-                  option: e.option,
-                  classe: e.classe,
-                  date_naissance: e.date_naissance,
-                  photo_url: (e as any).photo_url,
-                }));
-                const doc = await generateCartesEtudiants(cartes, logoUrl);
-                doc.save('cartes-etudiants.pdf');
+                const BATCH = 40;
+                const total = eleves.length;
+                setGeneratingProgress({ current: 0, total });
+                for (let i = 0; i < total; i += BATCH) {
+                  const batch = eleves.slice(i, i + BATCH).map(e => ({
+                    matricule: e.matricule, nom: e.nom, postnom: e.postnom, prenom: e.prenom,
+                    sexe: e.sexe, section: e.section, option: e.option, classe: e.classe,
+                    date_naissance: e.date_naissance, photo_url: (e as any).photo_url,
+                  }));
+                  const doc = await generateCartesEtudiants(batch, logoUrl);
+                  const batchNum = Math.floor(i / BATCH) + 1;
+                  const totalBatches = Math.ceil(total / BATCH);
+                  doc.save(`cartes-etudiants-${batchNum}-sur-${totalBatches}.pdf`);
+                  setGeneratingProgress({ current: Math.min(i + BATCH, total), total });
+                  // Small delay to let browser save the file
+                  await new Promise(r => setTimeout(r, 300));
+                }
+                alert('Toutes les cartes ont été générées !');
               } catch (err) {
                 console.error('Erreur génération cartes:', err);
-                alert('Erreur lors de la génération des cartes. Vérifiez la console.');
+                alert('Erreur lors de la génération des cartes.');
+              } finally {
+                setGeneratingCartes(false);
+                setGeneratingProgress({ current: 0, total: 0 });
               }
             }}
-            className="flex items-center gap-2 bg-teal-600 text-white px-4 py-3 rounded-lg hover:bg-teal-700 transition-colors font-medium shadow-sm"
+            className="flex items-center gap-2 bg-teal-600 text-white px-4 py-3 rounded-lg hover:bg-teal-700 transition-colors font-medium shadow-sm disabled:opacity-50"
           >
-            <Contact className="w-5 h-5" /> Cartes
+            {generatingCartes ? <Loader2 className="w-5 h-5 animate-spin" /> : <Contact className="w-5 h-5" />}
+            {generatingCartes ? `${generatingProgress.current}/${generatingProgress.total}` : 'Cartes'}
           </button>
           {!isReadOnly() && (
             <button onClick={handleOpenForm} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
