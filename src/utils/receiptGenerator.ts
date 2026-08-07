@@ -142,7 +142,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   doc.setTextColor(muted[0], muted[1], muted[2]);
   doc.text(S(`Emis le ${dateStr}`), pageWidth - margin, 39, { align: 'right' });
 
-  doc.addImage(qrAuthUrl, 'PNG', pageWidth - margin - 35, 50, 35, 35);
+  doc.addImage(qrAuthUrl, 'PNG', pageWidth - margin - 45, 45, 45, 45);
 
   let yPos = 58;
 
