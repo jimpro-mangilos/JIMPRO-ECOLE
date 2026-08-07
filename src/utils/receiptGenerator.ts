@@ -88,7 +88,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
 
   const nomComplet = `${nomParse.nom} ${nomParse.postnom} ${nomParse.prenom}`.trim();
   const qrAuthData = `RECU:${data.numero_recu}|MATRICULE:${data.matricule || ''}|ELEVE:${nomComplet}|MONTANT:${data.montant_paye}|DATE:${data.date_encaissement}`;
-  const qrAuthUrl = await QRCode.toDataURL(qrAuthData, { width: (500, margin: 1, errorCorrectionLevel: 'H' });
+  const qrAuthUrl = await QRCode.toDataURL(qrAuthData, { width: 300, margin: 1, errorCorrectionLevel: 'H' });
   const qrValidationUrl = await QRCode.toDataURL(`JIMPRO-VALIDATION:${data.numero_recu}|${data.date_encaissement}`, {
     width: 180, margin: 1, errorCorrectionLevel: 'M',
   });
@@ -265,7 +265,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   doc.text(S('DIRECTION'), margin + colWidth + colWidth / 2, yPos + 5, { align: 'center' });
   doc.text(S('CAISSE'), margin + 2 * colWidth + colWidth / 2, yPos + 5, { align: 'center' });
 
-  doc.addImage(qrValidationUrl, 'PNG', margin + colWidth + (colWidth - 28) / 2, yPos + 6, 28, 28);
+  doc.addImage(qrValidationUrl, 'PNG', margin + colWidth + (colWidth - 20) / 2, yPos + 10, 20, 20);
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
