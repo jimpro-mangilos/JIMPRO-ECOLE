@@ -175,7 +175,7 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   const qs = 13; // smaller than photo (18)
   const qx = ox + CARD_W - qs - PAD + 1;
   const qy = oy + CARD_H - qs - PAD - 4;
-  doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
+  doc.addImage(qrUrl, 'JPG', qx, qy, qs, qs);
 
   // QR border
   doc.setDrawColor('#cbd5e1');
