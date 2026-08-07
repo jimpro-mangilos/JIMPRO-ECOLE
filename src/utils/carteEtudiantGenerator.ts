@@ -16,12 +16,13 @@ interface CarteEtudiantEleve {
 }
 
 // ─── Design System ─────────────────────────────────────────────────────────────
-const DARK    = '#0f172a';   // slate-900
-const PRIMARY = '#1e40af';   // blue-800
-const ACCENT  = '#d97706';   // amber-600
-const MUTED   = '#64748b';   // slate-500
-const SURFACE = '#f1f5f9';   // slate-100
+const DARK    = '#1e293b';   // slate-800
+const PRIMARY = '#2563eb';   // blue-600
+const ACCENT  = '#ca8a04';   // yellow-600
+const MUTED   = '#94a3b8';   // slate-400
+const SURFACE = '#f8fafc';   // slate-50
 const BORDER  = '#e2e8f0';   // slate-200
+const GOLD    = '#eab308';   // yellow-500
 const WHITE   = '#ffffff';
 
 const CARD_W = 86; // mm
@@ -77,60 +78,61 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   const annee = e.annee_scolaire || new Date().getFullYear().toString();
   const nom = `${e.nom} ${e.postnom ? e.postnom + ' ' : ''}${e.prenom}`.toUpperCase();
 
-  // ─── Background with subtle gradient effect via layered rectangles ────────
+  // ─── Background ──────────────────────────────────────────────────────────────
   doc.setFillColor(WHITE);
   doc.roundedRect(ox, oy, CARD_W, CARD_H, 2, 2, 'F');
 
-  // ─── Left accent stripe ─────────────────────────────────────────────────────
+  // ─── Top band ────────────────────────────────────────────────────────────────
   doc.setFillColor(DARK);
-  doc.roundedRect(ox, oy, 4, CARD_H, 2, 2, 'F');
-  doc.rect(ox + 2, oy, 2, CARD_H, 'F'); // fill the rounded gap on right side
+  doc.roundedRect(ox, oy, CARD_W, 13, 2, 2, 'F');
+  doc.rect(ox, oy + 11, CARD_W, 2, 'F'); // fill curved bottom
 
-  // ─── Top-right decorative triangle ──────────────────────────────────────────
-  doc.setFillColor('#f8fafc');
-  doc.triangle(ox + CARD_W, oy, ox + CARD_W - 22, oy, ox + CARD_W, oy + 16, 'F');
+  // Bottom gold stripe below band
+  doc.setFillColor(GOLD);
+  doc.rect(ox + PAD, oy + 13, CARD_W - PAD * 2, 0.4, 'F');
 
-  // ─── Header: school name ────────────────────────────────────────────────────
+  // School name in top band
+  doc.setTextColor('#ffffff');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.text('GOLDEN ACADEMY', ox + PAD + 1, oy + 7);
+
+  // Subtitle
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(3.2);
+  doc.text('Établissement d\'Enseignement', ox + PAD + 1, oy + 10.5);
+
+  // ─── Badge top-right ─────────────────────────────────────────────────────────
+  doc.setFillColor(GOLD);
+  doc.roundedRect(ox + CARD_W - 22, oy + 2, 19, 5, 1, 1, 'F');
   doc.setTextColor(DARK);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.text('GOLDEN', ox + PAD + 5, oy + 8);
-  doc.setTextColor(PRIMARY);
-  doc.setFontSize(5.5);
-  doc.text('A C A D E M Y', ox + PAD + 5, oy + 12);
+  doc.setFontSize(3.5);
+  doc.text("CARTE D'ÉLÈVE", ox + CARD_W - 12.5, oy + 5.5, { align: 'center' });
 
   // ─── Logo ────────────────────────────────────────────────────────────────────
   if (logo) {
-    doc.addImage(logo, 'PNG', ox + CARD_W - 18, oy + PAD, 9, 6);
+    doc.addImage(logo, 'PNG', ox + CARD_W - 20, oy + 8, 10, 7);
   }
 
-  // ─── Thin separator ─────────────────────────────────────────────────────────
-  doc.setDrawColor(BORDER);
-  doc.setLineWidth(0.3);
-  doc.line(ox + PAD + 5, oy + 15, ox + CARD_W - PAD, oy + 15);
-
   // ─── Photo area ─────────────────────────────────────────────────────────────
-  const px = ox + PAD + 5;
-  const py = oy + 17.5;
+  const px = ox + PAD + 1;
+  const py = oy + 16;
   const pw = 18;
   const ph = 24;
 
-  // Outer border
-  doc.setDrawColor(PRIMARY);
+  doc.setDrawColor(BORDER);
   doc.setLineWidth(0.6);
   doc.roundedRect(px, py, pw, ph, 2, 2, 'S');
-  // Inner background
   doc.setFillColor(SURFACE);
   doc.roundedRect(px + 0.5, py + 0.5, pw - 1, ph - 1, 1.5, 1.5, 'F');
 
-  // Photo or initials
   if (e.photo_url) {
     try {
       const img = await loadImage(e.photo_url);
       if (img) doc.addImage(img, 'JPEG', px + 0.5, py + 0.5, pw - 1, ph - 1);
     } catch {}
-  }
-  if (!e.photo_url) {
+  } else {
     const init = (e.nom.charAt(0) + e.prenom.charAt(0)).toUpperCase();
     doc.setTextColor(DARK);
     doc.setFont('helvetica', 'bold');
@@ -138,88 +140,70 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
     doc.text(init, px + pw / 2, py + ph / 2 + 2, { align: 'center' });
   }
 
-  // ─── Info section ───────────────────────────────────────────────────────────
-  const ix = px + pw + 3.5;
+  // ─── Student info (center area) ─────────────────────────────────────────────
+  const ix = px + pw + 3;
   const iy = py + 2;
 
-  // Name
   doc.setTextColor(DARK);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(5.5);
   doc.text(nom, ix, iy);
 
-  // Matricule badge
-  doc.setFillColor('#eef2ff');
-  doc.roundedRect(ix, iy + 3.5, 36, 5, 1, 1, 'F');
+  // Matricule pill
+  doc.setFillColor('#eff6ff');
+  doc.roundedRect(ix, iy + 3.5, 32, 5, 1, 1, 'F');
   doc.setTextColor(PRIMARY);
-  doc.setFont('helvetica', 'bold');
   doc.setFontSize(4.5);
-  doc.text(e.matricule, ix + 1, iy + 7);
+  doc.text(e.matricule, ix + 1.5, iy + 7);
 
-  // Sexe + Age
   doc.setTextColor(MUTED);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(3.8);
   const sexeLabel = e.sexe === 'M' ? 'Masculin' : 'Féminin';
-  const ageInfo = e.date_naissance ? ` • Né(e) ${e.date_naissance}` : '';
+  const ageInfo = e.date_naissance ? ` · Né(e) ${e.date_naissance}` : '';
   doc.text(`${sexeLabel}${ageInfo}`, ix, iy + 12);
 
-  // Section - Classe - Option
-  doc.setTextColor('#334155');
+  doc.setTextColor(DARK);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(4.2);
   const classe = [e.section, e.classe, e.option].filter(Boolean).join('  ·  ');
   doc.text(classe, ix, iy + 15);
 
-  // ─── Bottom panel ───────────────────────────────────────────────────────────
-  const by = oy + CARD_H;
-
-  // Dark bar at bottom
-  doc.setFillColor(DARK);
-  doc.roundedRect(ox + PAD, by - 10.5, CARD_W - PAD * 2, 8, 1.5, 1.5, 'F');
-
-  // School year inside bar
-  doc.setTextColor('#ffffff');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4.5);
-  doc.text(`ANNÉE SCOLAIRE ${annee}`, ox + CARD_W / 2, by - 5.5, { align: 'center' });
-
-  // ─── Badge ──────────────────────────────────────────────────────────────────
-  doc.setFillColor(ACCENT);
-  doc.roundedRect(ox + CARD_W - 23, by - 13, 19, 4.5, 1, 1, 'F');
-  doc.setTextColor('#ffffff');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(3.5);
-  doc.text("CARTE D'ÉLÈVE", ox + CARD_W - 13.5, by - 10.2, { align: 'center' });
-
-  // ─── QR Code ────────────────────────────────────────────────────────────────
+  // ─── QR Code (right side, smaller than photo) ───────────────────────────────
   const qrData = `${e.matricule}|${nom}|${e.section}|${e.classe || ''}`;
   const qrUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 1, errorCorrectionLevel: 'M' });
-  const qx = px + pw / 2 - 6;
-  const qy = by - 18;
-  const qs = 12;
+  const qs = 13; // smaller than photo (18)
+  const qx = ox + CARD_W - qs - PAD + 1;
+  const qy = oy + CARD_H - qs - PAD - 4;
   doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
-  // white padding behind QR
-  doc.setFillColor('#ffffff');
-  doc.roundedRect(qx - 0.5, qy - 0.5, qs + 1, qs + 1, 1, 1, 'S');
-  doc.setDrawColor('#cbd5e1');
-  doc.setLineWidth(0.1);
-  doc.roundedRect(qx - 0.5, qy - 0.5, qs + 1, qs + 1, 1, 1, 'S');
 
-  // QR Label
+  // QR border
+  doc.setDrawColor('#cbd5e1');
+  doc.setLineWidth(0.15);
+  doc.roundedRect(qx - 1, qy - 1, qs + 2, qs + 2, 1, 1, 'S');
+
   doc.setTextColor(MUTED);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(2.8);
-  doc.text('Vérifier', qx + qs / 2, qy + qs + 2.5, { align: 'center' });
+  doc.text('Vérifier', qx + qs / 2, qy + qs + 3, { align: 'center' });
 
-  // ─── Signature line ─────────────────────────────────────────────────────────
+  // ─── Bottom info bar ────────────────────────────────────────────────────────
+  const by = oy + CARD_H;
+  doc.setFillColor(DARK);
+  doc.roundedRect(ox + PAD, by - 9, CARD_W - PAD * 2, 7, 1.5, 1.5, 'F');
+  doc.setTextColor('#ffffff');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4);
+  doc.text(`ANNÉE ${annee}`, ox + CARD_W / 2, by - 4, { align: 'center' });
+
+  // ─── Signature ──────────────────────────────────────────────────────────────
   doc.setDrawColor('#94a3b8');
   doc.setLineWidth(0.15);
-  doc.line(ox + PAD + 5, by - 3.5, ox + CARD_W / 2 + 5, by - 3.5);
+  doc.line(ox + PAD + 1, by - 2.5, ox + CARD_W / 2 - 4, by - 2.5);
   doc.setTextColor('#94a3b8');
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(2.8);
-  doc.text('Signature du titulaire', ox + CARD_W / 4, by - 2, { align: 'center' });
+  doc.setFontSize(2.5);
+  doc.text('Signature', ox + CARD_W / 4 - 5, by - 1.2, { align: 'center' });
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
