@@ -73,7 +73,7 @@ export default function FournituresEleves() {
       scannerRef.current = scanner;
       scannerRunning.current = false;
       scanner.start(
-        { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        { facingMode: 'environment' },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         async (decodedText) => {
           scannerRunning.current = false;
@@ -545,7 +545,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
       scannerRef.current = scanner;
       scannerRunning2.current = false;
       scanner.start(
-        { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        { facingMode: 'environment' },
         { fps: 15, qrbox: { width: 350, height: 350 }, aspectRatio: 1, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true, rememberLastUsedCamera: true },
         (decodedText) => {
           scannerRunning2.current = false;
