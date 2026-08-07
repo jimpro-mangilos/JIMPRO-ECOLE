@@ -88,7 +88,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
 
   const nomComplet = `${nomParse.nom} ${nomParse.postnom} ${nomParse.prenom}`.trim();
   const qrAuthData = `RECU:${data.numero_recu}|MATRICULE:${data.matricule || ''}|ELEVE:${nomComplet}|MONTANT:${data.montant_paye}|DATE:${data.date_encaissement}`;
-  const qrAuthUrl = await QRCode.toDataURL(qrAuthData, { width: 200, margin: 1, errorCorrectionLevel: 'H' });
+  const qrAuthUrl = await QRCode.toDataURL(qrAuthData, { width: 300, margin: 1, errorCorrectionLevel: 'H' });
   const qrValidationUrl = await QRCode.toDataURL(`JIMPRO-VALIDATION:${data.numero_recu}|${data.date_encaissement}`, {
     width: 180, margin: 1, errorCorrectionLevel: 'M',
   });
