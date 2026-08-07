@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { FileText, Download, Loader2, RotateCcw, Filter } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import MultiSelectFilter from '../components/MultiSelectFilter';
