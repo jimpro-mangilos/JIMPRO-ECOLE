@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import MultiSelectFilter from '../components/MultiSelectFilter';
-import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { calculateAverageAge } from '../utils/calculations';
 import EleveDetailsModal from '../components/EleveDetailsModal';
@@ -58,6 +59,8 @@ export default function Eleves() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [generatingCartes, setGeneratingCartes] = useState(false);
   const [generatingProgress, setGeneratingProgress] = useState({ current: 0, total: 0 });
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const sectionList = sections as { id: string; nom: string }[];
   const optionList = options as { id: string; nom: string; section_id: string }[];
@@ -85,11 +88,26 @@ export default function Eleves() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPhotoUploading(true);
     try {
-      await submitEleve(classeList);
-    } catch (err) {
+      // Upload photo if file selected
+      let photoUrl = formData.photo_url;
+      const file = photoInputRef.current?.files?.[0];
+      if (file) {
+        const ext = file.name.split('.').pop();
+        const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage.from('photos').upload(path, file);
+        if (uploadError) throw new Error(uploadError.message);
+        const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
+        photoUrl = urlData.publicUrl;
+      }
+      setFormData(p => ({ ...p, photo_url: photoUrl }));
+      await submitEleve(classeList, photoUrl);
+    } catch (err: any) {
       console.error('Erreur enregistrement:', err);
-      alert("Erreur lors de l'enregistrement");
+      alert("Erreur lors de l'enregistrement: " + (err.message || ''));
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
@@ -367,6 +385,13 @@ export default function Eleves() {
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Responsable *</label><input type="text" value={formData.responsable} onChange={e => setFormData(p => ({ ...p, responsable: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label><input type="text" value={formData.telephone} onChange={e => setFormData(p => ({ ...p, telephone: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Domicile</label><input type="text" value={formData.domicile} onChange={e => setFormData(p => ({ ...p, domicile: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+                  <input ref={photoInputRef} type="file" accept="image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                  {formData.photo_url && (
+                    <img src={formData.photo_url} alt="Aperçu" className="mt-1 w-16 h-16 object-cover rounded-lg border" />
+                  )}
+                </div>
               </div>
               <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>

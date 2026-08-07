@@ -17,12 +17,14 @@ interface EleveFormData {
   sexe: string; lieu_naissance: string; date_naissance: string;
   section: string; option: string; classe: string; classe_id: string;
   responsable: string; telephone: string; domicile: string;
+  photo_url: string;
 }
 
 const EMPTY_FORM: EleveFormData = {
   matricule: '', nom: '', postnom: '', prenom: '', sexe: 'M',
   lieu_naissance: '', date_naissance: '', section: '', option: '',
   classe: '', classe_id: '', responsable: '', telephone: '', domicile: '',
+  photo_url: '',
 };
 
 interface UseElevesOptions {
@@ -137,6 +139,7 @@ export function useEleves(filters: UseElevesOptions) {
       section: eleve.section, option: eleve.option || '', classe: eleve.classe || '',
       classe_id: (eleve as any).classe_id || '', responsable: eleve.responsable,
       telephone: eleve.telephone, domicile: eleve.domicile,
+      photo_url: (eleve as any).photo_url || '',
     });
     setShowModal(true);
   }, []);
@@ -159,12 +162,12 @@ export function useEleves(filters: UseElevesOptions) {
     if (autoGenerateMatricule && !selectedEleve) handleGenerateMatricule(section);
   }, [autoGenerateMatricule, selectedEleve, handleGenerateMatricule]);
 
-  const submitEleve = useCallback(async (classes: { id: string; nom: string }[]) => {
+  const submitEleve = useCallback(async (classes: { id: string; nom: string }[], photoUrl?: string) => {
     const isUnique = selectedEleve ? true : await validateMatriculeUniqueness(formData.matricule);
     if (!isUnique) {  toast.error('Ce matricule existe déjà.'); return false; }
 
     const classeObj = classes.find(c => c.id === formData.classe_id);
-    const dataToSave = { ...formData, classe: classeObj?.nom || formData.classe, classe_id: formData.classe_id || null };
+    const dataToSave = { ...formData, classe: classeObj?.nom || formData.classe, classe_id: formData.classe_id || null, photo_url: photoUrl || formData.photo_url };
 
     if (selectedEleve) {
       const { error } = await supabase.from('eleves').update({ ...dataToSave, updated_at: new Date().toISOString() }).eq('id', selectedEleve.id);
