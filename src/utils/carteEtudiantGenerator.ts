@@ -247,7 +247,9 @@ export async function generateCartesEtudiants(
     const cardDoc = await generateCarteEtudiant(eleves[i], logoBase64, stampBase64, true);
     const cardImg = cardDoc.output('datauristring');
 
-    doc.addImage(cardImg, 'JPEG', x, y, CARD_W, CARD_H);
+    // Use PNG format for data URI images
+    const format = cardImg.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+    doc.addImage(cardImg, format, x, y, CARD_W, CARD_H);
 
     // Card outline
     doc.setDrawColor('#d1d5db');

@@ -133,20 +133,27 @@ export default function Eleves() {
           </button>
           <button
             onClick={async () => {
-              const cartes = eleves.map(e => ({
-                matricule: e.matricule,
-                nom: e.nom,
-                postnom: e.postnom,
-                prenom: e.prenom,
-                sexe: e.sexe,
-                section: e.section,
-                option: e.option,
-                classe: e.classe,
-                date_naissance: e.date_naissance,
-                photo_url: (e as any).photo_url,
-              }));
-              const doc = await generateCartesEtudiants(cartes, logoUrl);
-              window.open(doc.output('bloburl'));
+              try {
+                const max = 40; // limit to avoid memory issues
+                const toPrint = eleves.slice(0, max);
+                const cartes = toPrint.map(e => ({
+                  matricule: e.matricule,
+                  nom: e.nom,
+                  postnom: e.postnom,
+                  prenom: e.prenom,
+                  sexe: e.sexe,
+                  section: e.section,
+                  option: e.option,
+                  classe: e.classe,
+                  date_naissance: e.date_naissance,
+                  photo_url: (e as any).photo_url,
+                }));
+                const doc = await generateCartesEtudiants(cartes, logoUrl);
+                doc.save('cartes-etudiants.pdf');
+              } catch (err) {
+                console.error('Erreur génération cartes:', err);
+                alert('Erreur lors de la génération des cartes. Vérifiez la console.');
+              }
             }}
             className="flex items-center gap-2 bg-teal-600 text-white px-4 py-3 rounded-lg hover:bg-teal-700 transition-colors font-medium shadow-sm"
           >
