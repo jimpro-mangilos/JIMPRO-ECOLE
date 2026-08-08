@@ -36,11 +36,25 @@ export default function PortailRecouvrement() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const [month, setMonth] = useState(currentMonthIdx);
+  const [motifId, setMotifId] = useState<string>('');
+  const [anneeScolaire, setAnneeScolaire] = useState('');
+  const [motifs, setMotifs] = useState<{ id: string; libelle: string }[]>([]);
+  const [annees, setAnnees] = useState<{ id: string; annee: string }[]>([]);
   const [resultat, setResultat] = useState<Resultat>(null);
   const [loading, setLoading] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-recouvrement';
+
+  // Load motifs and annees on mount
+  useEffect(() => {
+    supabase.from('motifs_paiement').select('id, libelle').eq('is_active', true).order('ordre').then(r => {
+      if (r.data) setMotifs(r.data);
+    });
+    supabase.from('annees_scolaires').select('id, annee').eq('is_active', true).order('ordre').then(r => {
+      if (r.data) setAnnees(r.data);
+    });
+  }, []);
 
   useEffect(() => {
     if (showScanner) {
@@ -86,14 +100,16 @@ export default function PortailRecouvrement() {
         section: eleve.section, classe: (eleve as any).classe || null, photo_url: (eleve as any).photo_url || null,
       };
 
-      // Check payment for selected month
-      const { data: paiement } = await supabase.from('paiements')
+      // Check payment for selected month, motif and année
+      let query = supabase.from('paiements')
         .select('*')
         .eq('eleve_id', eleve.id)
         .eq('mois_minerval', moisActuel)
         .eq('statut', 'encaisse')
-        .order('created_at', { ascending: false })
-        .maybeSingle();
+        .order('created_at', { ascending: false });
+      if (motifId) query = query.eq('motif_id', motifId);
+      if (anneeScolaire) query = query.eq('annee_scolaire', anneeScolaire);
+      const { data: paiement } = await query.maybeSingle();
 
       if (paiement) {
         setResultat({ type: 'en_ordre', eleve: info, paiement: {
@@ -124,18 +140,36 @@ export default function PortailRecouvrement() {
           <p className="text-white/60 text-sm">Scannez une carte étudiant pour vérifier le statut de paiement</p>
         </div>
 
-        {/* Month selector */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-4 flex items-center gap-3">
-          <Calendar className="w-5 h-5 text-white/60" />
-          <select
-            value={month}
-            onChange={e => { setMonth(Number(e.target.value)); setResultat(null); }}
-            className="flex-1 bg-transparent text-white text-sm font-medium outline-none cursor-pointer"
-          >
-            {MOIS.map((m, i) => (
-              <option key={m} value={i} className="bg-slate-800 text-white">{m} {new Date().getFullYear()}</option>
-            ))}
-          </select>
+        {/* Filters */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-4 space-y-3">
+          {/* Month */}
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-white/50" />
+            <select value={month} onChange={e => { setMonth(Number(e.target.value)); setResultat(null); }}
+              className="flex-1 bg-transparent text-white text-sm font-medium outline-none cursor-pointer">
+              {MOIS.map((m, i) => (
+                <option key={m} value={i} className="bg-slate-800 text-white">{m} {new Date().getFullYear()}</option>
+              ))}
+            </select>
+          </div>
+          {/* Motif */}
+          <div className="flex items-center gap-2">
+            <span className="text-white/40 text-xs">Motif</span>
+            <select value={motifId} onChange={e => { setMotifId(e.target.value); setResultat(null); }}
+              className="flex-1 bg-transparent text-white text-sm outline-none cursor-pointer">
+              <option value="" className="bg-slate-800">Tous les motifs</option>
+              {motifs.map(m => (<option key={m.id} value={m.id} className="bg-slate-800 text-white">{m.libelle}</option>))}
+            </select>
+          </div>
+          {/* Année */}
+          <div className="flex items-center gap-2">
+            <span className="text-white/40 text-xs">Année</span>
+            <select value={anneeScolaire} onChange={e => { setAnneeScolaire(e.target.value); setResultat(null); }}
+              className="flex-1 bg-transparent text-white text-sm outline-none cursor-pointer">
+              <option value="" className="bg-slate-800">Toutes les années</option>
+              {annees.map(a => (<option key={a.id} value={a.annee} className="bg-slate-800 text-white">{a.annee}</option>))}
+            </select>
+          </div>
         </div>
 
         {/* Scan button or result */}
