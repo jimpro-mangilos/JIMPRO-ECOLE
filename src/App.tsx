@@ -38,6 +38,7 @@ const PortailParent = lazy(() => import('./pages/PortailParent'));
 const PortailProfesseur = lazy(() => import('./pages/PortailProfesseur'));
 const GestionCours = lazy(() => import('./pages/GestionCours'));
 const GestionDevoirs = lazy(() => import('./pages/GestionDevoirs'));
+const PortailRecouvrement = lazy(() => import('./pages/PortailRecouvrement'));
 
 function LoadingFallback() {
   return (
@@ -82,6 +83,16 @@ function App() {
                 <ErrorBoundary>
                   <Suspense fallback={<LoadingFallback />}>
                     <PortailParent />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/portail-recouvrement"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <PortailRecouvrement />
                   </Suspense>
                 </ErrorBoundary>
               }
