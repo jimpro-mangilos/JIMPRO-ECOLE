@@ -433,8 +433,8 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-800">Enregistrer un Paiement</h2>
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-5 py-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-800">Enregistrer un Paiement</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
@@ -444,8 +444,8 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-5">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
               <Search className="w-5 h-5 text-blue-600" />
               <h3 className="font-semibold text-blue-900">Rechercher l'Élève</h3>
             </div>
@@ -648,48 +648,46 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
             </div>
           )}
 
-          <div className="bg-green-50 border border-green-200 rounded-lg p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <h3 className="font-semibold text-green-900">Informations de Paiement</h3>
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-indigo-600" />
+              </div>
+              <h3 className="font-semibold text-slate-800">Informations de Paiement</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-green-900 mb-2">Type de paiement *</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Type *</label>
                 <select
                   value={formData.type_paiement}
                   onChange={(e) => setFormData({ ...formData, type_paiement: e.target.value, motif_id: '', mois_minerval: '' })}
-                  className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors"
                   required
                 >
                   <option value="">Sélectionner un type</option>
                   {typesPaiement.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.libelle}
-                    </option>
+                    <option key={type.id} value={type.id}>{type.libelle}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-green-900 mb-2">Année Scolaire *</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Année *</label>
                 <select
                   value={formData.annee_scolaire}
                   onChange={(e) => setFormData({ ...formData, annee_scolaire: e.target.value })}
-                  className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white disabled:opacity-50 transition-colors"
                   required
                   disabled={anneeScolaires.length === 0}
                 >
                   {anneeScolaires.length === 0 ? (
-                    <option value="">Aucune année configurée — ajoutez-en dans Configuration</option>
+                    <option value="">Aucune année configurée</option>
                   ) : (
                     <>
                       <option value="">Sélectionner une année</option>
                       {anneeScolaires.map((a) => (
-                        <option key={a.id} value={a.annee}>
-                          {a.annee}
-                        </option>
+                        <option key={a.id} value={a.annee}>{a.annee}</option>
                       ))}
                     </>
                   )}
@@ -698,7 +696,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
 
               {isMinervalType ? (
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-green-900 mb-2">
+                  <label className="block text-sm font-medium text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
                     Mois du Minerval *
                   </label>
                   {!formData.eleve_id || !formData.annee_scolaire ? (
@@ -711,7 +709,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                       Verification des paiements...
                     </p>
                   ) : nextAllowedMonth === null ? (
-                    <p className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-md px-4 py-2 flex items-center gap-2">
+                    <p className="text-sm text-green-700 bg-emerald-50 border border-emerald-200 rounded-md px-4 py-2 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4" />
                       Cet eleve est a jour pour toute l'annee scolaire (Septembre a Juillet)
                     </p>
@@ -720,7 +718,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                       <select
                         value={formData.mois_minerval}
                         onChange={(e) => setFormData({ ...formData, mois_minerval: e.target.value })}
-                        className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white"
                         required
                       >
                         <option value="">Selectionner le mois</option>
@@ -742,7 +740,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                               key={mois}
                               className={`text-xs px-2 py-1 rounded-full font-medium ${
                                 isPaid
-                                  ? 'bg-green-100 text-green-700'
+                                  ? 'bg-emerald-100 text-emerald-700'
                                   : mois === nextAllowedMonth
                                   ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
                                   : 'bg-gray-100 text-gray-500'
@@ -763,11 +761,11 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium text-green-900 mb-2">Motif du Paiement *</label>
+                  <label className="block text-sm font-medium text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Motif du Paiement *</label>
                   <select
                     value={formData.motif_id}
                     onChange={(e) => setFormData({ ...formData, motif_id: e.target.value })}
-                    className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white"
                     required
                   >
                     <option value="">Sélectionner un motif</option>
@@ -781,7 +779,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
               )}
 
               <div>
-                <label className="block text-sm font-medium text-green-900 mb-2">Montant Paye (FC) *</label>
+                <label className="block text-sm font-medium text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Montant Paye (FC) *</label>
                 <input
                   type="number"
                   value={formData.montant_paye}
@@ -795,22 +793,22 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-green-900 mb-2">Montant en lettres</label>
+                <label className="block text-sm font-medium text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Montant en lettres</label>
                 <textarea
                   value={formData.montant_en_lettre}
                   readOnly
-                  className="w-full px-4 py-2 border border-green-300 rounded-md bg-green-100 text-green-900 font-medium"
+                  className="w-full px-4 py-2 border border-indigo-300 rounded-lg bg-indigo-50 text-indigo-900 font-medium"
                   rows={2}
-                  placeholder="Le montant en lettres apparaîtra automatiquement"
+                  placeholder="Saisissez un montant en chiffres"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-green-900 mb-2">Mode de Paiement *</label>
+                <label className="block text-sm font-medium text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Mode de Paiement *</label>
                 <select
                   value={formData.mode_paiement}
                   onChange={(e) => setFormData({ ...formData, mode_paiement: e.target.value })}
-                  className="w-full px-4 py-2 border border-green-300 rounded-md bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white"
                   required
                 >
                   {modesPaiement.map((mode) => (
@@ -822,7 +820,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-green-900 mb-2">Date *</label>
+                <label className="block text-sm font-medium text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Date *</label>
                 <input
                   type="date"
                   value={formData.date_paiement}
@@ -833,7 +831,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-green-900 mb-2">Description</label>
+                <label className="block text-sm font-medium text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -846,7 +844,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
           </div>
 
           {canEncaisser() && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -855,8 +853,8 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                   className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                 />
                 <div>
-                  <p className="font-semibold text-yellow-900">Encaisser le paiement immédiatement</p>
-                  <p className="text-sm text-yellow-700">
+                  <p className="font-semibold text-amber-900">Encaisser le paiement immédiatement</p>
+                  <p className="text-sm text-amber-700">
                     Un SMS et un email seront envoyés au responsable si cette case est cochée
                   </p>
                 </div>
@@ -868,7 +866,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-indigo-600 text-white py-2.5 px-6 rounded-xl hover:bg-indigo-700 shadow-sm shadow-indigo-200 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Enregistrement...' : 'Enregistrer le Paiement'}
             </button>
