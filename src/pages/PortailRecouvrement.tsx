@@ -70,11 +70,11 @@ export default function PortailRecouvrement() {
         async (decodedText) => {
           if (!scannerRunning.current) return;
           scannerRunning.current = false;
-          const match = decodedText.match(/GA[^|]*/i);
-          if (match) {
+          const matriculeExtrait = decodedText.split('|')[0].trim();
+          if (matriculeExtrait) {
             setShowScanner(false);
             setScanError('');
-            await verifierMatricule(match[0].toUpperCase());
+            await verifierMatricule(matriculeExtrait.toUpperCase());
           } else {
             setScanError('Aucun matricule valide trouvé.');
           }

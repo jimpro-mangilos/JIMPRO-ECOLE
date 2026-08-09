@@ -68,18 +68,18 @@ export default function PortailParent() {
         (decodedText) => {
           if (!scannerRunning.current) return;
           scannerRunning.current = false;
-          const match = decodedText.match(/GA[^|]*/i);
-          if (match) {
-            const matriculeExtrait = match[0].toUpperCase();
-            setMatricule(matriculeExtrait);
+          const matriculeExtrait = decodedText.split('|')[0].trim();
+          if (matriculeExtrait) {
+            const matriculeUpper = matriculeExtrait.toUpperCase();
+            setMatricule(matriculeUpper);
             setShowScanner(false);
             setScanError('');
             setTimeout(() => {
               const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-              handleSearchWithMatricule(matriculeExtrait, fakeEvent);
+              handleSearchWithMatricule(matriculeUpper, fakeEvent);
             }, 300);
           } else {
-            setScanError('Aucun matricule valide (GA...) trouve dans ce QR code.');
+            setScanError('Aucun matricule valide trouve dans ce QR code.');
           }
         },
         () => {}
