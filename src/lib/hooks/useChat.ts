@@ -54,6 +54,7 @@ export function useChat() {
     db
       .from('profiles')
       .select('id, nom, prenom, role:roles(nom)')
+      .eq('ecole_id', currentSchoolId)
       .neq('id', user.id)
       .order('nom')
       .then(({ data }: { data: ChatProfile[] | null }) => {

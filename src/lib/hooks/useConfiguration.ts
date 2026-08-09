@@ -21,8 +21,8 @@ export function useConfiguration() {
 
   // ─── Section Prefixes ──────────────────────────────────────────────────────
   const { data: sectionPrefixes = [] } = useQuery({
-    queryKey: ['sectionPrefixes'],
-    queryFn: async () => { const { data, error } = await db.from('section_prefixes').select('*').order('ordre'); if (error) throw error; return data ?? []; },
+    queryKey: ['sectionPrefixes', { schoolId: currentSchoolId }],
+    queryFn: async () => { const { data, error } = await db.from('section_prefixes').select('*').eq('ecole_id', currentSchoolId).order('ordre'); if (error) throw error; return data ?? []; },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -45,8 +45,8 @@ export function useConfiguration() {
 
   // ─── Types Uniforme ────────────────────────────────────────────────────────
   const { data: typesUniforme = [] } = useQuery({
-    queryKey: ['typesUniforme'],
-    queryFn: async () => { const { data, error } = await db.from('types_uniforme').select('*').order('ordre'); if (error) throw error; return data ?? []; },
+    queryKey: ['typesUniforme', { schoolId: currentSchoolId }],
+    queryFn: async () => { const { data, error } = await db.from('types_uniforme').select('*').eq('ecole_id', currentSchoolId).order('ordre'); if (error) throw error; return data ?? []; },
     staleTime: 5 * 60 * 1000,
   });
 

@@ -15,7 +15,7 @@ export function useRapports() {
 
   // ─── Finance filter data ───────────────────────────────────────────────────
   const { data: financeComptables = [] } = useQuery({
-    queryKey: ['rapports', 'financeComptables'],
+    queryKey: ['rapports', 'financeComptables', { schoolId }],
     queryFn: async () => {
       const { data } = await supabase.from('compte_courant').select('nom_comptable, nom_approbateur, nom_encaisseur').eq('ecole_id', schoolId);
       const set = new Set<string>();
@@ -26,7 +26,7 @@ export function useRapports() {
   });
 
   const { data: financeApprobateurs = [] } = useQuery({
-    queryKey: ['rapports', 'financeApprobateurs'],
+    queryKey: ['rapports', 'financeApprobateurs', { schoolId }],
     queryFn: async () => {
       const { data } = await supabase.from('compte_courant').select('nom_approbateur').eq('ecole_id', schoolId);
       const set = new Set<string>();
@@ -38,7 +38,7 @@ export function useRapports() {
 
   // ─── Fourniture filter data ────────────────────────────────────────────────
   const { data: fournitureFilterData } = useQuery({
-    queryKey: ['rapports', 'fournitureFilters'],
+    queryKey: ['rapports', 'fournitureFilters', { schoolId }],
     queryFn: async () => {
       const [{ data: types }, { data: fournData }] = await Promise.all([
         supabase.from('types_uniforme').select('libelle').eq('ecole_id', schoolId).eq('is_active', true).order('ordre'),

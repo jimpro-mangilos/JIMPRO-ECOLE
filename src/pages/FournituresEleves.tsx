@@ -512,6 +512,7 @@ interface EleveSelectorModalProps {
 }
 
 function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
+  const { currentSchoolId } = useAuth();
   const [eleves, setEleves] = useState<Eleve[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -527,6 +528,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
         const { data, error } = await supabase
           .from('eleves')
           .select('*')
+          .eq('ecole_id', currentSchoolId)
           .order('nom', { ascending: true });
         if (error) throw error;
         setEleves(data || []);

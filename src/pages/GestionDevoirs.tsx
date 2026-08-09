@@ -23,7 +23,7 @@ export default function GestionDevoirs() {
   const [error, setError] = useState('');
 
   const { data: devoirs = [], isLoading } = useQuery({
-    queryKey: ['devoirs'],
+    queryKey: ['devoirs', { schoolId: currentSchoolId }],
     queryFn: async () => {
       const { data } = await supabase.from('devoirs').select('*, classes(nom), profiles!professeur_id(nom, prenom)').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
       return (data ?? []) as DevoirItem[];

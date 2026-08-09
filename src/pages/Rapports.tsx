@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { FileText, Download, Loader2, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import { useRapports } from '../lib/hooks/useRapports';
 import {
@@ -10,6 +11,7 @@ import {
 } from '../utils/pdfGenerator';
 
 export default function Rapports() {
+  const { currentSchoolId } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -27,7 +29,7 @@ export default function Rapports() {
 
   const generate = async (fn: Function, ...args: any[]) => { setLoading(true); try { await fn(...args); showMsg('success', 'Rapport généré'); } catch (err: any) { showMsg('error', err.message || 'Erreur'); } finally { setLoading(false); } };
 
-  const loadComptables = async () => { const { data } = await supabase.from('compte_courant').select('*'); setComptables(data || []); };
+  const loadComptables = async () => { const { data } = await supabase.from('compte_courant').select('*').eq('ecole_id', currentSchoolId); setComptables(data || []); };
 
   return (
     <div className="space-y-4">

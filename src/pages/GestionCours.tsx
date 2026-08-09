@@ -23,7 +23,7 @@ export default function GestionCours() {
   const [error, setError] = useState('');
 
   const { data: cours = [], isLoading } = useQuery({
-    queryKey: ['cours'],
+    queryKey: ['cours', { schoolId: currentSchoolId }],
     queryFn: async () => {
       const { data } = await supabase.from('cours').select('*, classes(nom), sections(nom), profiles!professeur_id(nom, prenom)').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
       return (data ?? []) as CoursItem[];

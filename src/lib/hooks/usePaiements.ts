@@ -74,7 +74,7 @@ export function usePaiements(filters: PaiementFilters) {
   const { data: typesPaiement = [] } = useQuery({
     queryKey: queryKeys.typesPaiement.active,
     queryFn: async () => {
-      const { data, error } = await supabase.from('types_paiement').select('*').eq('is_active', true).order('ordre');
+      const { data, error } = await supabase.from('types_paiement').select('*').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre');
       if (error) throw error;
       return data ?? [];
     },
