@@ -26,9 +26,7 @@ interface ActiveSchool {
  * - Admin/it_manager : peut overrider via switchSchool() → stocké dans localStorage
  */
 export function useActiveSchool(): ActiveSchool {
-  const { currentSchoolId, currentSchoolCode, isItManager, isAdmin } = useAuth();
-
-  const homeSchoolId = currentSchoolId;
+  const { currentSchoolCode, homeSchoolId, isItManager, isAdmin } = useAuth();
   const canSwitchSchool = isItManager() || (isAdmin() && !isItManager()); // admin = true, it_manager = true
 
   // Récupérer l'override localStorage

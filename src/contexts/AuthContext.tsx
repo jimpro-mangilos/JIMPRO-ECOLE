@@ -46,6 +46,8 @@ interface AuthContextType {
   userProfile: Profile | null;
   currentSchoolId: string | null;
   currentSchoolCode: string | null;
+  /** L'école d'origine du profil (jamais override par le sélecteur admin) */
+  homeSchoolId: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -217,8 +219,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return isItManager() || profile?.role?.nom === 'admin';
   }
 
-  // École courante : priorité au profile, fallback au JWT app_metadata
+  // École courante : priorité override localStorage (admin), puis profile, puis JWT
+  const isAdminOrItManager = profile?.role?.nom === 'admin' || profile?.role?.nom === 'it_manager';
+  const activeSchoolOverride: string | null = (() => {
+    if (!isAdminOrItManager) return null;
+    try {
+      const stored = localStorage.getItem('jimpro_active_school_id');
+      return stored && stored !== 'null' ? stored : null;
+    } catch { return null; }
+  })();
+
+  // École d'origine (sans override) — pour le reset
+  const homeSchoolId: string | null =
+    profile?.ecole_id ??
+    (user?.app_metadata?.ecole_id as string | undefined) ??
+    null;
+
   const currentSchoolId: string | null =
+    activeSchoolOverride ??
     profile?.ecole_id ??
     (user?.app_metadata?.ecole_id as string | undefined) ??
     null;
@@ -253,6 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userProfile: profile,
     currentSchoolId,
     currentSchoolCode,
+    homeSchoolId,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
