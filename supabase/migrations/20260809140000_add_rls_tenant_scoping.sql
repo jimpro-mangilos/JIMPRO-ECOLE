@@ -65,8 +65,8 @@ BEGIN
            SELECT policyname FROM pg_policies 
            WHERE schemaname = ''public'' AND tablename = %L
          LOOP
-           EXECUTE format(''DROP POLICY IF EXISTS %%I ON %I.%I'', 
-             pol.policyname, ''public'', %L);
+            EXECUTE format(''DROP POLICY IF EXISTS %%I ON %%I.%%I'', 
+              pol.policyname, ''public'', %L);
          END LOOP;
        END $inner$;',
       tbl.table_name, tbl.table_name
