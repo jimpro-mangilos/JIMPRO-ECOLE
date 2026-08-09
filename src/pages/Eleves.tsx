@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import MultiSelectFilter from '../components/MultiSelectFilter';
-import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { calculateAverageAge } from '../utils/calculations';
@@ -46,7 +46,7 @@ export default function Eleves() {
     showModal, setShowModal,
     selectedEleve, setSelectedEleve,
     formData, setFormData,
-    autoGenerateMatricule, setAutoGenerateMatricule,
+    setAutoGenerateMatricule,
     generatingMatricule,
     selectedIds, bulkDeleting,
     openCreate, openEdit,
@@ -60,7 +60,7 @@ export default function Eleves() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [generatingCartes, setGeneratingCartes] = useState(false);
   const [generatingProgress, setGeneratingProgress] = useState({ current: 0, total: 0 });
-  const [photoUploading, setPhotoUploading] = useState(false);
+  const [, setPhotoUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const sectionList = sections as { id: string; nom: string }[];
@@ -97,7 +97,7 @@ export default function Eleves() {
       if (file) {
         const ext = file.name.split('.').pop();
         const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage.from('photos').upload(path, file);
+        const { error: uploadError } = await supabase.storage.from('photos').upload(path, file);
         if (uploadError) throw new Error(uploadError.message);
         const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
         photoUrl = urlData.publicUrl;
@@ -410,7 +410,7 @@ export default function Eleves() {
 
       {/* Payment Modal */}
       {showPaymentModal && selectedEleve && (
-        <PaymentFormModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} onSuccess={() => { invalidateEleves(); setShowPaymentModal(false); }} preselectedEleve={selectedEleve} />
+        <PaymentFormModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} onSuccess={() => { invalidateEleves(); setShowPaymentModal(false); }} preselectedEleve={selectedEleve as any} />
       )}
     </div>
   );

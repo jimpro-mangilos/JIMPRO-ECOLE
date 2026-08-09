@@ -20,7 +20,9 @@ async function loadSectionPrefixes(): Promise<Record<string, string>> {
     return prefixCache;
   }
 
-  const { data, error } = await supabase
+  // section_prefixes not yet in generated Database types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('section_prefixes')
     .select('section, prefix')
     .eq('is_active', true);

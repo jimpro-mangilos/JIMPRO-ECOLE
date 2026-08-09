@@ -41,7 +41,7 @@ interface PaiementFilters {
 }
 
 export function usePaiements(filters: PaiementFilters) {
-  const { user, userProfile, canEncaisser, canAnnulerPaiement, canSupprimerPaiement, isItManager, isPromoteur, isCoordonnateur, isSecretary, currentSchoolId } = useAuth();
+  const { user, userProfile, canEncaisser, canSupprimerPaiement, isItManager, isPromoteur, isCoordonnateur, isSecretary, currentSchoolId } = useAuth();
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -161,7 +161,7 @@ export function usePaiements(filters: PaiementFilters) {
   }, [filteredPaiements]);
 
   const toggleDate = useCallback((dateKey: string) => {
-    setExpandedDates(prev => { const n = new Set(prev); n.has(dateKey) ? n.delete(dateKey) : n.add(dateKey); return n; });
+    setExpandedDates(prev => { const n = new Set(prev); if (n.has(dateKey)) n.delete(dateKey); else n.add(dateKey); return n; });
   }, []);
 
   const expandAllDates = useCallback(() => setExpandedDates(new Set(dateGroups.map(([k]) => k))), [dateGroups]);
@@ -170,7 +170,7 @@ export function usePaiements(filters: PaiementFilters) {
 
   // ─── Selection ─────────────────────────────────────────────────────────────
   const toggleSelectOne = useCallback((id: string) => {
-    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelectedIds(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   }, []);
 
   const toggleSelectAll = useCallback(() => {

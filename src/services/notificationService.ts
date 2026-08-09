@@ -1,5 +1,9 @@
 import { supabase } from '../lib/supabase';
 
+// notifications_log table is not yet in the generated Database types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+
 interface NotificationData {
   paiementId: string;
   nomEleve: string;
@@ -15,7 +19,7 @@ export async function sendSMSNotification(data: NotificationData): Promise<boole
   try {
     const message = `Bonjour, Paiement reçu pour ${data.nomEleve}. Montant: ${data.montantPaye} FC (${data.montantEnLettre}). Reçu N°: ${data.numeroRecu}. Merci.`;
 
-    const { error } = await supabase.from('notifications_log').insert({
+    const { error } = await db.from('notifications_log').insert({
       paiement_id: data.paiementId,
       type_notification: 'sms',
       destinataire: data.telephone,
@@ -35,7 +39,7 @@ export async function sendSMSNotification(data: NotificationData): Promise<boole
   } catch (error) {
     console.error('Erreur lors de l\'envoi du SMS:', error);
 
-    await supabase.from('notifications_log').insert({
+    await db.from('notifications_log').insert({
       paiement_id: data.paiementId,
       type_notification: 'sms',
       destinataire: data.telephone,
@@ -73,7 +77,7 @@ export async function sendEmailNotification(data: NotificationData): Promise<boo
       L'administration
     `;
 
-    const { error } = await supabase.from('notifications_log').insert({
+    const { error } = await db.from('notifications_log').insert({
       paiement_id: data.paiementId,
       type_notification: 'email',
       destinataire: data.email,
@@ -93,7 +97,7 @@ export async function sendEmailNotification(data: NotificationData): Promise<boo
   } catch (error) {
     console.error('Erreur lors de l\'envoi de l\'email:', error);
 
-    await supabase.from('notifications_log').insert({
+    await db.from('notifications_log').insert({
       paiement_id: data.paiementId,
       type_notification: 'email',
       destinataire: data.email || '',

@@ -3,13 +3,14 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogo } from '../contexts/LogoContext';
 import { invalidatePrefixCache } from '../utils/matriculeGenerator';
-import { Settings, Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Hash, Package, Upload, Image, RotateCcw, Menu as MenuIcon } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Upload, RotateCcw } from 'lucide-react';
 import MenuConfigTab from '../components/MenuConfigTab';
 import { useSections, useOptions, useClasses, useMotifsPaiement, useTypesPaiement, useAnneesScolaires } from '../lib/hooks/useReferenceData';
 import { useConfiguration } from '../lib/hooks/useConfiguration';
 
 // ─── Form helpers ─────────────────────────────────────────────────────────────
-const emptyForm = (extra?: Record<string, string | boolean>) => ({ nom: '', description: '', is_active: true, ...extra });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const emptyForm = (extra?: Record<string, any>): any => ({ nom: '', description: '', is_active: true, ...extra });
 const libForm = (extra?: Record<string, string | boolean>) => ({ libelle: '', description: '', is_active: true, ...extra });
 type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'menu_par_role';
 const TABS: { key: TabKey; label: string }[] = [
@@ -159,24 +160,24 @@ export default function Configuration() {
       {/* ─── Modals (simplified) ───────────────────────────────────────────── */}
       {/* Section Modal */}
       {showSectionForm && <Modal title={editingSection ? 'Modifier Section' : 'Nouvelle Section'} onClose={() => setShowSectionForm(false)} onSubmit={e => { e.preventDefault(); handleSubmit(upsertSection, sectionForm, setShowSectionForm, () => setSectionForm(emptyForm()), 'Section', !!editingSection, { id: editingSection?.id, maxOrdre: Math.max(0, ...sections.map((s: any) => s.ordre)) }); }}>
-        <Field label="Nom" value={sectionForm.nom} onChange={v => setSectionForm(p => ({ ...p, nom: v }))} />
-        <Field label="Description" value={sectionForm.description} onChange={v => setSectionForm(p => ({ ...p, description: v }))} />
+        <Field label="Nom" value={sectionForm.nom} onChange={v => setSectionForm((p: any) => ({ ...p, nom: v }))} />
+        <Field label="Description" value={sectionForm.description} onChange={v => setSectionForm((p: any) => ({ ...p, description: v }))} />
       </Modal>}
 
       {/* Option Modal */}
       {showOptionForm && <Modal title={editingOption ? "Modifier Option" : "Nouvelle Option"} onClose={() => setShowOptionForm(false)} onSubmit={e => { e.preventDefault(); handleSubmit(upsertOption, optionForm, setShowOptionForm, () => setOptionForm(emptyForm({ section_id: '' })), 'Option', !!editingOption, { id: editingOption?.id, maxOrdre: Math.max(0, ...options.map((o: any) => o.ordre)) }); }}>
-        <Field label="Nom" value={optionForm.nom} onChange={v => setOptionForm(p => ({ ...p, nom: v }))} />
-        <div><label className="block text-sm font-medium mb-1">Section</label><select value={optionForm.section_id} onChange={e => setOptionForm(p => ({ ...p, section_id: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg text-sm"><option value="">—</option>{sections.map((s: any) => <option key={s.id} value={s.id}>{s.nom}</option>)}</select></div>
-        <Field label="Description" value={optionForm.description} onChange={v => setOptionForm(p => ({ ...p, description: v }))} />
+        <Field label="Nom" value={optionForm.nom} onChange={v => setOptionForm((p: any) => ({ ...p, nom: v }))} />
+        <div><label className="block text-sm font-medium mb-1">Section</label><select value={optionForm.section_id} onChange={e => setOptionForm((p: any) => ({ ...p, section_id: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg text-sm"><option value="">—</option>{sections.map((s: any) => <option key={s.id} value={s.id}>{s.nom}</option>)}</select></div>
+        <Field label="Description" value={optionForm.description} onChange={v => setOptionForm((p: any) => ({ ...p, description: v }))} />
       </Modal>}
 
       {/* Classe Modal */}
       {showClasseForm && <Modal title={editingClasse ? 'Modifier Classe' : 'Nouvelle Classe'} onClose={() => setShowClasseForm(false)} onSubmit={e => { e.preventDefault(); const maxO = Math.max(0, ...classes.map((c: any) => c.ordre)); handleSubmit(upsertClasse, classeForm, setShowClasseForm, () => setClasseForm(emptyForm({ section_id: '', option_id: '', niveau: '', designation: '' })), 'Classe', !!editingClasse, { id: editingClasse?.id, maxOrdre: maxO }); }}>
-        <Field label="Nom" value={classeForm.nom} onChange={v => setClasseForm(p => ({ ...p, nom: v }))} />
-        <div><label className="block text-sm font-medium mb-1">Section</label><select value={classeForm.section_id} onChange={e => setClasseForm(p => ({ ...p, section_id: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg text-sm"><option value="">—</option>{sections.map((s: any) => <option key={s.id} value={s.id}>{s.nom}</option>)}</select></div>
-        <Field label="Niveau" value={classeForm.niveau} onChange={v => setClasseForm(p => ({ ...p, niveau: v }))} />
-        <Field label="Désignation" value={classeForm.designation} onChange={v => setClasseForm(p => ({ ...p, designation: v }))} />
-        <Field label="Description" value={classeForm.description} onChange={v => setClasseForm(p => ({ ...p, description: v }))} />
+        <Field label="Nom" value={classeForm.nom} onChange={v => setClasseForm((p: any) => ({ ...p, nom: v }))} />
+        <div><label className="block text-sm font-medium mb-1">Section</label><select value={classeForm.section_id} onChange={e => setClasseForm((p: any) => ({ ...p, section_id: e.target.value }))} className="w-full px-2 py-1.5 border rounded-lg text-sm"><option value="">—</option>{sections.map((s: any) => <option key={s.id} value={s.id}>{s.nom}</option>)}</select></div>
+        <Field label="Niveau" value={classeForm.niveau} onChange={v => setClasseForm((p: any) => ({ ...p, niveau: v }))} />
+        <Field label="Désignation" value={classeForm.designation} onChange={v => setClasseForm((p: any) => ({ ...p, designation: v }))} />
+        <Field label="Description" value={classeForm.description} onChange={v => setClasseForm((p: any) => ({ ...p, description: v }))} />
       </Modal>}
 
       {/* Motif / TypePaiement Modal */}

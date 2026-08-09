@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Users, Plus, CreditCard as Edit2, Trash2, Shield, Check, X, AlertCircle, Search, Loader2 } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Shield, Check, AlertCircle, Search, Loader2 } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -234,7 +234,7 @@ export default function Admin() {
       .from('profiles')
       .update({ role_id: newRoleId, ecole_id: currentSchoolId })
       .eq('id', userId)
-      .then(({ error }) => {
+      .then(({ error }: { error: any }) => {
         if (error) { setError('Erreur lors du changement de rôle'); return; }
         const newRole = roles.find(r => r.id === newRoleId);
         supabase.from('user_activity_logs').insert({

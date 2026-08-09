@@ -83,7 +83,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
       if (typesRes.data) setTypesUniforme(typesRes.data);
       if (anneesRes.data) {
         setAnneeScolaires(anneesRes.data);
-        const active = anneesRes.data.find(a => a.is_active);
+        const active = anneesRes.data.find((a: any) => a.is_active);
         if (active && !annee) {
           setAnnee(active.annee);
         }
@@ -107,7 +107,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
         .eq('section', eleve.section || '');
       if (error) throw error;
       const map: StockInfo = {};
-      (data || []).forEach((s) => { map[s.type_uniforme_id] = s.quantite_stock; });
+      (data || []).forEach((s: any) => { map[s.type_uniforme_id] = s.quantite_stock; });
       setStockInfo(map);
 
       // Pre-select all available articles with quantity 1

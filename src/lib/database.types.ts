@@ -367,6 +367,17 @@ export interface Database {
           read_at?: string;
         };
       };
+      // Fallback for tables not yet in generated types
+      // TODO: regenerate with `supabase gen types typescript --linked` when project is linked
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      [key: string]: any;
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Views: Record<string, any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Functions: Record<string, any>;
+    Enums: Record<string, string[]>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    CompositeTypes: Record<string, any>;
   };
 }

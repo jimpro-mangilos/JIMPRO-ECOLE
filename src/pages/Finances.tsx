@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Plus, Search, TrendingUp, TrendingDown, CheckCircle, ArrowDownCircle, ArrowUpCircle, Trash2, ChevronUp, ChevronDown, ChevronRight, ChevronsUpDown, Filter, User, Calendar, CalendarDays, ChevronsDownUp, RotateCcw, FileDown, LayoutDashboard, Clock, Pencil, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, TrendingUp, TrendingDown, CheckCircle, ArrowDownCircle, ArrowUpCircle, Trash2, ChevronUp, ChevronDown, ChevronRight, Filter, User, Calendar, CalendarDays, FileDown, LayoutDashboard, Clock, Pencil, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { generateFinancesReport } from '../utils/pdfGenerator';
 import { montantEnLettres } from '../utils/numberToWords';
@@ -30,9 +30,9 @@ export default function Finances() {
   const { transactions, loading, stats, pieData, dateGroups, expandedDates, toggleDate,
     comptableOptions, years, selectedIds, bulkDeleting, actionLoading,
     toggleSelectOne, toggleSelectAll, bulkDelete,
-    canApprouver, canApprouverTransaction, canDecaisserEncaisser, canDecaisserTransaction, canDecaisserEncaisserTransaction,
+    canApprouverTransaction, canDecaisserEncaisserTransaction,
     canSupprimer, canCreer, canModifier,
-    updateStatut, supprimer, createTransaction, editTransaction, invalidate, currentUserFullName } = useFinances(filters);
+    updateStatut, supprimer, createTransaction, editTransaction } = useFinances(filters);
 
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'recette' | 'depense'>('recette');
@@ -85,7 +85,7 @@ export default function Finances() {
             ))}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100"><h3 className="text-sm font-semibold text-gray-700 mb-2">Répartition</h3><PieChart data={pieData} /></div>
+        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100"><h3 className="text-sm font-semibold text-gray-700 mb-2">Répartition</h3><PieChart data={pieData as any} /></div>
       </div>
 
       {/* Filters + Table */}

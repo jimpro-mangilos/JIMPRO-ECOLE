@@ -99,7 +99,7 @@ export default function MenuConfigTab() {
 
     if (!error && data) {
       const configurableRoles = data.filter(
-        (r) => r.nom !== 'revoque' && r.nom !== 'it_manager'
+        (r: any) => r.nom !== 'revoque' && r.nom !== 'it_manager'
       );
       setRoles(configurableRoles);
       if (configurableRoles.length > 0) {

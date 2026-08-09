@@ -96,7 +96,7 @@ export function useEleves(filters: UseElevesOptions) {
 
   // Filtering
   const filteredEleves = useMemo(() => {
-    let result = eleves.filter((eleve) => {
+    const result = eleves.filter((eleve) => {
       const s = filters.searchTerm.toLowerCase();
       const matchesSearch = !s || eleve.nom.toLowerCase().includes(s) || eleve.postnom.toLowerCase().includes(s) || eleve.prenom.toLowerCase().includes(s) || eleve.matricule.toLowerCase().includes(s);
       const matchesSection = filters.selectedSection.length === 0 || filters.selectedSection.some(sec => eleve.section.toLowerCase() === sec.toLowerCase());
@@ -138,7 +138,7 @@ export function useEleves(filters: UseElevesOptions) {
     setFormData({
       matricule: eleve.matricule, nom: eleve.nom, postnom: eleve.postnom, prenom: eleve.prenom,
       sexe: eleve.sexe, lieu_naissance: eleve.lieu_naissance, date_naissance: eleve.date_naissance,
-      section: eleve.section, option: eleve.option || '', classe: eleve.classe || '',
+      section: eleve.section, option: eleve.option || '', classe: (eleve as any).classe || '',
       classe_id: (eleve as any).classe_id || '', responsable: eleve.responsable,
       telephone: eleve.telephone, domicile: eleve.domicile,
       photo_url: (eleve as any).photo_url || '',

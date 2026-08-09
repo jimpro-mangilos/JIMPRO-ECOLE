@@ -58,7 +58,7 @@ export default function PortailProfesseur() {
   };
 
   const openCreate = () => { setEditingId(null); setForm(EMPTY_FORM); setShowForm(true); setError(''); };
-  const openEdit = (item: any, isDevoir: boolean) => {
+  const openEdit = (item: any, _isDevoir: boolean) => {
     setEditingId(item.id);
     const sectionId = (item as any).section_id || '';
     const optionId = (item as any).option_id || '';
@@ -122,8 +122,6 @@ export default function PortailProfesseur() {
   };
 
   const isOwner = (professeur_id: string) => user?.id === professeur_id;
-
-  const canDeleteFile = (item: any) => isOwner(item.professeur_id) && (item.fichier_url || item.fichier_nom);
 
   const classLabel = (item: any) => {
     const cls = item.classes;

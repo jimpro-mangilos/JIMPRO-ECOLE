@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, TrendingDown, Users, CheckCircle, Clock, Calendar, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -49,7 +49,7 @@ interface TypePaiement {
 }
 
 export default function TableauBordComptable() {
-  const { profile, currentSchoolId } = useAuth();
+  const { currentSchoolId } = useAuth();
   const [comptables, setComptables] = useState<Comptable[]>([]);
   const [comptableSelectionne, setComptableSelectionne] = useState<string>('');
   const [statistiques, setStatistiques] = useState<StatistiquesComptable | null>(null);
@@ -100,6 +100,7 @@ export default function TableauBordComptable() {
   };
 
   const fetchComptables = async () => {
+    if (!currentSchoolId) return;
     try {
       setLoading(true);
 
@@ -116,13 +117,13 @@ export default function TableauBordComptable() {
       const encaisseurIds = Array.from(
         new Set(
           (paiementsEncaisses || [])
-            .map((p) => p.encaisseur_id)
-            .filter((id): id is string => !!id)
+            .map((p: any) => p.encaisseur_id)
+            .filter((id: any) => !!id)
         )
       );
 
       const nomsParId = new Map<string, string>();
-      (paiementsEncaisses || []).forEach((p) => {
+      (paiementsEncaisses || []).forEach((p: any) => {
         if (p.encaisseur_id && p.nom_encaisseur && !nomsParId.has(p.encaisseur_id)) {
           nomsParId.set(p.encaisseur_id, p.nom_encaisseur);
         }
@@ -139,10 +140,10 @@ export default function TableauBordComptable() {
 
         if (errorProfils) throw errorProfils;
 
-        const profilsMap = new Map((profilsData || []).map((p) => [p.id, p]));
+        const profilsMap = new Map((profilsData || []).map((p: any) => [p.id, p]));
 
-        encaisseursList = encaisseurIds.map((id) => {
-          const profil = profilsMap.get(id);
+        encaisseursList = encaisseurIds.map((id: any) => {
+          const profil: any = profilsMap.get(id);
           if (profil) {
             return {
               id: profil.id,
@@ -187,6 +188,7 @@ export default function TableauBordComptable() {
   };
 
   const fetchStatistiquesComptable = async (comptableId: string) => {
+    if (!currentSchoolId) return;
     try {
       const { data: paiements, error } = await supabase
         .from('paiements')
@@ -197,9 +199,9 @@ export default function TableauBordComptable() {
       if (error) throw error;
 
       const paiementsData = paiements || [];
-      const paiementsActifs = paiementsData.filter(p => p.statut !== 'annule');
-      const encaisses = paiementsActifs.filter(p => p.est_encaisse);
-      const nonEncaisses = paiementsActifs.filter(p => !p.est_encaisse);
+      const paiementsActifs = paiementsData.filter((p: any) => p.statut !== 'annule');
+      const encaisses = paiementsActifs.filter((p: any) => p.est_encaisse);
+      const nonEncaisses = paiementsActifs.filter((p: any) => !p.est_encaisse);
 
       const selectedComptable = comptables.find(c => c.id === comptableId);
       const nomComptable = selectedComptable
@@ -209,14 +211,14 @@ export default function TableauBordComptable() {
       const stats: StatistiquesComptable = {
         comptable_id: comptableId,
         nom_comptable: nomComptable,
-        total_paiements: paiementsActifs.reduce((sum, p) => sum + p.montant_paye, 0),
-        total_encaisse: encaisses.reduce((sum, p) => sum + p.montant_paye, 0),
-        total_non_encaisse: nonEncaisses.reduce((sum, p) => sum + p.montant_paye, 0),
+        total_paiements: paiementsActifs.reduce((sum: number, p: any) => sum + p.montant_paye, 0),
+        total_encaisse: encaisses.reduce((sum: number, p: any) => sum + p.montant_paye, 0),
+        total_non_encaisse: nonEncaisses.reduce((sum: number, p: any) => sum + p.montant_paye, 0),
         nombre_transactions: paiementsActifs.length,
         nombre_encaisses: encaisses.length,
         nombre_non_encaisses: nonEncaisses.length,
         dernier_paiement: paiementsData.length > 0
-          ? [...paiementsData].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].created_at
+          ? [...paiementsData].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].created_at
           : null,
       };
 
@@ -227,6 +229,7 @@ export default function TableauBordComptable() {
   };
 
   const fetchTransactions = async (comptableId: string) => {
+    if (!currentSchoolId) return;
     try {
       const { data: encaisses, error: errorEncaisses } = await supabase
         .from('paiements')
@@ -258,6 +261,7 @@ export default function TableauBordComptable() {
   };
 
   const fetchStatsMensuel = async (comptableId: string) => {
+    if (!currentSchoolId) return;
     try {
       const maintenant = new Date();
       const debutMoisActuel = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
@@ -294,9 +298,9 @@ export default function TableauBordComptable() {
       if (moisActuelRes.error) throw moisActuelRes.error;
       if (moisPrecedentRes.error) throw moisPrecedentRes.error;
 
-      const totalJour = (jourRes.data || []).reduce((sum, p) => sum + p.montant_paye, 0);
-      const totalMoisActuel = (moisActuelRes.data || []).reduce((sum, p) => sum + p.montant_paye, 0);
-      const totalMoisPrecedent = (moisPrecedentRes.data || []).reduce((sum, p) => sum + p.montant_paye, 0);
+      const totalJour = (jourRes.data || []).reduce((sum: number, p: any) => sum + p.montant_paye, 0);
+      const totalMoisActuel = (moisActuelRes.data || []).reduce((sum: number, p: any) => sum + p.montant_paye, 0);
+      const totalMoisPrecedent = (moisPrecedentRes.data || []).reduce((sum: number, p: any) => sum + p.montant_paye, 0);
       const difference = totalMoisActuel - totalMoisPrecedent;
       const pourcentage = totalMoisPrecedent > 0 ? (difference / totalMoisPrecedent) * 100 : (totalMoisActuel > 0 ? 100 : 0);
 
@@ -313,6 +317,7 @@ export default function TableauBordComptable() {
   };
 
   const fetchTypesPaiement = async () => {
+    if (!currentSchoolId) return;
     try {
       const { data, error } = await supabase
         .from('types_paiement')

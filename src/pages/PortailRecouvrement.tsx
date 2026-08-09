@@ -51,10 +51,10 @@ export default function PortailRecouvrement() {
   // Load motifs and annees on mount (scoped by school)
   useEffect(() => {
     if (!schoolId) return;
-    supabase.from('motifs_paiement').select('id, libelle').eq('ecole_id', schoolId).eq('is_active', true).order('ordre').then(r => {
+    supabase.from('motifs_paiement').select('id, libelle').eq('ecole_id', schoolId).eq('is_active', true).order('ordre').then((r: any) => {
       if (r.data) setMotifs(r.data);
     });
-    supabase.from('annees_scolaires').select('id, annee').eq('ecole_id', schoolId).eq('is_active', true).order('ordre').then(r => {
+    supabase.from('annees_scolaires').select('id, annee').eq('ecole_id', schoolId).eq('is_active', true).order('ordre').then((r: any) => {
       if (r.data) setAnnees(r.data);
     });
   }, [schoolId]);

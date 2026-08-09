@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Mail, Lock, Camera, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { Lock, Camera, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function Profile() {

@@ -6,7 +6,7 @@ import PaymentFormModal from '../components/PaymentFormModal';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import { useAuth } from '../contexts/AuthContext';
 import { usePaiements, getStatut, type Paiement } from '../lib/hooks/usePaiements';
-import { useSections, useOptions, useClasses } from '../lib/hooks/useReferenceData';
+import { useSections, useClasses } from '../lib/hooks/useReferenceData';
 
 // ─── Motif Multi-Select (local component) ────────────────────────────────────
 function MotifMultiSelect({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (v: string[]) => void }) {
@@ -69,7 +69,7 @@ function usePaiementFilters() {
 
 // ─── Page Component ───────────────────────────────────────────────────────────
 export default function Paiements() {
-  const { user, userProfile, currentSchoolId, canCreatePaiement, canAnnulerPaiement, canSupprimerPaiement, isItManager, isAdmin, isComptable, isPromoteur, isCoordonnateur } = useAuth();
+  const { currentSchoolId, canCreatePaiement, canAnnulerPaiement, canSupprimerPaiement, isItManager, isComptable } = useAuth();
   const filters = usePaiementFilters();
   const isStrictComptable = isComptable() && !isItManager();
 
@@ -83,7 +83,7 @@ export default function Paiements() {
     dateGroups, expandedDates,
     toggleDate, expandAllDates, collapseAllDates, allExpanded,
     selectedIds, bulkDeleting,
-    toggleSelectOne, toggleSelectAll, bulkDelete,
+    toggleSelectOne, bulkDelete,
     annulationModal, setAnnulationModal, openAnnulation, closeAnnulation, handleAnnuler,
     encaisser, canEncaisserMontant,
     supprimer, editPaiement, invalidate,
@@ -91,7 +91,6 @@ export default function Paiements() {
 
   const schoolId = currentSchoolId!;
   const { data: sections = [] } = useSections(schoolId);
-  const { data: options = [] } = useOptions(schoolId);
   const { data: classes = [] } = useClasses(schoolId);
 
   const [showModal, setShowModal] = useState(false);
@@ -100,7 +99,6 @@ export default function Paiements() {
   const [editFormData, setEditFormData] = useState({ montant_paye: 0, montant_en_lettre: '', motif_libelle: '', mode_paiement: '', date_paiement: '', annee_scolaire: '' });
 
   const isDateFilterActive = filters.filterDateDebut !== '' || filters.filterDateFin !== '';
-  const colCount = isItManager() ? 8 : 7;
 
   // ─── Print / Edit / Detail handlers ────────────────────────────────────────
   const handlePrintRecu = (paiement: Paiement) => {

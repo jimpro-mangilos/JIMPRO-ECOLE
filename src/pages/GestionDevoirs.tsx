@@ -11,8 +11,8 @@ interface DevoirItem { id: string; titre: string; description: string; professeu
 export default function GestionDevoirs() {
   const queryClient = useQueryClient();
   const { currentSchoolId } = useAuth();
-  const { data: sections = [] } = useSections(currentSchoolId);
-  const { data: classes = [] } = useClasses(currentSchoolId);
+  const { data: sections = [] } = useSections(currentSchoolId!);
+  const { data: classes = [] } = useClasses(currentSchoolId!);
   const [search, setSearch] = useState('');
   const [filterSection, setFilterSection] = useState('');
   const [filterClasse, setFilterClasse] = useState('');

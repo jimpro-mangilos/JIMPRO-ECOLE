@@ -18,7 +18,6 @@ interface CarteEtudiantEleve {
 // ─── Design System ─────────────────────────────────────────────────────────────
 const DARK    = '#1e293b';   // slate-800
 const PRIMARY = '#2563eb';   // blue-600
-const ACCENT  = '#ca8a04';   // yellow-600
 const MUTED   = '#94a3b8';   // slate-400
 const SURFACE = '#f8fafc';   // slate-50
 const BORDER  = '#e2e8f0';   // slate-200
@@ -141,7 +140,7 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
     try {
       const img = await loadImage(e.photo_url);
       if (img) doc.addImage(img, 'JPEG', px + 0.5, py + 0.5, pw - 1, ph - 1);
-    } catch {}
+    } catch { /* image non chargée, on continue sans photo */ }
   } else {
     const init = (e.nom.charAt(0) + e.prenom.charAt(0)).toUpperCase();
     doc.setTextColor(DARK);

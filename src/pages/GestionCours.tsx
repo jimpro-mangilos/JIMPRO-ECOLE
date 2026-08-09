@@ -11,8 +11,8 @@ interface CoursItem { id: string; titre: string; description: string; professeur
 export default function GestionCours() {
   const queryClient = useQueryClient();
   const { currentSchoolId } = useAuth();
-  const { data: sections = [] } = useSections(currentSchoolId);
-  const { data: classes = [] } = useClasses(currentSchoolId);
+  const { data: sections = [] } = useSections(currentSchoolId!);
+  const { data: classes = [] } = useClasses(currentSchoolId!);
   const [search, setSearch] = useState('');
   const [filterSection, setFilterSection] = useState('');
   const [filterClasse, setFilterClasse] = useState('');

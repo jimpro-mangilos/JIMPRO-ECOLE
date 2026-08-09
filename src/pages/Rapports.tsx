@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FileText, Download, Loader2, RotateCcw, Filter } from 'lucide-react';
+import { FileText, Download, Loader2, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import { useRapports } from '../lib/hooks/useRapports';
@@ -13,17 +13,14 @@ export default function Rapports() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const { sections, options, classes, motifs, annees, sectionMap, sectionIdToName, financeComptables, financeApprobateurs, fournitureTypes, fournitureSections, fournitureClasses } = useRapports();
+  const { sections, options, classes, motifs, sectionIdToName } = useRapports();
 
   // Filter states
   const [ef, setEf] = useState({ startDate: '', endDate: '', section: [] as string[], option: [] as string[], classe: [] as string[], motif: [] as string[], annee: [] as string[], montantMin: '', montantMax: '' });
-  const [ff, setFf] = useState({ section: [] as string[], classe: [] as string[], typeUniforme: [] as string[], annee: [] as string[], startDate: '', endDate: '', search: '' });
-  const [fnf, setFnf] = useState({ startDate: '', endDate: '', typeOperation: [] as string[], statut: [] as string[], comptable: [] as string[], approbateur: [] as string[], montantMin: '', montantMax: '', search: '' });
   const [startDate, setStartDate] = useState(''); const [endDate, setEndDate] = useState('');
   const [comptables, setComptables] = useState<any[]>([]);
-  const [selectedComptables, setSelectedComptables] = useState<string[]>([]);
 
-  const filteredOptions = useMemo(() => ef.section.length === 0 ? options : options.filter((o: string) => { const sec = sections.find((s: any) => typeof s === 'object' ? s.nom : false); return true; }), [options, ef.section, sections]);
+  const filteredOptions = useMemo(() => ef.section.length === 0 ? options : options.filter(() => true), [options, ef.section, sections]);
   const filteredClasses = useMemo(() => { let list = classes; if (ef.section.length > 0) list = list.filter((c: any) => ef.section.includes(sectionIdToName[c.section_id] || '')); if (ef.option.length > 0) list = list.filter((c: any) => { const opt = (options as any[]).find((o: any) => o.nom && ef.option.includes(o.nom)); return opt && c.option_id === opt.id; }); return [...new Set(list.map((c: any) => c.nom))].sort(); }, [classes, ef, sectionIdToName, options]);
 
   const showMsg = (type: 'success' | 'error', text: string) => { setMessage({ type, text }); setTimeout(() => setMessage(null), 3000); };
@@ -80,7 +77,7 @@ export default function Rapports() {
           </div>
           <div className="flex gap-2">
             <button onClick={() => generate(generateRapportComparatifComptables, comptables, startDate ? new Date(startDate) : undefined, endDate ? new Date(endDate) : undefined)} disabled={loading} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}Comparatif</button>
-            <button onClick={() => generate(generateRapportComptable, selectedComptables.length > 0 ? selectedComptables[0] : null, startDate ? new Date(startDate) : undefined, endDate ? new Date(endDate) : undefined)} disabled={loading} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"><Download className="w-4 h-4" />Individuel</button>
+            <button onClick={() => generate(generateRapportComptable, comptables.length > 0 ? comptables[0].id : null, startDate ? new Date(startDate) : undefined, endDate ? new Date(endDate) : undefined)} disabled={loading} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"><Download className="w-4 h-4" />Individuel</button>
           </div>
         </>}
       </section>

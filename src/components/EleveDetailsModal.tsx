@@ -102,7 +102,7 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
   const totalArticles = uniformes.reduce((sum, u) => sum + u.quantite, 0);
 
   const handlePrintHistory = () => {
-    generateElevePaymentHistoryPDF(eleve, paiements);
+    generateElevePaymentHistoryPDF(eleve as any, paiements as any);
   };
 
   return (

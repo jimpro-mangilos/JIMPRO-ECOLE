@@ -24,7 +24,7 @@ interface FinanceFilters {
 }
 
 export function useFinances(filters: FinanceFilters) {
-  const { user, userProfile, isAdmin, isItManager, isComptable, isCoordonnateur, isSecretary, isPromoteur, profile, currentSchoolId } = useAuth();
+  const { isAdmin, isItManager, isComptable, isCoordonnateur, isSecretary, isPromoteur, profile, currentSchoolId } = useAuth();
   const queryClient = useQueryClient();
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set(['__first__']));
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

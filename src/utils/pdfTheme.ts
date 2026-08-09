@@ -90,13 +90,15 @@ let _logoCache: string | null = null;
 export async function loadLogoBase64(): Promise<string> {
   if (_logoCache) return _logoCache;
   try {
-    const { data } = await supabase
+    // app_settings not yet in generated Database types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
       .from('app_settings')
       .select('value')
       .eq('key', 'logo_url')
       .maybeSingle();
 
-    const url = data?.value || '/image.png';
+    const url = (data as any)?.value || '/image.png';
     const resp = await fetch(url);
     const blob = await resp.blob();
     return new Promise((resolve) => {
@@ -301,6 +303,7 @@ export function contentStartY(): number {
 }
 
 export function ensureSpace(doc: jsPDF, y: number, needed: number, _header: ReportHeaderOptions): number {
+  void _header;
   const pageHeight = doc.internal.pageSize.getHeight();
   if (y + needed > pageHeight - 20) {
     doc.addPage();

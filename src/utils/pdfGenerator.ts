@@ -288,7 +288,7 @@ export async function generateFinancesReport(finances: FinanceRecord[], filterIn
   const kpiCards = [
     { label: 'Recettes', value: formatCurrencyPDF(totalRecettes), tone: 'success' as const },
     { label: 'Depenses', value: formatCurrencyPDF(totalDepenses), tone: 'danger' as const },
-    { label: 'Solde net', value: formatCurrencyPDF(solde), tone: (solde >= 0 ? 'success' : 'danger') as const },
+    { label: 'Solde net', value: formatCurrencyPDF(solde), tone: (solde >= 0 ? 'success' : 'danger') },
   ];
   const kpiH = 14;
   const kpiGap = 3;

@@ -73,7 +73,7 @@ export function useChat() {
           .from('chat_participants')
           .select('conversation_id');
         if (allErr) throw allErr;
-        privateConvIds = [...new Set((allParts ?? []).map((r: { conversation_id: string }) => r.conversation_id))];
+        privateConvIds = [...new Set((allParts ?? []).map((r: { conversation_id: string }) => r.conversation_id))] as string[];
       } else {
         const { data: participantRows, error: partErr } = await db
           .from('chat_participants')
