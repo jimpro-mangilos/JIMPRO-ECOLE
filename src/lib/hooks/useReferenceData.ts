@@ -9,7 +9,7 @@ const db: any = supabase;
 
 export function useSections(currentSchoolId: string) {
   return useQuery({
-    queryKey: queryKeys.sections.active,
+    queryKey: [...queryKeys.sections.active, { schoolId: currentSchoolId }],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sections')
@@ -26,7 +26,7 @@ export function useSections(currentSchoolId: string) {
 
 export function useOptions(currentSchoolId: string, sectionId?: string) {
   return useQuery({
-    queryKey: sectionId ? queryKeys.options.bySection(sectionId) : queryKeys.options.active,
+    queryKey: [...(sectionId ? queryKeys.options.bySection(sectionId) : queryKeys.options.active), { schoolId: currentSchoolId }],
     queryFn: async () => {
       let query = db.from('options').select('id, nom, section_id, is_active, ordre').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre');
       if (sectionId) query = query.eq('section_id', sectionId);
@@ -40,7 +40,7 @@ export function useOptions(currentSchoolId: string, sectionId?: string) {
 
 export function useClasses(currentSchoolId: string) {
   return useQuery({
-    queryKey: queryKeys.classes.active,
+    queryKey: [...queryKeys.classes.active, { schoolId: currentSchoolId }],
     queryFn: async () => {
       const { data, error } = await db
         .from('classes')
@@ -57,7 +57,7 @@ export function useClasses(currentSchoolId: string) {
 
 export function useMotifsPaiement(currentSchoolId: string) {
   return useQuery({
-    queryKey: queryKeys.motifsPaiement.active,
+    queryKey: [...queryKeys.motifsPaiement.active, { schoolId: currentSchoolId }],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('motifs_paiement')
@@ -74,7 +74,7 @@ export function useMotifsPaiement(currentSchoolId: string) {
 
 export function useTypesPaiement(currentSchoolId: string) {
   return useQuery({
-    queryKey: queryKeys.typesPaiement.active,
+    queryKey: [...queryKeys.typesPaiement.active, { schoolId: currentSchoolId }],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('types_paiement')
@@ -91,7 +91,7 @@ export function useTypesPaiement(currentSchoolId: string) {
 
 export function useAnneesScolaires(currentSchoolId: string) {
   return useQuery({
-    queryKey: queryKeys.anneesScolaires.active,
+    queryKey: [...queryKeys.anneesScolaires.active, { schoolId: currentSchoolId }],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('annees_scolaires')

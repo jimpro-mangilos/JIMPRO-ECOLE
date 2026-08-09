@@ -52,14 +52,14 @@ export function usePaiements(filters: PaiementFilters) {
 
   // ─── Data Queries ──────────────────────────────────────────────────────────
   const { data: paiements = [], isLoading: loading } = useQuery({
-    queryKey: [...queryKeys.paiements.all, 'v3'],
+    queryKey: [...queryKeys.paiements.all, 'v3', { schoolId: currentSchoolId }],
     queryFn: async () => {
       const PAGE = 1000;
       let all: Paiement[] = [];
       let from = 0;
       while (true) {
         const to = from + PAGE - 1;
-        const { data, error } = await supabase.from('paiements').select('*').order('created_at', { ascending: false }).range(from, to);
+        const { data, error } = await supabase.from('paiements').select('*').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false }).range(from, to);
         if (error) throw error;
         if (!data || data.length === 0) break;
         all = all.concat(data as Paiement[]);

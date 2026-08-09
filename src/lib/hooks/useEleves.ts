@@ -52,14 +52,14 @@ export function useEleves(filters: UseElevesOptions) {
 
   // Load eleves
   const { data: eleves = [], isLoading: loading } = useQuery({
-    queryKey: [...queryKeys.eleves.all, 'v3'],
+    queryKey: [...queryKeys.eleves.all, 'v3', { schoolId: currentSchoolId }],
     queryFn: async () => {
       const PAGE = 1000;
       let all: any[] = [];
       let from = 0;
       while (true) {
         const to = from + PAGE - 1;
-        const { data, error } = await supabase.from('eleves').select('*').order('created_at', { ascending: false }).range(from, to);
+        const { data, error } = await supabase.from('eleves').select('*').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false }).range(from, to);
         if (error) throw error;
         if (!data || data.length === 0) break;
         all = all.concat(data);
@@ -72,11 +72,12 @@ export function useEleves(filters: UseElevesOptions) {
 
   // Load paid eleve IDs for current month
   const { data: paidEleveIds = new Set<string>() } = useQuery({
-    queryKey: ['eleves', 'paidThisMonth'],
+    queryKey: ['eleves', 'paidThisMonth', { schoolId: currentSchoolId }],
     queryFn: async () => {
       const { data } = await supabase
         .from('paiements')
         .select('eleve_id')
+        .eq('ecole_id', currentSchoolId)
         .eq('mois_minerval', getCurrentMoisMinerval())
         .eq('statut', 'encaisse');
       return new Set((data ?? []).map((p: { eleve_id: string }) => p.eleve_id));

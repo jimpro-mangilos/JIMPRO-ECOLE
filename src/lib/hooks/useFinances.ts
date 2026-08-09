@@ -35,14 +35,14 @@ export function useFinances(filters: FinanceFilters) {
 
   // ─── Data ───────────────────────────────────────────────────────────────────
   const { data: transactions = [], isLoading: loading } = useQuery({
-    queryKey: [...queryKeys.finances.all, 'v3'],
+    queryKey: [...queryKeys.finances.all, 'v3', { schoolId: currentSchoolId }],
     queryFn: async () => {
       const PAGE = 1000;
       let all: Transaction[] = [];
       let from = 0;
       while (true) {
         const to = from + PAGE - 1;
-        const { data, error } = await supabase.from('compte_courant').select('*').order('date_transaction', { ascending: false }).range(from, to);
+        const { data, error } = await supabase.from('compte_courant').select('*').eq('ecole_id', currentSchoolId).order('date_transaction', { ascending: false }).range(from, to);
         if (error) throw error;
         if (!data || data.length === 0) break;
         all = all.concat(data as Transaction[]);
