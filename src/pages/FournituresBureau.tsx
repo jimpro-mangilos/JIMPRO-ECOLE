@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 type FournitureBureau = Database['public']['Tables']['gestion_fourniture_bureau']['Row'];
 
 export default function FournituresBureau() {
-  const { isReadOnly, isItManager } = useAuth();
+  const { isReadOnly, isItManager, currentSchoolId } = useAuth();
   const [fournitures, setFournitures] = useState<FournitureBureau[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +44,7 @@ export default function FournituresBureau() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase.from('gestion_fourniture_bureau').insert([formData]);
+      const { error } = await supabase.from('gestion_fourniture_bureau').insert([{ ...formData, ecole_id: currentSchoolId }]);
       if (error) throw error;
       setShowModal(false);
       resetForm();

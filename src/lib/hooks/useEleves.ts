@@ -4,6 +4,7 @@ import { supabase } from '../supabase';
 import { queryKeys } from '../queryKeys';
 import type { Database } from '../database.types';
 import { generateMatricule, validateMatriculeUniqueness } from '../../utils/matriculeGenerator';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
 type Eleve = Database['public']['Tables']['eleves']['Row'];
@@ -40,6 +41,7 @@ interface UseElevesOptions {
 
 export function useEleves(filters: UseElevesOptions) {
   const queryClient = useQueryClient();
+  const { currentSchoolId } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
   const [autoGenerateMatricule, setAutoGenerateMatricule] = useState(true);
@@ -170,10 +172,10 @@ export function useEleves(filters: UseElevesOptions) {
     const dataToSave = { ...formData, classe: classeObj?.nom || formData.classe, classe_id: formData.classe_id || null, photo_url: photoUrl || formData.photo_url };
 
     if (selectedEleve) {
-      const { error } = await supabase.from('eleves').update({ ...dataToSave, updated_at: new Date().toISOString() }).eq('id', selectedEleve.id);
+      const { error } = await supabase.from('eleves').update({ ...dataToSave, ecole_id: currentSchoolId, updated_at: new Date().toISOString() }).eq('id', selectedEleve.id);
       if (error) throw error;
     } else {
-      const { error } = await supabase.from('eleves').insert([dataToSave]);
+      const { error } = await supabase.from('eleves').insert([{ ...dataToSave, ecole_id: currentSchoolId }]);
       if (error) {
         if (error.code === '23505') {  toast.error('Matricule en double. Régénérez.'); return false; }
         throw error;

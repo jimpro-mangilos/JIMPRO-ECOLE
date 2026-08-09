@@ -3,6 +3,7 @@ import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, L
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, formatDate } from '../utils/calculations';
+import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 
 interface EleveInfo {
   matricule: string;
@@ -53,6 +54,7 @@ export default function PortailParent() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-scanner-reader';
+  const { schoolId } = usePublicSchool();
 
   // QR Scanner lifecycle
   useEffect(() => {
@@ -109,6 +111,7 @@ export default function PortailParent() {
       const { data: eleveData, error: eleveError } = await supabase
         .from('eleves')
         .select('*')
+        .eq('ecole_id', schoolId)
         .ilike('matricule', cleanTerm)
         .maybeSingle();
 
@@ -124,6 +127,7 @@ export default function PortailParent() {
       const { data: paiementsData, error: paiementsError } = await supabase
         .from('paiements')
         .select('*')
+        .eq('ecole_id', schoolId)
         .eq('eleve_id', eleveData.id)
         .order('date_paiement', { ascending: false });
 
@@ -137,8 +141,8 @@ export default function PortailParent() {
       const classeId = (eleveData as any).classe_id;
       if (classeId) {
         const [{ data: coursData }, { data: devoirsData }] = await Promise.all([
-          supabase.from('cours').select('id, titre, description, fichier_url, fichier_nom, created_at').eq('classe_id', classeId).order('created_at', { ascending: false }),
-          supabase.from('devoirs').select('id, titre, description, date_limite, fichier_url, fichier_nom, created_at').eq('classe_id', classeId).order('created_at', { ascending: false }),
+          supabase.from('cours').select('id, titre, description, fichier_url, fichier_nom, created_at').eq('ecole_id', schoolId).eq('classe_id', classeId).order('created_at', { ascending: false }),
+          supabase.from('devoirs').select('id, titre, description, date_limite, fichier_url, fichier_nom, created_at').eq('ecole_id', schoolId).eq('classe_id', classeId).order('created_at', { ascending: false }),
         ]);
         setCours((coursData || []) as CoursInfo[]);
         setDevoirs((devoirsData || []) as DevoirInfo[]);

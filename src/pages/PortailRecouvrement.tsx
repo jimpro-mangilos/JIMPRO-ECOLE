@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { QrCode, X, Search, Loader2, CheckCircle, XCircle, Calendar, RefreshCw } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
+import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 
 const MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const currentMonthIdx = new Date().getMonth();
@@ -45,16 +46,18 @@ export default function PortailRecouvrement() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-recouvrement';
+  const { schoolId } = usePublicSchool();
 
-  // Load motifs and annees on mount
+  // Load motifs and annees on mount (scoped by school)
   useEffect(() => {
-    supabase.from('motifs_paiement').select('id, libelle').eq('is_active', true).order('ordre').then(r => {
+    if (!schoolId) return;
+    supabase.from('motifs_paiement').select('id, libelle').eq('ecole_id', schoolId).eq('is_active', true).order('ordre').then(r => {
       if (r.data) setMotifs(r.data);
     });
-    supabase.from('annees_scolaires').select('id, annee').eq('is_active', true).order('ordre').then(r => {
+    supabase.from('annees_scolaires').select('id, annee').eq('ecole_id', schoolId).eq('is_active', true).order('ordre').then(r => {
       if (r.data) setAnnees(r.data);
     });
-  }, []);
+  }, [schoolId]);
 
   useEffect(() => {
     if (showScanner) {
@@ -91,8 +94,8 @@ export default function PortailRecouvrement() {
     setResultat({ type: 'loading' });
 
     try {
-      // Find student
-      const { data: eleve } = await supabase.from('eleves').select('*').ilike('matricule', matricule).maybeSingle();
+      // Find student (scoped by school)
+      const { data: eleve } = await supabase.from('eleves').select('*').eq('ecole_id', schoolId).ilike('matricule', matricule).maybeSingle();
       if (!eleve) { setResultat({ type: 'introuvable' }); return; }
 
       const info: EleveInfo = {
@@ -100,9 +103,10 @@ export default function PortailRecouvrement() {
         section: eleve.section, classe: (eleve as any).classe || null, photo_url: (eleve as any).photo_url || null,
       };
 
-      // Check payment for selected month, motif and année
+      // Check payment for selected month, motif and année (scoped by school)
       let query = supabase.from('paiements')
         .select('*')
+        .eq('ecole_id', schoolId)
         .eq('eleve_id', eleve.id)
         .eq('mois_minerval', moisActuel)
         .eq('statut', 'encaisse')

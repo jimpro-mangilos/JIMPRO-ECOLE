@@ -24,7 +24,7 @@ interface FinanceFilters {
 }
 
 export function useFinances(filters: FinanceFilters) {
-  const { user, userProfile, isAdmin, isItManager, isComptable, isCoordonnateur, isSecretary, isPromoteur, profile } = useAuth();
+  const { user, userProfile, isAdmin, isItManager, isComptable, isCoordonnateur, isSecretary, isPromoteur, profile, currentSchoolId } = useAuth();
   const queryClient = useQueryClient();
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set(['__first__']));
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -170,7 +170,7 @@ export function useFinances(filters: FinanceFilters) {
       const updateData: Record<string, any> = { statut: newStatut };
       if (newStatut === 'approuve' && currentUserFullName) updateData.nom_approbateur = currentUserFullName;
       if ((newStatut === 'encaisse' || newStatut === 'decaisse') && currentUserFullName) updateData.nom_encaisseur = currentUserFullName;
-      const { error } = await supabase.from('compte_courant').update(updateData).eq('id', id);
+      const { error } = await supabase.from('compte_courant').update({ ...updateData, ecole_id: currentSchoolId }).eq('id', id);
       if (error) throw error;
       invalidate();
       return true;
@@ -204,14 +204,14 @@ export function useFinances(filters: FinanceFilters) {
   }, [selectedIds, invalidate]);
 
   const createTransaction = useCallback(async (formData: { montant_chiffre: number; montant_lettre: string; beneficiaire: string; libelle: string; telephone: string; type_operation: string }) => {
-    const { error } = await supabase.from('compte_courant').insert([{ ...formData, nom_comptable: currentUserFullName || null }]);
+    const { error } = await supabase.from('compte_courant').insert([{ ...formData, ecole_id: currentSchoolId, nom_comptable: currentUserFullName || null }]);
     if (error) {  toast.error('Erreur création: ' + error.message); return false; }
     invalidate();
     return true;
   }, [currentUserFullName, invalidate]);
 
   const editTransaction = useCallback(async (id: string, formData: Record<string, any>) => {
-    const { error } = await supabase.from('compte_courant').update(formData).eq('id', id);
+    const { error } = await supabase.from('compte_courant').update({ ...formData, ecole_id: currentSchoolId }).eq('id', id);
     if (error) {  toast.error('Erreur modification: ' + error.message); return false; }
     invalidate();
     return true;

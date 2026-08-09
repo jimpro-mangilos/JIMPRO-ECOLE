@@ -26,7 +26,7 @@ interface Role {
 }
 
 export default function Admin() {
-  const { isAdmin, isItManager, session } = useAuth();
+  const { isAdmin, isItManager, session, currentSchoolId } = useAuth();
   const canManageUsers = isAdmin() || isItManager();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -93,6 +93,7 @@ export default function Admin() {
             nom: formData.nom,
             prenom: formData.prenom,
             role_id: formData.role_id,
+            ecole_id: currentSchoolId,
           })
           .eq('id', editingProfile.id);
 
@@ -115,7 +116,7 @@ export default function Admin() {
         if (authData.user && formData.role_id) {
           const { error: profileError } = await supabase
             .from('profiles')
-            .update({ role_id: formData.role_id })
+            .update({ role_id: formData.role_id, ecole_id: currentSchoolId })
             .eq('id', authData.user.id);
 
           if (profileError) throw profileError;
@@ -136,7 +137,7 @@ export default function Admin() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: !profile.is_active })
+        .update({ is_active: !profile.is_active, ecole_id: currentSchoolId })
         .eq('id', profile.id);
 
       if (error) throw error;
@@ -230,7 +231,7 @@ export default function Admin() {
     if (!canManageUsers) return;
     supabase
       .from('profiles')
-      .update({ role_id: newRoleId })
+      .update({ role_id: newRoleId, ecole_id: currentSchoolId })
       .eq('id', userId)
       .then(({ error }) => {
         if (error) { setError('Erreur lors du changement de rôle'); return; }

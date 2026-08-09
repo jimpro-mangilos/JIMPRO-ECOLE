@@ -32,7 +32,7 @@ export interface Conversation {
 }
 
 export function useChat() {
-  const { user, isItManager } = useAuth();
+  const { user, isItManager, currentSchoolId } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -364,6 +364,7 @@ export function useChat() {
           conversation_id: conversationId,
           sender_id: user.id,
           content: trimmed,
+          ecole_id: currentSchoolId,
         });
 
         if (sendErr) throw sendErr;
@@ -414,7 +415,7 @@ export function useChat() {
         const convId = crypto.randomUUID();
         const { error: convError } = await db
           .from('chat_conversations')
-          .insert({ id: convId, type: 'private' });
+          .insert({ id: convId, type: 'private', ecole_id: currentSchoolId });
 
         if (convError) throw new Error('Erreur création conversation: ' + convError.message);
 

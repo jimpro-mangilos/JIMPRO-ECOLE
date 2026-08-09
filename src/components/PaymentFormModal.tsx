@@ -62,7 +62,7 @@ const MOIS_SCOLAIRES = [
 ];
 
 export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselectedEleve }: PaymentFormModalProps) {
-  const { user, userProfile, canEncaisser } = useAuth();
+  const { user, userProfile, canEncaisser, currentSchoolId } = useAuth();
   const [eleves, setEleves] = useState<Eleve[]>([]);
   const [motifs, setMotifs] = useState<MotifPaiement[]>([]);
   const [typesPaiement, setTypesPaiement] = useState<TypePaiement[]>([]);
@@ -307,6 +307,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
         mois_minerval: isMinervalType ? formData.mois_minerval || null : null,
         comptable_id: user?.id,
         nom_comptable: `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim(),
+        ecole_id: currentSchoolId,
       };
 
       if (formData.encaisser && canEncaisser()) {

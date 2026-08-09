@@ -8,6 +8,7 @@ interface NotificationData {
   numeroRecu: string;
   telephone: string;
   email?: string;
+  ecole_id?: string;
 }
 
 export async function sendSMSNotification(data: NotificationData): Promise<boolean> {
@@ -21,6 +22,7 @@ export async function sendSMSNotification(data: NotificationData): Promise<boole
       message: message,
       statut: 'sent',
       sent_at: new Date().toISOString(),
+      ecole_id: data.ecole_id,
     });
 
     if (error) {
@@ -40,6 +42,7 @@ export async function sendSMSNotification(data: NotificationData): Promise<boole
       message: 'Erreur lors de l\'envoi',
       statut: 'failed',
       error_message: error instanceof Error ? error.message : 'Unknown error',
+      ecole_id: data.ecole_id,
     });
 
     return false;
@@ -77,6 +80,7 @@ export async function sendEmailNotification(data: NotificationData): Promise<boo
       message: message,
       statut: 'sent',
       sent_at: new Date().toISOString(),
+      ecole_id: data.ecole_id,
     });
 
     if (error) {
@@ -96,6 +100,7 @@ export async function sendEmailNotification(data: NotificationData): Promise<boo
       message: 'Erreur lors de l\'envoi',
       statut: 'failed',
       error_message: error instanceof Error ? error.message : 'Unknown error',
+      ecole_id: data.ecole_id,
     });
 
     return false;

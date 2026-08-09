@@ -11,7 +11,7 @@ interface FormData { titre: string; description: string; classe_id: string; sect
 const EMPTY_FORM: FormData = { titre: '', description: '', classe_id: '', section_id: '', option_id: '', cours_id: '', date_limite: '', fichier: null };
 
 export default function PortailProfesseur() {
-  const { user } = useAuth();
+  const { user, currentSchoolId } = useAuth();
   const [activeTab, setActiveTab] = useState<'cours' | 'devoirs'>('cours');
   const [cours, setCours] = useState<CoursItem[]>([]);
   const [devoirs, setDevoirs] = useState<DevoirItem[]>([]);
@@ -30,29 +30,29 @@ export default function PortailProfesseur() {
   useEffect(() => { loadSections(); loadOptions(); loadClasses(); loadCours(); loadDevoirs(); }, []);
 
   const loadSections = async () => {
-    const { data } = await supabase.from('sections').select('id, nom').eq('is_active', true).order('ordre');
+    const { data } = await supabase.from('sections').select('id, nom').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre');
     if (data) setSections(data);
   };
 
   const loadOptions = async () => {
-    const { data } = await supabase.from('options').select('id, nom, section_id').eq('is_active', true).order('ordre');
+    const { data } = await supabase.from('options').select('id, nom, section_id').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre');
     if (data) setOptions(data);
   };
 
   const loadClasses = async () => {
-    const { data } = await supabase.from('classes').select('id, nom, sections(nom), options(nom), option_id').eq('is_active', true).order('nom');
+    const { data } = await supabase.from('classes').select('id, nom, sections(nom), options(nom), option_id').eq('ecole_id', currentSchoolId).eq('is_active', true).order('nom');
     if (data) setClasses((data as any[]).map(c => ({ id: c.id, nom: c.nom, option_nom: c.options?.nom || '', option_id: c.option_id || null })));
   };
 
   const loadCours = async () => {
-    const { data, error } = await supabase.from('cours').select('*, classes(nom, sections(nom))').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('cours').select('*, classes(nom, sections(nom))').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
     if (error) { console.error('Erreur chargement cours:', error); setError('Erreur chargement cours: ' + error.message); }
     else setCours((data || []) as any);
     setLoading(false);
   };
 
   const loadDevoirs = async () => {
-    const { data, error } = await supabase.from('devoirs').select('*, classes(nom, sections(nom)), cours(titre)').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('devoirs').select('*, classes(nom, sections(nom)), cours(titre)').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
     if (error) console.error('Erreur chargement devoirs:', error);
     else setDevoirs((data || []) as any);
   };
@@ -90,7 +90,7 @@ export default function PortailProfesseur() {
       if (uploaded) { fichier_url = uploaded.url; fichier_nom = uploaded.nom; }
     }
 
-    const payload = { titre: form.titre, description: form.description, professeur_id: user!.id, classe_id: form.classe_id || null, section_id: form.section_id || null, option_id: form.option_id || null, fichier_url, fichier_nom };
+    const payload = { titre: form.titre, description: form.description, professeur_id: user!.id, ecole_id: currentSchoolId, classe_id: form.classe_id || null, section_id: form.section_id || null, option_id: form.option_id || null, fichier_url, fichier_nom };
 
     try {
       if (activeTab === 'cours') {

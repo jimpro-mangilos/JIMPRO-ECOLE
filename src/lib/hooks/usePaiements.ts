@@ -41,7 +41,7 @@ interface PaiementFilters {
 }
 
 export function usePaiements(filters: PaiementFilters) {
-  const { user, userProfile, canEncaisser, canAnnulerPaiement, canSupprimerPaiement, isItManager, isPromoteur, isCoordonnateur, isSecretary } = useAuth();
+  const { user, userProfile, canEncaisser, canAnnulerPaiement, canSupprimerPaiement, isItManager, isPromoteur, isCoordonnateur, isSecretary, currentSchoolId } = useAuth();
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -194,6 +194,7 @@ export function usePaiements(filters: PaiementFilters) {
     const { error } = await supabase.from('paiements').update({
       est_encaisse: true, statut: 'encaisse', date_encaissement: new Date().toISOString(),
       encaisseur_id: user?.id, nom_encaisseur: `${userProfile?.prenom} ${userProfile?.nom}`,
+      ecole_id: currentSchoolId,
     }).eq('id', paiementId);
     if (error) {  toast.error("Erreur d'encaissement: " + error.message); return; }
      toast.success('Paiement encaissé avec succès');
@@ -216,6 +217,7 @@ export function usePaiements(filters: PaiementFilters) {
       statut: 'annule', motif_annulation: annulationModal.motif.trim(),
       annule_par: user?.id, nom_annuleur: `${userProfile?.prenom} ${userProfile?.nom}`,
       date_annulation: new Date().toISOString(),
+      ecole_id: currentSchoolId,
     }).eq('id', annulationModal.paiementId);
     if (error) {  toast.error("Erreur d'annulation: " + error.message); setAnnulationModal(p => ({ ...p, loading: false })); return; }
     closeAnnulation();
@@ -249,7 +251,7 @@ export function usePaiements(filters: PaiementFilters) {
   }, [selectedIds, invalidate]);
 
   const editPaiement = useCallback(async (paiementId: string, formData: { montant_paye: number; montant_en_lettre: string; motif_libelle: string; mode_paiement: string; date_paiement: string; annee_scolaire: string }) => {
-    const { error } = await supabase.from('paiements').update(formData).eq('id', paiementId);
+    const { error } = await supabase.from('paiements').update({ ...formData, ecole_id: currentSchoolId }).eq('id', paiementId);
     if (error) {  toast.error('Erreur modification: ' + error.message); return false; }
     invalidate();
     return true;

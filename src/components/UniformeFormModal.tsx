@@ -46,7 +46,7 @@ type StockStatus =
 const emptyItem = (): ArticleItem => ({ type_uniforme_id: '', quantite: '1' });
 
 export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }: UniformeFormModalProps) {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, currentSchoolId } = useAuth();
   const [typesUniforme, setTypesUniforme] = useState<TypeUniforme[]>([]);
   const [anneeScolaires, setAnneeScolaires] = useState<AnneeScolaire[]>([]);
   const [stockInfo, setStockInfo] = useState<StockInfo>({});
@@ -204,6 +204,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
           comptable_id: user?.id,
           nom_comptable: nomComptable,
           date_distribution: dateDistribution,
+          ecole_id: currentSchoolId,
         };
       });
 

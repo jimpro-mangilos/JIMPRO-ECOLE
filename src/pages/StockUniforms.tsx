@@ -46,7 +46,7 @@ interface StockForm {
 }
 
 function StockUniforms() {
-  const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager } = useAuth();
+  const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, currentSchoolId } = useAuth();
   const canWrite = isAdmin() || profile?.role?.nom === 'secretaire';
 
   const [stocks, setStocks] = useState<StockUniforme[]>([]);
@@ -163,6 +163,7 @@ function StockUniforms() {
             nom_comptable: nomComptable,
             comptable_id: user?.id,
             updated_at: new Date().toISOString(),
+            ecole_id: currentSchoolId,
           })
           .eq('id', editingStock.id);
 
@@ -193,6 +194,7 @@ function StockUniforms() {
               nom_comptable: nomComptable,
               comptable_id: user?.id,
               updated_at: new Date().toISOString(),
+              ecole_id: currentSchoolId,
             })
             .eq('id', existingStock.id);
 
@@ -212,6 +214,7 @@ function StockUniforms() {
               notes: formData.notes || null,
               nom_comptable: nomComptable,
               comptable_id: user?.id,
+              ecole_id: currentSchoolId,
             });
 
           if (error) throw error;

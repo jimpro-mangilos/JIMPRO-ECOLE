@@ -8,6 +8,7 @@ interface Profile {
   nom: string;
   prenom: string;
   role_id: string;
+  ecole_id: string;
   photo_url?: string;
   last_login?: string;
   is_active: boolean;
@@ -43,6 +44,8 @@ interface AuthContextType {
   isRevoque: () => boolean;
   isReadOnly: () => boolean;
   userProfile: Profile | null;
+  currentSchoolId: string | null;
+  currentSchoolCode: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -214,6 +217,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return isItManager() || profile?.role?.nom === 'admin';
   }
 
+  // École courante : priorité au profile, fallback au JWT app_metadata
+  const currentSchoolId: string | null =
+    profile?.ecole_id ??
+    (user?.app_metadata?.ecole_id as string | undefined) ??
+    null;
+
+  const currentSchoolCode: string | null =
+    (user?.app_metadata?.ecole_code as string | undefined) ?? null;
+
   const value = {
     user,
     profile,
@@ -239,6 +251,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isRevoque,
     isReadOnly,
     userProfile: profile,
+    currentSchoolId,
+    currentSchoolCode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

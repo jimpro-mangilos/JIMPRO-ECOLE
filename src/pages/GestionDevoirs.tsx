@@ -3,12 +3,14 @@ import { Plus, FileText, Edit, Trash2, Loader2, X, Search } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useSections, useClasses } from '../lib/hooks/useReferenceData';
+import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface DevoirItem { id: string; titre: string; description: string; professeur_id: string; classe_id: string | null; date_limite: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; classes?: { nom: string } | null; profiles?: { nom: string; prenom: string } | null; }
 
 export default function GestionDevoirs() {
   const queryClient = useQueryClient();
+  const { currentSchoolId } = useAuth();
   const { data: sections = [] } = useSections();
   const { data: classes = [] } = useClasses();
   const [search, setSearch] = useState('');
@@ -44,7 +46,7 @@ export default function GestionDevoirs() {
     e.preventDefault();
     if (!form.titre.trim()) { setError('Titre requis'); return; }
     setSaving(true);
-    const payload = { titre: form.titre, description: form.description, classe_id: form.classe_id || null, date_limite: form.date_limite || null };
+    const payload = { titre: form.titre, description: form.description, classe_id: form.classe_id || null, date_limite: form.date_limite || null, ecole_id: currentSchoolId };
     const result = editingId ? await supabase.from('devoirs').update(payload).eq('id', editingId).select() : await supabase.from('devoirs').insert(payload).select();
     if (result.error) { toast.error(result.error.message); setSaving(false); return; }
     setShowForm(false); invalidate(); setSaving(false);
