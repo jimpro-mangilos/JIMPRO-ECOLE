@@ -10,6 +10,8 @@ import {
   School,
   Building2,
   Check,
+  Plus,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogo } from '../contexts/LogoContext';
@@ -40,6 +42,10 @@ export default function Layout({ children }: LayoutProps) {
   const [schoolSwitcherOpen, setSchoolSwitcherOpen] = useState(false);
   const [schools, setSchools] = useState<{ id: string; nom: string; code: string }[]>([]);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
+  const [showNewSchoolForm, setShowNewSchoolForm] = useState(false);
+  const [newSchoolSaving, setNewSchoolSaving] = useState(false);
+  const [newSchool, setNewSchool] = useState({ nom: '', code: '', adresse: '', telephone: '', email: '' });
+  const [newSchoolError, setNewSchoolError] = useState('');
 
   useEffect(() => {
     if (!user || isRevoque()) return;
@@ -95,6 +101,41 @@ export default function Layout({ children }: LayoutProps) {
 
   const activeSchoolName = schools.find(s => s.id === activeId)?.nom ?? 'C.S_GOLDEN_ACADEMY';
   const displaySchoolCode = activeCode ?? currentSchoolCode ?? 'CSGA';
+
+  async function handleCreateSchool(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newSchool.nom.trim() || !newSchool.code.trim()) {
+      setNewSchoolError('Nom et code requis');
+      return;
+    }
+    setNewSchoolSaving(true);
+    setNewSchoolError('');
+    try {
+      const { error } = await db.from('ecoles').insert({
+        nom: newSchool.nom.trim(),
+        code: newSchool.code.trim().toUpperCase(),
+        adresse: newSchool.adresse.trim() || null,
+        telephone: newSchool.telephone.trim() || null,
+        email: newSchool.email.trim() || null,
+      });
+      if (error) {
+        if (error.code === '23505') setNewSchoolError('Ce code existe déjà');
+        else setNewSchoolError(error.message);
+        setNewSchoolSaving(false);
+        return;
+      }
+      // Rafraîchir la liste
+      const { data } = await db.from('ecoles').select('id, nom, code').eq('is_active', true).order('nom');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setSchools((data as any[]) || []);
+      setNewSchool({ nom: '', code: '', adresse: '', telephone: '', email: '' });
+      setShowNewSchoolForm(false);
+    } catch (err: any) {
+      setNewSchoolError(err.message || 'Erreur');
+    } finally {
+      setNewSchoolSaving(false);
+    }
+  }
 
   const visibleMenuItems = menuConfig
     .filter((item) => {
@@ -272,6 +313,69 @@ export default function Layout({ children }: LayoutProps) {
                         </button>
                       </div>
                     )}
+                    {/* Bouton : Nouvelle école */}
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      {showNewSchoolForm ? (
+                        <form onSubmit={handleCreateSchool} className="px-4 py-2 space-y-2">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Nouvel établissement</p>
+                          <input
+                            type="text" placeholder="Nom *" value={newSchool.nom}
+                            onChange={e => setNewSchool(p => ({ ...p, nom: e.target.value }))}
+                            className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none"
+                            autoFocus
+                          />
+                          <input
+                            type="text" placeholder="Code * (ex: CSJ)" value={newSchool.code}
+                            onChange={e => setNewSchool(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                            className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none"
+                            maxLength={10}
+                          />
+                          <input
+                            type="text" placeholder="Adresse" value={newSchool.adresse}
+                            onChange={e => setNewSchool(p => ({ ...p, adresse: e.target.value }))}
+                            className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none"
+                          />
+                          <div className="flex gap-2">
+                            <input
+                              type="text" placeholder="Téléphone" value={newSchool.telephone}
+                              onChange={e => setNewSchool(p => ({ ...p, telephone: e.target.value }))}
+                              className="flex-1 text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none"
+                            />
+                            <input
+                              type="email" placeholder="Email" value={newSchool.email}
+                              onChange={e => setNewSchool(p => ({ ...p, email: e.target.value }))}
+                              className="flex-1 text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none"
+                            />
+                          </div>
+                          {newSchoolError && <p className="text-xs text-red-500">{newSchoolError}</p>}
+                          <div className="flex gap-2">
+                            <button
+                              type="submit"
+                              disabled={newSchoolSaving}
+                              className="flex-1 flex items-center justify-center gap-1 bg-indigo-600 text-white text-sm rounded px-3 py-1.5 hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                            >
+                              {newSchoolSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                              Créer
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setShowNewSchoolForm(false); setNewSchool({ nom: '', code: '', adresse: '', telephone: '', email: '' }); setNewSchoolError(''); }}
+                              className="text-sm text-gray-500 px-2 py-1.5 hover:text-gray-700 transition-colors"
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <button
+                          onClick={() => { setShowNewSchoolForm(true); setNewSchoolError(''); }}
+                          className="w-full flex items-center gap-3 px-4 py-2 hover:bg-indigo-50 transition-colors text-left text-sm text-indigo-600"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Nouvel établissement
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
