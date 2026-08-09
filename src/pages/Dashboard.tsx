@@ -77,6 +77,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from('user_activity_logs')
         .select('*, profiles:user_id(nom, prenom)')
+        .eq('ecole_id', currentSchoolId)
         .order('created_at', { ascending: false })
         .limit(5);
 

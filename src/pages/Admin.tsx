@@ -151,6 +151,7 @@ export default function Admin() {
           nom: profile.nom,
           prenom: profile.prenom,
         },
+        ecole_id: currentSchoolId,
       });
 
       setSuccess(`Utilisateur ${profile.is_active ? 'désactivé' : 'activé'} avec succès`);
@@ -241,6 +242,7 @@ export default function Admin() {
           user_id: userId,
           action: 'role_changed',
           details: { email: userEmail, new_role: newRole?.nom },
+          ecole_id: currentSchoolId,
         });
         setSuccess('Rôle modifié avec succès');
         loadData();
