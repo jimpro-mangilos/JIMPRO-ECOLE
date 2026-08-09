@@ -86,12 +86,13 @@ function StockUniforms() {
         supabase
           .from('stock_uniformes')
           .select('*')
+          .eq('ecole_id', currentSchoolId)
           .order('annee_scolaire', { ascending: false })
           .order('section')
           .order('type_uniforme_libelle'),
-        supabase.from('types_uniforme').select('id, libelle, is_active').eq('is_active', true).order('ordre'),
-        supabase.from('annees_scolaires').select('id, annee, is_active').eq('is_active', true).order('annee', { ascending: false }),
-        supabase.from('sections').select('id, nom, is_active').eq('is_active', true).order('ordre'),
+        supabase.from('types_uniforme').select('id, libelle, is_active').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
+        supabase.from('annees_scolaires').select('id, annee, is_active').eq('ecole_id', currentSchoolId).eq('is_active', true).order('annee', { ascending: false }),
+        supabase.from('sections').select('id, nom, is_active').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
       ]);
 
       if (stocksRes.error) throw stocksRes.error;

@@ -146,6 +146,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
       const { data, error } = await supabase
         .from('paiements')
         .select('mois_minerval')
+        .eq('ecole_id', currentSchoolId)
         .eq('eleve_id', formData.eleve_id)
         .eq('type_paiement', formData.type_paiement)
         .eq('annee_scolaire', formData.annee_scolaire)
@@ -184,6 +185,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
       const { data, error } = await supabase
         .from('eleves')
         .select('*')
+        .eq('ecole_id', currentSchoolId)
         .order('nom');
 
       if (error) throw error;
@@ -198,6 +200,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
       const { data, error } = await supabase
         .from('motifs_paiement')
         .select('*')
+        .eq('ecole_id', currentSchoolId)
         .eq('is_active', true)
         .order('ordre');
 
@@ -213,6 +216,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
       const { data, error } = await supabase
         .from('types_paiement')
         .select('*')
+        .eq('ecole_id', currentSchoolId)
         .eq('is_active', true)
         .order('ordre');
 
@@ -228,6 +232,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
       const { data, error } = await supabase
         .from('annees_scolaires')
         .select('*')
+        .eq('ecole_id', currentSchoolId)
         .eq('is_active', true)
         .order('annee', { ascending: false });
 
@@ -267,6 +272,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
       const { data: eleveSelectionne, error: eleveError } = await supabase
         .from('eleves')
         .select('*')
+        .eq('ecole_id', currentSchoolId)
         .eq('id', formData.eleve_id)
         .maybeSingle();
 

@@ -7,13 +7,14 @@ const db: any = supabase;
 
 // ─── Reference Data ───────────────────────────────────────────────────────────
 
-export function useSections() {
+export function useSections(currentSchoolId: string) {
   return useQuery({
     queryKey: queryKeys.sections.active,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sections')
         .select('id, nom, description, is_active, ordre')
+        .eq('ecole_id', currentSchoolId)
         .eq('is_active', true)
         .order('ordre');
       if (error) throw error;
@@ -23,11 +24,11 @@ export function useSections() {
   });
 }
 
-export function useOptions(sectionId?: string) {
+export function useOptions(currentSchoolId: string, sectionId?: string) {
   return useQuery({
     queryKey: sectionId ? queryKeys.options.bySection(sectionId) : queryKeys.options.active,
     queryFn: async () => {
-      let query = db.from('options').select('id, nom, section_id, is_active, ordre').eq('is_active', true).order('ordre');
+      let query = db.from('options').select('id, nom, section_id, is_active, ordre').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre');
       if (sectionId) query = query.eq('section_id', sectionId);
       const { data, error } = await query;
       if (error) throw error;
@@ -37,13 +38,14 @@ export function useOptions(sectionId?: string) {
   });
 }
 
-export function useClasses() {
+export function useClasses(currentSchoolId: string) {
   return useQuery({
     queryKey: queryKeys.classes.active,
     queryFn: async () => {
       const { data, error } = await db
         .from('classes')
         .select('id, nom, section_id, option_id, is_active, ordre')
+        .eq('ecole_id', currentSchoolId)
         .eq('is_active', true)
         .order('ordre');
       if (error) throw error;
@@ -53,13 +55,14 @@ export function useClasses() {
   });
 }
 
-export function useMotifsPaiement() {
+export function useMotifsPaiement(currentSchoolId: string) {
   return useQuery({
     queryKey: queryKeys.motifsPaiement.active,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('motifs_paiement')
         .select('id, libelle, description, is_active, ordre')
+        .eq('ecole_id', currentSchoolId)
         .eq('is_active', true)
         .order('ordre');
       if (error) throw error;
@@ -69,13 +72,14 @@ export function useMotifsPaiement() {
   });
 }
 
-export function useTypesPaiement() {
+export function useTypesPaiement(currentSchoolId: string) {
   return useQuery({
     queryKey: queryKeys.typesPaiement.active,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('types_paiement')
         .select('id, libelle, description, is_active, ordre')
+        .eq('ecole_id', currentSchoolId)
         .eq('is_active', true)
         .order('ordre');
       if (error) throw error;
@@ -85,13 +89,14 @@ export function useTypesPaiement() {
   });
 }
 
-export function useAnneesScolaires() {
+export function useAnneesScolaires(currentSchoolId: string) {
   return useQuery({
     queryKey: queryKeys.anneesScolaires.active,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('annees_scolaires')
         .select('id, annee, date_debut, date_fin, is_active, ordre')
+        .eq('ecole_id', currentSchoolId)
         .eq('is_active', true)
         .order('ordre');
       if (error) throw error;

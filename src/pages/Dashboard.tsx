@@ -15,7 +15,7 @@ interface Stats {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { profile, isAdmin, isItManager } = useAuth();
+  const { profile, isAdmin, isItManager, currentSchoolId } = useAuth();
   const { menuItems: menuConfig, loading: menuLoading } = useMenuConfig(profile?.role_id);
   const [stats, setStats] = useState<Stats>({
     totalEleves: 0,
@@ -38,10 +38,10 @@ export default function Dashboard() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const db: any = supabase;
       const [elevesResult, paiementsResult, compteCourantResult, fournituresResult] = await Promise.all([
-        supabase.from('eleves').select('*', { count: 'exact', head: true }),
-        db.from('paiements').select('montant_paye').eq('statut', 'en_attente'),
-        supabase.from('compte_courant').select('montant_chiffre, type_operation'),
-        db.from('gestion_fournitures').select('eps, pull'),
+        supabase.from('eleves').select('*', { count: 'exact', head: true }).eq('ecole_id', currentSchoolId),
+        db.from('paiements').select('montant_paye').eq('ecole_id', currentSchoolId).eq('statut', 'en_attente'),
+        supabase.from('compte_courant').select('montant_chiffre, type_operation').eq('ecole_id', currentSchoolId),
+        db.from('gestion_fournitures').select('eps, pull').eq('ecole_id', currentSchoolId),
       ]);
 
       const totalEleves = elevesResult.count || 0;

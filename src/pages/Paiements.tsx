@@ -69,7 +69,7 @@ function usePaiementFilters() {
 
 // ─── Page Component ───────────────────────────────────────────────────────────
 export default function Paiements() {
-  const { user, userProfile, canCreatePaiement, canAnnulerPaiement, canSupprimerPaiement, isItManager, isAdmin, isComptable, isPromoteur, isCoordonnateur } = useAuth();
+  const { user, userProfile, currentSchoolId, canCreatePaiement, canAnnulerPaiement, canSupprimerPaiement, isItManager, isAdmin, isComptable, isPromoteur, isCoordonnateur } = useAuth();
   const filters = usePaiementFilters();
   const isStrictComptable = isComptable() && !isItManager();
 
@@ -89,9 +89,10 @@ export default function Paiements() {
     supprimer, editPaiement, invalidate,
   } = usePaiements(filters);
 
-  const { data: sections = [] } = useSections();
-  const { data: options = [] } = useOptions();
-  const { data: classes = [] } = useClasses();
+  const schoolId = currentSchoolId!;
+  const { data: sections = [] } = useSections(schoolId);
+  const { data: options = [] } = useOptions(schoolId);
+  const { data: classes = [] } = useClasses(schoolId);
 
   const [showModal, setShowModal] = useState(false);
   const [editModal, setEditModal] = useState<{ open: boolean; paiement: Paiement | null; loading: boolean }>({ open: false, paiement: null, loading: false });

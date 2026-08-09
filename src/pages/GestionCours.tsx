@@ -11,8 +11,8 @@ interface CoursItem { id: string; titre: string; description: string; professeur
 export default function GestionCours() {
   const queryClient = useQueryClient();
   const { currentSchoolId } = useAuth();
-  const { data: sections = [] } = useSections();
-  const { data: classes = [] } = useClasses();
+  const { data: sections = [] } = useSections(currentSchoolId);
+  const { data: classes = [] } = useClasses(currentSchoolId);
   const [search, setSearch] = useState('');
   const [filterSection, setFilterSection] = useState('');
   const [filterClasse, setFilterClasse] = useState('');
@@ -25,7 +25,7 @@ export default function GestionCours() {
   const { data: cours = [], isLoading } = useQuery({
     queryKey: ['cours'],
     queryFn: async () => {
-      const { data } = await supabase.from('cours').select('*, classes(nom), sections(nom), profiles!professeur_id(nom, prenom)').order('created_at', { ascending: false });
+      const { data } = await supabase.from('cours').select('*, classes(nom), sections(nom), profiles!professeur_id(nom, prenom)').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
       return (data ?? []) as CoursItem[];
     },
   });

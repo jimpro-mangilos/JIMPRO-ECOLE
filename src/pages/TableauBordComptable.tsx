@@ -49,7 +49,7 @@ interface TypePaiement {
 }
 
 export default function TableauBordComptable() {
-  const { profile } = useAuth();
+  const { profile, currentSchoolId } = useAuth();
   const [comptables, setComptables] = useState<Comptable[]>([]);
   const [comptableSelectionne, setComptableSelectionne] = useState<string>('');
   const [statistiques, setStatistiques] = useState<StatistiquesComptable | null>(null);
@@ -106,6 +106,7 @@ export default function TableauBordComptable() {
       const { data: paiementsEncaisses, error: errorPaiements } = await supabase
         .from('paiements')
         .select('encaisseur_id, nom_encaisseur')
+        .eq('ecole_id', currentSchoolId)
         .eq('est_encaisse', true)
         .neq('statut', 'annule')
         .not('encaisseur_id', 'is', null);
@@ -133,6 +134,7 @@ export default function TableauBordComptable() {
         const { data: profilsData, error: errorProfils } = await supabase
           .from('profiles')
           .select('id, nom, prenom, email')
+          .eq('ecole_id', currentSchoolId)
           .in('id', encaisseurIds);
 
         if (errorProfils) throw errorProfils;
@@ -189,6 +191,7 @@ export default function TableauBordComptable() {
       const { data: paiements, error } = await supabase
         .from('paiements')
         .select('montant_paye, est_encaisse, created_at, nom_encaisseur, statut')
+        .eq('ecole_id', currentSchoolId)
         .eq('encaisseur_id', comptableId);
 
       if (error) throw error;
@@ -228,6 +231,7 @@ export default function TableauBordComptable() {
       const { data: encaisses, error: errorEncaisses } = await supabase
         .from('paiements')
         .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement')
+        .eq('ecole_id', currentSchoolId)
         .eq('encaisseur_id', comptableId)
         .eq('est_encaisse', true)
         .neq('statut', 'annule')
@@ -238,6 +242,7 @@ export default function TableauBordComptable() {
       const { data: nonEncaisses, error: errorNonEncaisses } = await supabase
         .from('paiements')
         .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement')
+        .eq('ecole_id', currentSchoolId)
         .eq('encaisseur_id', comptableId)
         .eq('est_encaisse', false)
         .neq('statut', 'annule')
@@ -264,18 +269,21 @@ export default function TableauBordComptable() {
         supabase
           .from('paiements')
           .select('montant_paye')
+          .eq('ecole_id', currentSchoolId)
           .eq('encaisseur_id', comptableId)
           .eq('est_encaisse', true)
           .gte('date_encaissement', debutJour.toISOString()),
         supabase
           .from('paiements')
           .select('montant_paye')
+          .eq('ecole_id', currentSchoolId)
           .eq('encaisseur_id', comptableId)
           .eq('est_encaisse', true)
           .gte('date_encaissement', debutMoisActuel.toISOString()),
         supabase
           .from('paiements')
           .select('montant_paye')
+          .eq('ecole_id', currentSchoolId)
           .eq('encaisseur_id', comptableId)
           .eq('est_encaisse', true)
           .gte('date_encaissement', debutMoisPrecedent.toISOString())
@@ -309,6 +317,7 @@ export default function TableauBordComptable() {
       const { data, error } = await supabase
         .from('types_paiement')
         .select('id, libelle')
+        .eq('ecole_id', currentSchoolId)
         .eq('is_active', true);
 
       if (error) throw error;

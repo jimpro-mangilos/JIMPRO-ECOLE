@@ -11,8 +11,8 @@ interface DevoirItem { id: string; titre: string; description: string; professeu
 export default function GestionDevoirs() {
   const queryClient = useQueryClient();
   const { currentSchoolId } = useAuth();
-  const { data: sections = [] } = useSections();
-  const { data: classes = [] } = useClasses();
+  const { data: sections = [] } = useSections(currentSchoolId);
+  const { data: classes = [] } = useClasses(currentSchoolId);
   const [search, setSearch] = useState('');
   const [filterSection, setFilterSection] = useState('');
   const [filterClasse, setFilterClasse] = useState('');
@@ -25,7 +25,7 @@ export default function GestionDevoirs() {
   const { data: devoirs = [], isLoading } = useQuery({
     queryKey: ['devoirs'],
     queryFn: async () => {
-      const { data } = await supabase.from('devoirs').select('*, classes(nom), profiles!professeur_id(nom, prenom)').order('created_at', { ascending: false });
+      const { data } = await supabase.from('devoirs').select('*, classes(nom), profiles!professeur_id(nom, prenom)').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
       return (data ?? []) as DevoirItem[];
     },
   });

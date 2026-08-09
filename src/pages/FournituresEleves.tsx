@@ -29,7 +29,7 @@ interface DistributionUniforme {
 }
 
 export default function FournituresEleves() {
-  const { isReadOnly, isItManager, isGestionnaireUniforme } = useAuth();
+  const { isReadOnly, isItManager, isGestionnaireUniforme, currentSchoolId } = useAuth();
   const [distributions, setDistributions] = useState<DistributionUniforme[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,7 +83,7 @@ export default function FournituresEleves() {
             const matriculeExtrait = match[0].toUpperCase();
             setShowScanner(false);
             setScanError('');
-            const { data } = await supabase.from('eleves').select('*').ilike('matricule', matriculeExtrait).maybeSingle();
+            const { data } = await supabase.from('eleves').select('*').eq('ecole_id', currentSchoolId).ilike('matricule', matriculeExtrait).maybeSingle();
             // Double-check session is still current after async fetch
             if (data && scannerSessionId.current === currentSessionId) {
               setSelectedEleve(data);
@@ -111,6 +111,7 @@ export default function FournituresEleves() {
       const { data, error } = await supabase
         .from('gestion_uniformes')
         .select('*')
+        .eq('ecole_id', currentSchoolId)
         .order('date_distribution', { ascending: false });
 
       if (error) throw error;

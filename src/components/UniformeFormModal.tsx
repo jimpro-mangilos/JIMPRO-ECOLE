@@ -77,8 +77,8 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
     setLoadingData(true);
     try {
       const [typesRes, anneesRes] = await Promise.all([
-        supabase.from('types_uniforme').select('*').eq('is_active', true).order('ordre'),
-        supabase.from('annees_scolaires').select('*').eq('is_active', true).order('annee', { ascending: false }),
+        supabase.from('types_uniforme').select('*').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
+        supabase.from('annees_scolaires').select('*').eq('ecole_id', currentSchoolId).eq('is_active', true).order('annee', { ascending: false }),
       ]);
       if (typesRes.data) setTypesUniforme(typesRes.data);
       if (anneesRes.data) {
@@ -102,6 +102,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
       const { data, error } = await supabase
         .from('stock_uniformes')
         .select('type_uniforme_id, quantite_stock')
+        .eq('ecole_id', currentSchoolId)
         .eq('annee_scolaire', a)
         .eq('section', eleve.section || '');
       if (error) throw error;

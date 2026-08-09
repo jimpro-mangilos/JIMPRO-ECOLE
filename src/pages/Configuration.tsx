@@ -20,7 +20,7 @@ const TABS: { key: TabKey; label: string }[] = [
 
 // ─── Page Component ───────────────────────────────────────────────────────────
 export default function Configuration() {
-  const { canManageConfiguration } = useAuth();
+  const { canManageConfiguration, currentSchoolId } = useAuth();
   const { logoUrl, refreshLogo } = useLogo();
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -29,12 +29,13 @@ export default function Configuration() {
   const [success, setSuccess] = useState('');
 
   // Data from React Query
-  const { data: sections = [], isLoading: loading } = useSections();
-  const { data: options = [] } = useOptions();
-  const { data: classes = [] } = useClasses();
-  const { data: motifs = [] } = useMotifsPaiement();
-  const { data: typesPaiement = [] } = useTypesPaiement();
-  const { data: anneeScolaires = [] } = useAnneesScolaires();
+  const schoolId = currentSchoolId!;
+  const { data: sections = [], isLoading: loading } = useSections(schoolId);
+  const { data: options = [] } = useOptions(schoolId);
+  const { data: classes = [] } = useClasses(schoolId);
+  const { data: motifs = [] } = useMotifsPaiement(schoolId);
+  const { data: typesPaiement = [] } = useTypesPaiement(schoolId);
+  const { data: anneeScolaires = [] } = useAnneesScolaires(schoolId);
   const { sectionPrefixes, typesUniforme, upsertPrefix, deletePrefix, upsertTypeUniforme, deleteTypeUniforme,
     upsertSection, deleteSection, upsertOption, deleteOption, upsertClasse, deleteClasse,
     upsertMotif, deleteMotif, upsertTypePaiement, deleteTypePaiement, upsertAnneeScolaire, deleteAnneeScolaire } = useConfiguration();

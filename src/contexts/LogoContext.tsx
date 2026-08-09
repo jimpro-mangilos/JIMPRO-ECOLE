@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 import { invalidateLogoCache } from '../utils/pdfTheme';
 
 interface LogoContextType {
@@ -17,6 +18,7 @@ const LogoContext = createContext<LogoContextType>({
 });
 
 export function LogoProvider({ children }: { children: ReactNode }) {
+  const { currentSchoolId } = useAuth();
   const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO);
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
 
@@ -39,6 +41,7 @@ export function LogoProvider({ children }: { children: ReactNode }) {
       const { data } = await supabase
         .from('app_settings')
         .select('value')
+        .eq('ecole_id', currentSchoolId)
         .eq('key', 'logo_url')
         .maybeSingle();
 

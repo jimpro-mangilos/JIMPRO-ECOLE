@@ -62,6 +62,7 @@ export default function Admin() {
             *,
             role:roles(id, nom, description)
           `)
+          .eq('ecole_id', currentSchoolId)
           .order('created_at', { ascending: false }),
         supabase.from('roles').select('*').order('nom'),
       ]);

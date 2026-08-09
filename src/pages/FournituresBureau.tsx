@@ -30,6 +30,7 @@ export default function FournituresBureau() {
       const { data, error } = await supabase
         .from('gestion_fourniture_bureau')
         .select('*')
+        .eq('ecole_id', currentSchoolId)
         .order('date_operation', { ascending: false });
 
       if (error) throw error;

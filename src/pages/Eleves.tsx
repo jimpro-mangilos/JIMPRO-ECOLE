@@ -33,12 +33,13 @@ function useEleveFilters() {
 
 // ─── Page Component ───────────────────────────────────────────────────────────
 export default function Eleves() {
-  const { isReadOnly, isItManager } = useAuth();
+  const { isReadOnly, isItManager, currentSchoolId } = useAuth();
   const { logoUrl } = useLogo();
   const filters = useEleveFilters();
-  const { data: sections = [] } = useSections();
-  const { data: options = [] } = useOptions();
-  const { data: classes = [] } = useClasses();
+  const schoolId = currentSchoolId!;
+  const { data: sections = [] } = useSections(schoolId);
+  const { data: options = [] } = useOptions(schoolId);
+  const { data: classes = [] } = useClasses(schoolId);
 
   const {
     eleves, loading, paidEleveIds,

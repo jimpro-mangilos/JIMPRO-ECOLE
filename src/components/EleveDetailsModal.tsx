@@ -42,7 +42,7 @@ interface EleveDetailsModalProps {
 }
 
 export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOpenPaymentForm }: EleveDetailsModalProps) {
-  const { canCreatePaiement } = useAuth();
+  const { canCreatePaiement, currentSchoolId } = useAuth();
   const [paiements, setPaiements] = useState<Paiement[]>([]);
   const [uniformes, setUniformes] = useState<Uniforme[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +60,7 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
       const { data, error } = await supabase
         .from('paiements')
         .select('*')
+        .eq('ecole_id', currentSchoolId)
         .eq('eleve_id', eleve.id)
         .order('date_paiement', { ascending: false });
 
@@ -78,6 +79,7 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
       const { data, error } = await supabase
         .from('gestion_uniformes')
         .select('id, type_uniforme_libelle, quantite, annee_scolaire, date_distribution, nom_comptable, notes')
+        .eq('ecole_id', currentSchoolId)
         .eq('eleve_id', eleve.id)
         .order('date_distribution', { ascending: false });
 

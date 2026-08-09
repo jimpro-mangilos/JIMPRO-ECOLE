@@ -1,20 +1,23 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { useSections, useOptions, useClasses, useMotifsPaiement, useAnneesScolaires } from './useReferenceData';
 
 export function useRapports() {
-  const { data: sections = [] } = useSections();
-  const { data: options = [] } = useOptions();
-  const { data: classes = [] } = useClasses();
-  const { data: motifs = [] } = useMotifsPaiement();
-  const { data: annees = [] } = useAnneesScolaires();
+  const { currentSchoolId } = useAuth();
+  const schoolId = currentSchoolId!;
+  const { data: sections = [] } = useSections(schoolId);
+  const { data: options = [] } = useOptions(schoolId);
+  const { data: classes = [] } = useClasses(schoolId);
+  const { data: motifs = [] } = useMotifsPaiement(schoolId);
+  const { data: annees = [] } = useAnneesScolaires(schoolId);
 
   // ─── Finance filter data ───────────────────────────────────────────────────
   const { data: financeComptables = [] } = useQuery({
     queryKey: ['rapports', 'financeComptables'],
     queryFn: async () => {
-      const { data } = await supabase.from('compte_courant').select('nom_comptable, nom_approbateur, nom_encaisseur');
+      const { data } = await supabase.from('compte_courant').select('nom_comptable, nom_approbateur, nom_encaisseur').eq('ecole_id', schoolId);
       const set = new Set<string>();
       (data || []).forEach((r: any) => { if (r.nom_comptable) set.add(r.nom_comptable); if (r.nom_encaisseur) set.add(r.nom_encaisseur); });
       return Array.from(set).sort();
@@ -25,7 +28,7 @@ export function useRapports() {
   const { data: financeApprobateurs = [] } = useQuery({
     queryKey: ['rapports', 'financeApprobateurs'],
     queryFn: async () => {
-      const { data } = await supabase.from('compte_courant').select('nom_approbateur');
+      const { data } = await supabase.from('compte_courant').select('nom_approbateur').eq('ecole_id', schoolId);
       const set = new Set<string>();
       (data || []).forEach((r: any) => { if (r.nom_approbateur) set.add(r.nom_approbateur); });
       return Array.from(set).sort();
@@ -38,8 +41,8 @@ export function useRapports() {
     queryKey: ['rapports', 'fournitureFilters'],
     queryFn: async () => {
       const [{ data: types }, { data: fournData }] = await Promise.all([
-        supabase.from('types_uniforme').select('libelle').eq('is_active', true).order('ordre'),
-        supabase.from('gestion_fournitures').select('section, classe').order('created_at'),
+        supabase.from('types_uniforme').select('libelle').eq('ecole_id', schoolId).eq('is_active', true).order('ordre'),
+        supabase.from('gestion_fournitures').select('section, classe').eq('ecole_id', schoolId).order('created_at'),
       ]);
       const classSet = new Set<string>();
       const sectionSet = new Set<string>();
