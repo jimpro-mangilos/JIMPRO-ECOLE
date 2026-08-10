@@ -113,7 +113,6 @@ export default function PortailParent() {
     setPaiements([]);
 
     try {
-      console.log('[PortailParent] Recherche matricule:', cleanTerm, 'ecole:', schoolId);
       const { data: eleveData, error: eleveError } = await supabase
         .from('eleves')
         .select('*')

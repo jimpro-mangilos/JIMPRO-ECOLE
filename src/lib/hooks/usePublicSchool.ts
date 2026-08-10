@@ -91,10 +91,36 @@ export function usePublicSchool(): PublicSchool {
       }
     } catch { /* ignore */ }
 
-    // 3. Pas d'école trouvée → demander à l'utilisateur
-    setLoading(false);
-    setError('Veuillez sélectionner une école');
-  }, [searchParams, resolveSchool]);
+    // 3. Pas d'école trouvée → résoudre automatiquement la première école active
+    (async () => {
+      try {
+        const { data, error: queryError } = await supabase
+          .from('ecoles')
+          .select('id, nom, code')
+          .eq('is_active', true)
+          .order('nom')
+          .limit(1)
+          .maybeSingle();
+        if (!queryError && data) {
+          setSchoolId(data.id);
+          setSchoolCodeState(data.code);
+          setSchoolName(data.nom);
+          setSearchParams({ ecole: data.code });
+          try {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+              id: data.id, code: data.code, nom: data.nom
+            }));
+          } catch { /* ignore */ }
+        } else {
+          setError('Aucune école trouvée. Contactez l\'administrateur.');
+        }
+      } catch {
+        setError('Erreur lors du chargement des écoles.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [searchParams, resolveSchool, setSearchParams]);
 
   const setSchoolCode = useCallback((code: string) => {
     // Mettre à jour l'URL
