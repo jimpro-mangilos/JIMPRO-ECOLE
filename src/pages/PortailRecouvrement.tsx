@@ -70,7 +70,8 @@ export default function PortailRecouvrement() {
         async (decodedText) => {
           if (!scannerRunning.current) return;
           scannerRunning.current = false;
-          const matriculeExtrait = decodedText.split('|')[0].trim();
+          const match = decodedText.match(/MATRICULE:([^|]+)/i);
+          const matriculeExtrait = match ? match[1].trim() : '';
           if (matriculeExtrait) {
             setShowScanner(false);
             setScanError('');

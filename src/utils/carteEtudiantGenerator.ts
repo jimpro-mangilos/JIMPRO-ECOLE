@@ -197,7 +197,7 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   doc.text('Signature', ox + CARD_W / 4 - 5, by - 1.2, { align: 'center' });
 
   // ─── QR Code (ON TOP of the bottom bar) ──────────────────────────────────────
-  const qrData = `${e.matricule}|${nom}|${e.section}|${e.classe || ''}`;
+  const qrData = `MATRICULE:${e.matricule}|ELEVE:${nom}|SECTION:${e.section}|CLASSE:${e.classe || ''}`;
   const qrUrl = await QRCode.toDataURL(qrData, { width: 400, margin: 1, errorCorrectionLevel: 'M' });
   const qs = 24;
   const qx = ox + CARD_W - qs - PAD;
