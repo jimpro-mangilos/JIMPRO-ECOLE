@@ -109,11 +109,12 @@ export function useConfiguration() {
 
   // ─── Classes ───────────────────────────────────────────────────────────────
   const upsertClasse = useCallback(async (form: { nom: string; section_id: string; option_id: string; niveau: string; designation: string; description: string; is_active: boolean }, id?: string, maxOrdre?: number) => {
+    const payload = { ...form, option_id: form.option_id || null, ecole_id: schoolId };
     if (id) {
-      const { error } = await supabase.from('classes').update({ ...form, ecole_id: schoolId }).eq('id', id);
+      const { error } = await supabase.from('classes').update(payload).eq('id', id);
       if (error) throw error;
     } else {
-      const { error } = await supabase.from('classes').insert([{ ...form, ecole_id: schoolId, ordre: (maxOrdre || 0) + 1 }]);
+      const { error } = await supabase.from('classes').insert([{ ...payload, ordre: (maxOrdre || 0) + 1 }]);
       if (error) throw error;
     }
     queryClient.invalidateQueries({ queryKey: queryKeys.classes.all });
