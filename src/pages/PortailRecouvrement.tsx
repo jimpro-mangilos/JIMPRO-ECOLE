@@ -100,7 +100,8 @@ export default function PortailRecouvrement() {
 
     try {
       // Find student (scoped by school)
-      const { data: eleve } = await supabase.from('eleves').select('*').eq('ecole_id', schoolId).ilike('matricule', matricule).maybeSingle();
+      console.log('[Recouvrement] Recherche matricule:', matricule, 'ecole:', schoolId);
+      const { data: eleve } = await supabase.from('eleves').select('*').eq('ecole_id', schoolId).eq('matricule', matricule).maybeSingle();
       if (!eleve) { setResultat({ type: 'introuvable' }); return; }
 
       const info: EleveInfo = {
