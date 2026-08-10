@@ -72,13 +72,13 @@ export default function Configuration() {
   const handleSubmit = async (upsertFn: Function, form: any, setShow: (v: boolean) => void, resetForm: () => void, entityName: string, isEdit: boolean, extra?: any) => {
     clearMsg();
     try { await upsertFn(form, isEdit ? (extra?.id) : undefined, extra?.maxOrdre); showSuccess(`${entityName} ${isEdit ? 'modifié' : 'créé'}`); resetForm(); setShow(false); }
-    catch { showError(`Erreur lors de l'enregistrement`); }
+    catch (err: any) { showError(err?.message || 'Erreur lors de l\'enregistrement'); }
   };
 
   const handleDelete = async (deleteFn: Function, id: string, entityName: string) => {
     if (!confirm(`Supprimer ${entityName} ?`)) return;
     try { await deleteFn(id); showSuccess(`${entityName} supprimé`); }
-    catch { showError('Erreur suppression'); }
+    catch (err: any) { showError(err?.message || 'Erreur suppression'); }
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
