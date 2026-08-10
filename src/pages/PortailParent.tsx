@@ -98,6 +98,10 @@ export default function PortailParent() {
 
   const handleSearchWithMatricule = async (term: string, e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!schoolId) {
+      setError('Aucune école sélectionnée. Ajoutez ?ecole=CODE dans l\'URL.');
+      return;
+    }
     const cleanTerm = term.trim().toUpperCase();
     if (!cleanTerm) {
       setError('Veuillez entrer un matricule');

@@ -91,6 +91,10 @@ export default function PortailRecouvrement() {
   const moisActuel = MOIS[month];
 
   async function verifierMatricule(matricule: string) {
+    if (!schoolId) {
+      setScanError('Aucune école sélectionnée. Ajoutez ?ecole=CODE dans l\'URL.');
+      return;
+    }
     setLoading(true);
     setResultat({ type: 'loading' });
 
