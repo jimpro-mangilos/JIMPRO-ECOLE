@@ -46,7 +46,7 @@ export default function PortailRecouvrement() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-recouvrement';
-  const { schoolId } = usePublicSchool();
+  const { schoolId, loading: schoolLoading } = usePublicSchool();
 
   // Load motifs and annees on mount (scoped by school)
   useEffect(() => {
@@ -91,8 +91,9 @@ export default function PortailRecouvrement() {
   const moisActuel = MOIS[month];
 
   async function verifierMatricule(matricule: string) {
+    if (schoolLoading) return; // attente résolution école
     if (!schoolId) {
-      setScanError('Aucune école sélectionnée. Ajoutez ?ecole=CODE dans l\'URL.');
+      setScanError('Aucune école trouvée. Contactez l\'administrateur.');
       return;
     }
     setLoading(true);

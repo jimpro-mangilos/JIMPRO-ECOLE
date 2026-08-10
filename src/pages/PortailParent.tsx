@@ -54,7 +54,7 @@ export default function PortailParent() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-scanner-reader';
-  const { schoolId } = usePublicSchool();
+  const { schoolId, loading: schoolLoading } = usePublicSchool();
 
   // QR Scanner lifecycle
   useEffect(() => {
@@ -98,8 +98,9 @@ export default function PortailParent() {
 
   const handleSearchWithMatricule = async (term: string, e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (schoolLoading) return; // attente résolution école
     if (!schoolId) {
-      setError('Aucune école sélectionnée. Ajoutez ?ecole=CODE dans l\'URL.');
+      setError('Aucune école trouvée. Contactez l\'administrateur.');
       return;
     }
     const cleanTerm = term.trim().toUpperCase();
