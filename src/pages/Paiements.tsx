@@ -100,6 +100,11 @@ export default function Paiements() {
 
   const isDateFilterActive = filters.filterDateDebut !== '' || filters.filterDateFin !== '';
 
+  const getTypeLabel = (typePaiement: string) => {
+    const t = typesPaiement.find((tp: any) => tp.libelle === typePaiement || tp.id === typePaiement);
+    return t?.libelle || typePaiement;
+  };
+
   // ─── Print / Edit / Detail handlers ────────────────────────────────────────
   const handlePrintRecu = (paiement: Paiement) => {
     try {
@@ -281,7 +286,7 @@ export default function Paiements() {
                           <td className="px-2 py-1.5 text-sm font-mono text-gray-900">{p.numero_recu}</td>
                           <td className="px-2 py-1.5"><p className="text-sm font-medium text-gray-900">{p.nom_eleve} {p.prenom}</p><p className="text-xs text-gray-400">{p.matricule}</p></td>
                           <td className="px-2 py-1.5 text-sm text-gray-600">{p.classe}</td>
-                          <td className="px-2 py-1.5"><p className="text-sm text-gray-800">{p.type_paiement}</p><p className="text-xs text-gray-400">{p.motif_libelle || '—'}</p></td>
+                          <td className="px-2 py-1.5"><p className="text-sm text-gray-800">{getTypeLabel(p.type_paiement)}</p><p className="text-xs text-gray-400">{p.motif_libelle || '—'}</p></td>
                           <td className="px-2 py-1.5 text-sm font-semibold text-right text-gray-900">{p.montant_paye.toLocaleString('fr-FR')} FC</td>
                           <td className="px-2 py-1.5 text-center">
                             {getStatut(p) === 'encaisse' ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full"><CheckCircle className="w-3 h-3" /> Encaissé</span>
@@ -364,7 +369,7 @@ export default function Paiements() {
                 <div><span className="text-gray-500">Section</span><p className="font-medium text-gray-900">{detailPaiement.section}</p></div>
                 <div><span className="text-gray-500">Montant</span><p className="font-bold text-gray-900">{detailPaiement.montant_paye.toLocaleString('fr-FR')} FC</p></div>
                 <div><span className="text-gray-500">Mode</span><p className="font-medium text-gray-900">{detailPaiement.mode_paiement}</p></div>
-                <div><span className="text-gray-500">Type</span><p className="font-medium text-gray-900">{detailPaiement.type_paiement}</p></div>
+                <div><span className="text-gray-500">Type</span><p className="font-medium text-gray-900">{getTypeLabel(detailPaiement.type_paiement)}</p></div>
                 <div><span className="text-gray-500">Motif</span><p className="font-medium text-gray-900">{detailPaiement.motif_libelle || '—'}</p></div>
                 <div><span className="text-gray-500">Date</span><p className="font-medium text-gray-900">{new Date(detailPaiement.date_paiement).toLocaleDateString('fr-FR')}</p></div>
                 <div><span className="text-gray-500">Comptable</span><p className="font-medium text-gray-900">{detailPaiement.nom_comptable || '—'}</p></div>
