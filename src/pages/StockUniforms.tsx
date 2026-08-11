@@ -78,7 +78,9 @@ function StockUniforms() {
   const [showDemandeForm, setShowDemandeForm] = useState(false);
   const [demandes, setDemandes] = useState<any[]>([]);
   const [loadingDemandes, setLoadingDemandes] = useState(false);
-  const [demandeForm, setDemandeForm] = useState({ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' });
+  const [demandeArticles, setDemandeArticles] = useState<Array<{ type_uniforme_id: string; annee_scolaire: string; section: string; quantite: string }>>([
+    { type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' },
+  ]);
 
   useEffect(() => {
     loadAll();
@@ -124,18 +126,23 @@ function StockUniforms() {
   };
 
   const createDemande = async () => {
-    if (!demandeForm.type_uniforme_id || !demandeForm.quantite) return alert('Remplissez le type et la quantite');
-    const { error } = await supabase.from('stock_demandes').insert({
-      ...demandeForm,
-      quantite: parseInt(demandeForm.quantite),
-      ecole_id: currentSchoolId,
-      demandeur_id: (userProfile as any)?.id,
-      statut: 'en_attente'
-    });
+    const valid = demandeArticles.filter(a => a.type_uniforme_id && a.quantite && parseInt(a.quantite) > 0);
+    if (valid.length === 0) return alert('Remplissez au moins un article avec type et quantite');
+    const { error } = await supabase.from('stock_demandes').insert(
+      valid.map(a => ({
+        type_uniforme_id: a.type_uniforme_id,
+        annee_scolaire: a.annee_scolaire || '',
+        section: a.section || '',
+        quantite: parseInt(a.quantite),
+        ecole_id: currentSchoolId,
+        demandeur_id: (userProfile as any)?.id,
+        statut: 'en_attente'
+      }))
+    );
     if (error) { alert('Erreur: ' + error.message); return; }
-    alert('Demande envoyee');
+    alert(`${valid.length} demande(s) envoyee(s)`);
     setShowDemandeForm(false);
-    setDemandeForm({ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' });
+    setDemandeArticles([{ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' }]);
     loadDemandes();
   };
 
@@ -855,35 +862,62 @@ function StockUniforms() {
             <button onClick={() => setShowDemandeForm(false)} className="p-1 hover:bg-gray-100 rounded-lg"><XCircle className="w-5 h-5 text-gray-400" /></button>
           </div>
 
-          {/* Formulaire de demande */}
-          <div className="bg-teal-50 rounded-lg p-4 mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Type uniforme *</label>
-              <select value={demandeForm.type_uniforme_id} onChange={e => setDemandeForm(f => ({ ...f, type_uniforme_id: e.target.value }))} className="w-full px-2 py-2 text-sm border rounded-lg">
-                <option value="">--</option>
-                {typesUniforme.map((t: any) => <option key={t.id} value={t.id}>{t.libelle}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Année scolaire</label>
-              <select value={demandeForm.annee_scolaire} onChange={e => setDemandeForm(f => ({ ...f, annee_scolaire: e.target.value }))} className="w-full px-2 py-2 text-sm border rounded-lg">
-                <option value="">--</option>
-                {anneeScolaires.map((a: any) => <option key={a.annee} value={a.annee}>{a.annee}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Section</label>
-              <select value={demandeForm.section} onChange={e => setDemandeForm(f => ({ ...f, section: e.target.value }))} className="w-full px-2 py-2 text-sm border rounded-lg">
-                <option value="">Toutes</option>
-                {sections.map((s: any) => <option key={s.nom} value={s.nom}>{s.nom}</option>)}
-              </select>
-            </div>
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Quantité *</label>
-                <input type="number" min="1" value={demandeForm.quantite} onChange={e => setDemandeForm(f => ({ ...f, quantite: e.target.value }))} className="w-full px-2 py-2 text-sm border rounded-lg" />
+          {/* Formulaire de demande multi-articles */}
+          <div className="bg-teal-50 rounded-lg p-4 mb-6 space-y-3">
+            {demandeArticles.map((art, idx) => (
+              <div key={idx} className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
+                <div>
+                  {idx === 0 && <label className="block text-xs font-medium text-gray-700 mb-1">Type *</label>}
+                  <select value={art.type_uniforme_id} onChange={e => {
+                    const cp = [...demandeArticles];
+                    cp[idx].type_uniforme_id = e.target.value;
+                    setDemandeArticles(cp);
+                  }} className="w-full px-2 py-2 text-sm border rounded-lg">
+                    <option value="">--</option>
+                    {typesUniforme.map((t: any) => <option key={t.id} value={t.id}>{t.libelle}</option>)}
+                  </select>
+                </div>
+                <div>
+                  {idx === 0 && <label className="block text-xs font-medium text-gray-700 mb-1">Année</label>}
+                  <select value={art.annee_scolaire} onChange={e => {
+                    const cp = [...demandeArticles];
+                    cp[idx].annee_scolaire = e.target.value;
+                    setDemandeArticles(cp);
+                  }} className="w-full px-2 py-2 text-sm border rounded-lg">
+                    <option value="">--</option>
+                    {anneeScolaires.map((a: any) => <option key={a.annee} value={a.annee}>{a.annee}</option>)}
+                  </select>
+                </div>
+                <div>
+                  {idx === 0 && <label className="block text-xs font-medium text-gray-700 mb-1">Section</label>}
+                  <select value={art.section} onChange={e => {
+                    const cp = [...demandeArticles];
+                    cp[idx].section = e.target.value;
+                    setDemandeArticles(cp);
+                  }} className="w-full px-2 py-2 text-sm border rounded-lg">
+                    <option value="">Toutes</option>
+                    {sections.map((s: any) => <option key={s.nom} value={s.nom}>{s.nom}</option>)}
+                  </select>
+                </div>
+                <div>
+                  {idx === 0 && <label className="block text-xs font-medium text-gray-700 mb-1">Qté *</label>}
+                  <input type="number" min="1" value={art.quantite} onChange={e => {
+                    const cp = [...demandeArticles];
+                    cp[idx].quantite = e.target.value;
+                    setDemandeArticles(cp);
+                  }} className="w-full px-2 py-2 text-sm border rounded-lg" />
+                </div>
+                <div className="flex items-end gap-1">
+                  {idx === demandeArticles.length - 1 ? (
+                    <button type="button" onClick={() => setDemandeArticles([...demandeArticles, { type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' }])} className="text-teal-600 hover:bg-teal-100 p-1.5 rounded-lg" title="Ajouter un article"><Plus className="w-4 h-4" /></button>
+                  ) : (
+                    <button type="button" onClick={() => setDemandeArticles(demandeArticles.filter((_, i) => i !== idx))} className="text-red-400 hover:bg-red-50 p-1.5 rounded-lg" title="Retirer"><XCircle className="w-4 h-4" /></button>
+                  )}
+                </div>
               </div>
-              <button onClick={createDemande} className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 shrink-0">Envoyer</button>
+            ))}
+            <div className="flex justify-end pt-2">
+              <button onClick={createDemande} className="bg-teal-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-teal-700">Envoyer la demande</button>
             </div>
           </div>
 
