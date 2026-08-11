@@ -46,9 +46,9 @@ interface StockForm {
 }
 
 function StockUniforms() {
-  const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, currentSchoolId } = useAuth();
+  const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, isPromoteur, currentSchoolId } = useAuth();
   const canWrite = isAdmin() || profile?.role?.nom === 'secretaire';
-  const canApprove = isAdmin() || isItManager() || isCoordonnateur();
+  const canApprove = isAdmin() || isItManager() || isPromoteur();
 
   const [stocks, setStocks] = useState<StockUniforme[]>([]);
   const [typesUniforme, setTypesUniforme] = useState<TypeUniforme[]>([]);
@@ -75,7 +75,7 @@ function StockUniforms() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
-  const [showDemandeForm, setShowDemandeForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<'stock' | 'demandes'>('stock');
   const [demandes, setDemandes] = useState<any[]>([]);
   const [loadingDemandes, setLoadingDemandes] = useState(false);
   const [demandeArticles, setDemandeArticles] = useState<Array<{ type_uniforme_id: string; annee_scolaire: string; section: string; quantite: string }>>([
@@ -118,12 +118,15 @@ function StockUniforms() {
   const loadDemandes = async () => {
     setLoadingDemandes(true);
     try {
-      const { data } = await supabase.from('stock_demandes').select('*, types_uniforme:types_uniforme!inner(libelle)').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
+      const { data } = await supabase.from('stock_demandes').select('*, types_uniforme:types_uniforme!inner(libelle), demandeur:demandeur_id(nom, prenom), approbateur:approbateur_id(nom, prenom)').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
       setDemandes(data || []);
     } catch { /* ignore */ } finally {
       setLoadingDemandes(false);
     }
   };
+
+  // Auto-charger les demandes quand on bascule sur l'onglet
+  useEffect(() => { if (activeTab === 'demandes') loadDemandes(); }, [activeTab]);
 
   const createDemande = async () => {
     const valid = demandeArticles.filter(a => a.type_uniforme_id && a.quantite && parseInt(a.quantite) > 0);
@@ -141,7 +144,6 @@ function StockUniforms() {
     );
     if (error) { alert('Erreur: ' + error.message); return; }
     alert(`${valid.length} demande(s) envoyee(s)`);
-    setShowDemandeForm(false);
     setDemandeArticles([{ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' }]);
     loadDemandes();
   };
@@ -436,15 +438,14 @@ function StockUniforms() {
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-           {canWrite && (
-            <button
-              onClick={() => { setShowDemandeForm(!showDemandeForm); if (!showDemandeForm) loadDemandes(); }}
-              className="flex items-center gap-2 border border-teal-300 text-teal-700 bg-teal-50 px-4 py-2 rounded-lg hover:bg-teal-100 transition-colors text-sm font-medium"
-            >
-              <Package className="w-4 h-4" />
-              Demandes
-            </button>
-           )}
+           {/* Tabs Stock | Demandes */}
+           <div className="flex bg-gray-100 rounded-lg p-0.5 mr-2">
+             {(['stock', 'demandes'] as const).map(tab => (
+               <button key={tab} onClick={() => setActiveTab(tab)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                 {tab === 'stock' ? 'Stock' : 'Demandes'}
+               </button>
+             ))}
+           </div>
            {canWrite && (
             <button
               onClick={openApprovisionner}
@@ -693,6 +694,7 @@ function StockUniforms() {
       </div>
 
       {/* Table */}
+       {activeTab === 'stock' && (
       <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         {isItManager() && selectedIds.size > 0 && (
           <div className="px-5 py-3 bg-red-50 border-b border-red-200 flex items-center justify-between">
@@ -859,13 +861,13 @@ function StockUniforms() {
           </div>
           )}
       </div>
+      )}
 
       {/* ─── Panel Demandes ────────────────────────────────────────────────── */}
-      {showDemandeForm && (
+      {activeTab === 'demandes' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Package className="w-5 h-5 text-teal-600" /> Demandes d'approvisionnement</h3>
-            <button onClick={() => setShowDemandeForm(false)} className="p-1 hover:bg-gray-100 rounded-lg"><XCircle className="w-5 h-5 text-gray-400" /></button>
           </div>
 
           {/* Formulaire de demande multi-articles */}
@@ -935,7 +937,7 @@ function StockUniforms() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b text-left text-gray-500">{['Type','Année','Section','Qté','Statut','Date',''].map(h => <th key={h} className="px-3 py-2 font-medium text-xs">{h}</th>)}</tr></thead>
+                  <thead><tr className="border-b text-left text-gray-500">{['Type','Année','Section','Qté','Demandeur','Approbateur','Statut','Date',''].map(h => <th key={h} className="px-3 py-2 font-medium text-xs">{h}</th>)}</tr></thead>
                 <tbody>
                   {demandes.map((d: any) => (
                     <tr key={d.id} className={`border-b hover:bg-gray-50 ${d.statut === 'en_attente' ? 'border-l-4 border-l-amber-400' : d.statut === 'approuve' ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-red-400'}`}>
@@ -943,6 +945,8 @@ function StockUniforms() {
                       <td className="px-3 py-2">{d.annee_scolaire || '—'}</td>
                       <td className="px-3 py-2">{d.section || '—'}</td>
                       <td className="px-3 py-2 font-medium">{d.quantite}</td>
+                      <td className="px-3 py-2 text-xs">{[d.demandeur?.prenom, d.demandeur?.nom].filter(Boolean).join(' ') || '—'}</td>
+                      <td className="px-3 py-2 text-xs">{[d.approbateur?.prenom, d.approbateur?.nom].filter(Boolean).join(' ') || '—'}</td>
                       <td className="px-3 py-2">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${d.statut === 'en_attente' ? 'bg-amber-100 text-amber-700' : d.statut === 'approuve' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                           {d.statut === 'en_attente' ? 'En attente' : d.statut === 'approuve' ? 'Approuvé' : 'Rejeté'}
