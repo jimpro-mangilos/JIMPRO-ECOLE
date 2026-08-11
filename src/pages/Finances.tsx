@@ -86,7 +86,7 @@ export default function Finances() {
             ))}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100"><h3 className="text-sm font-semibold text-gray-700 mb-2">Répartition</h3><PieChart data={pieData} size={180} /></div>
+        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100"><h3 className="text-sm font-semibold text-gray-700 mb-2">Répartition</h3><PieChart data={pieData} size={220} /></div>
       </div>
 
       {/* Filters + Table */}

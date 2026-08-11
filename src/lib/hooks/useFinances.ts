@@ -120,14 +120,21 @@ export function useFinances(filters: FinanceFilters) {
     const totalDepenses = filteredTransactions.filter(t => t.type_operation === 'dépense').reduce((s, t) => s + t.montant_chiffre, 0);
     const solde = totalRecettes - totalDepenses;
     const count = filteredTransactions.length;
-    return { totalRecettes, totalDepenses, solde, count };
+    const approuve = filteredTransactions.filter(t => t.statut === 'approuve').reduce((s, t) => s + t.montant_chiffre, 0);
+    const enAttente = filteredTransactions.filter(t => t.statut === 'en_attente').reduce((s, t) => s + t.montant_chiffre, 0);
+    return { totalRecettes, totalDepenses, solde, count, approuve, enAttente };
   }, [filteredTransactions]);
 
   // ─── Pie chart data ────────────────────────────────────────────────────────
-  const pieData = useMemo(() => [
-    { label: 'Recettes', value: stats.totalRecettes, color: '#10b981' },
-    { label: 'Dépenses', value: stats.totalDepenses, color: '#ef4444' },
-  ], [stats]);
+  const pieData = useMemo(() => {
+    const items = [];
+    if (stats.totalRecettes > 0) items.push({ label: 'Recettes', value: stats.totalRecettes, color: '#10b981' });
+    if (stats.totalDepenses > 0) items.push({ label: 'Dépenses', value: stats.totalDepenses, color: '#ef4444' });
+    if (stats.approuve > 0) items.push({ label: 'Approuvées', value: stats.approuve, color: '#3b82f6' });
+    if (stats.enAttente > 0) items.push({ label: 'En attente', value: stats.enAttente, color: '#f59e0b' });
+    if (stats.solde > 0) items.push({ label: 'Solde', value: stats.solde, color: '#8b5cf6' });
+    return items.length > 0 ? items : [{ label: 'Aucune', value: 1, color: '#d1d5db' }];
+  }, [stats]);
 
   // ─── Comptable options for filter ──────────────────────────────────────────
   const comptableOptions = useMemo(() => {
