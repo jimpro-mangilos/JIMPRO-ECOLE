@@ -48,7 +48,7 @@ interface StockForm {
 function StockUniforms() {
   const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, currentSchoolId } = useAuth();
   const canWrite = isAdmin() || profile?.role?.nom === 'secretaire';
-  const canApprove = isAdmin() || isItManager();
+  const canApprove = isAdmin() || isItManager() || isCoordonnateur();
 
   const [stocks, setStocks] = useState<StockUniforme[]>([]);
   const [typesUniforme, setTypesUniforme] = useState<TypeUniforme[]>([]);
