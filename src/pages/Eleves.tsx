@@ -162,6 +162,7 @@ export default function Eleves() {
           >
             <FileDown className="w-5 h-5" /> Imprimer
           </button>
+          {isItManager() && (
           <button
             disabled={generatingCartes}
             onClick={async () => {
@@ -198,6 +199,7 @@ export default function Eleves() {
             {generatingCartes ? <Loader2 className="w-5 h-5 animate-spin" /> : <Contact className="w-5 h-5" />}
             {generatingCartes ? `${generatingProgress.current}/${generatingProgress.total}` : 'Cartes'}
           </button>
+          )}
           {!isReadOnly() && (
             <button onClick={handleOpenForm} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
               <Plus className="w-5 h-5" /> Ajouter un Élève
@@ -403,7 +405,17 @@ export default function Eleves() {
                     setPhotoPreview(f ? URL.createObjectURL(f) : null);
                   }} className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
                   {(photoPreview || formData.photo_url) && (
-                    <img src={photoPreview || formData.photo_url} alt="Aperçu" className="mt-1 w-16 h-16 object-cover rounded-lg border" />
+                    <div className="flex items-end gap-2 mt-1">
+                      <img src={photoPreview || formData.photo_url} alt="Aperçu" className="w-16 h-16 object-cover rounded-lg border" />
+                      {isItManager() && selectedEleve && (
+                        <button type="button" onClick={async () => {
+                          if (!confirm('Supprimer la photo de cet élève ?')) return;
+                          await supabase.from('eleves').update({ photo_url: null }).eq('id', selectedEleve.id);
+                          setFormData(p => ({ ...p, photo_url: '' }));
+                          setPhotoPreview(null);
+                        }} className="px-2 py-1 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100">Supprimer</button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
