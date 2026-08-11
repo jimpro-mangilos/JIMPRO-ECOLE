@@ -36,6 +36,7 @@ export default function Finances() {
 
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'recette' | 'depense'>('recette');
+  const [listTab, setListTab] = useState<'all' | 'recette' | 'depense'>('all');
   const [formData, setFormData] = useState({ montant_chiffre: 0, montant_lettre: '', beneficiaire: '', libelle: '', telephone: '', type_operation: 'recette' });
   const [editModal, setEditModal] = useState<{ open: boolean; transaction: Transaction | null; loading: boolean }>({ open: false, transaction: null, loading: false });
   const [editFormData, setEditFormData] = useState({ montant_chiffre: 0, montant_lettre: '', beneficiaire: '', libelle: '', telephone: '', type_operation: 'recette', date_transaction: '', statut: 'en_attente' });
@@ -85,13 +86,22 @@ export default function Finances() {
             ))}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100"><h3 className="text-sm font-semibold text-gray-700 mb-2">Répartition</h3><PieChart data={pieData as any} /></div>
+        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100"><h3 className="text-sm font-semibold text-gray-700 mb-2">Répartition</h3><PieChart data={pieData} size={180} /></div>
       </div>
 
       {/* Filters + Table */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-bold">Transactions</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold">Transactions</h2>
+            <div className="flex bg-gray-100 rounded-lg p-0.5">
+              {(['all', 'recette', 'depense'] as const).map(tab => (
+                <button key={tab} onClick={() => setListTab(tab)} className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${listTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  {tab === 'all' ? 'Tout' : tab === 'recette' ? 'Recettes' : 'Dépenses'}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <button onClick={() => generateFinancesReport(transactions as any)} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm"><FileDown className="w-4 h-4" /> Rapport</button>
             {selectedIds.size > 0 && canSupprimer() && <button onClick={bulkDelete} disabled={bulkDeleting} className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 text-sm disabled:opacity-50"><Trash2 className="w-4 h-4" /> Supprimer ({selectedIds.size})</button>}
@@ -117,18 +127,20 @@ export default function Finances() {
 
         {/* Table grouped by date */}
         {dateGroups.map(([dateKey, group]) => {
+          const filteredGroup = listTab === 'all' ? group : group.filter(t => t.type_operation === listTab);
+          if (filteredGroup.length === 0) return null;
           const isExpanded = expandedDates.has(dateKey) || expandedDates.has('__first__');
           return (
             <div key={dateKey} className="border border-gray-100 rounded-lg mb-2 overflow-hidden">
               <button onClick={() => toggleDate(dateKey)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3"><ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} /><span className="font-semibold text-gray-800">{formatDateLong(dateKey)}</span><span className="text-sm text-gray-500">({group.length})</span></div>
-                <span className={`text-sm font-semibold ${groupTotal(group) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{groupTotal(group) >= 0 ? '+' : ''}{groupTotal(group).toLocaleString('fr-FR')} FC</span>
+                <div className="flex items-center gap-3"><ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} /><span className="font-semibold text-gray-800">{formatDateLong(dateKey)}</span><span className="text-sm text-gray-500">({filteredGroup.length})</span></div>
+                <span className={`text-sm font-semibold ${groupTotal(filteredGroup) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{groupTotal(filteredGroup) >= 0 ? '+' : ''}{groupTotal(filteredGroup).toLocaleString('fr-FR')} FC</span>
               </button>
               {isExpanded && <table className="w-full"><thead><tr className="border-b border-gray-200 bg-gray-50">
-                {canSupprimer() && <th className="px-2 py-1.5"><input type="checkbox" checked={group.length > 0 && group.every(t => selectedIds.has(t.id))} onChange={() => toggleSelectAll(group.map(t => t.id))} className="rounded" /></th>}
+                {canSupprimer() && <th className="px-2 py-1.5"><input type="checkbox" checked={filteredGroup.length > 0 && filteredGroup.every(t => selectedIds.has(t.id))} onChange={() => toggleSelectAll(filteredGroup.map(t => t.id))} className="rounded" /></th>}
                 <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Bénéficiaire</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Libellé</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Type</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Signataires</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
               </tr></thead><tbody className="divide-y divide-gray-50">
-                {group.map(t => (
+                {filteredGroup.map(t => (
                   <tr key={t.id} className={`border-l-4 ${t.type_operation === 'recette' ? 'border-l-emerald-500' : 'border-l-red-500'} hover:bg-gray-50/50 transition-colors cursor-pointer`} onClick={() => setDetailTransaction(t)}>
                     {canSupprimer() && <td className="px-2 py-1.5"><input type="checkbox" checked={selectedIds.has(t.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(t.id); }} className="rounded" /></td>}
                     <td className="px-2 py-1.5"><p className="text-sm font-medium text-gray-900">{t.beneficiaire}</p><p className="text-xs text-gray-400">{t.telephone}</p></td>

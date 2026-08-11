@@ -125,8 +125,8 @@ export function useFinances(filters: FinanceFilters) {
 
   // ─── Pie chart data ────────────────────────────────────────────────────────
   const pieData = useMemo(() => [
-    { name: 'Recettes', value: stats.totalRecettes },
-    { name: 'Dépenses', value: stats.totalDepenses },
+    { label: 'Recettes', value: stats.totalRecettes, color: '#10b981' },
+    { label: 'Dépenses', value: stats.totalDepenses, color: '#ef4444' },
   ], [stats]);
 
   // ─── Comptable options for filter ──────────────────────────────────────────
