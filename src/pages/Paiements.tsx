@@ -57,14 +57,17 @@ function usePaiementFilters() {
   const [filterClasse, setFilterClasse] = useState<string[]>([]);
   const [filterDateDebut, setFilterDateDebut] = useState('');
   const [filterDateFin, setFilterDateFin] = useState('');
+  const [filterMontantMin, setFilterMontantMin] = useState('');
+  const [filterMontantMax, setFilterMontantMax] = useState('');
   const [viewMode, setViewMode] = useState<'general' | 'journalier' | 'jour_precedent' | 'mois' | 'mois_precedent' | 'compte_actif'>('compte_actif');
   const resetFilters = () => {
     setSearchTerm('');
     setFilterType([]); setFilterStatut([]); setFilterMotifs([]); setFilterYear([]);
     setFilterEncaisseur([]); setFilterSection([]); setFilterOption([]); setFilterClasse([]);
     setFilterDateDebut(''); setFilterDateFin('');
+    setFilterMontantMin(''); setFilterMontantMax('');
   };
-  return { searchTerm, setSearchTerm, filterType, setFilterType, filterStatut, setFilterStatut, filterMotifs, setFilterMotifs, filterYear, setFilterYear, filterEncaisseur, setFilterEncaisseur, filterSection, setFilterSection, filterOption, setFilterOption, filterClasse, setFilterClasse, filterDateDebut, setFilterDateDebut, filterDateFin, setFilterDateFin, viewMode, setViewMode, resetFilters };
+  return { searchTerm, setSearchTerm, filterType, setFilterType, filterStatut, setFilterStatut, filterMotifs, setFilterMotifs, filterYear, setFilterYear, filterEncaisseur, setFilterEncaisseur, filterSection, setFilterSection, filterOption, setFilterOption, filterClasse, setFilterClasse, filterDateDebut, setFilterDateDebut, filterDateFin, setFilterDateFin, filterMontantMin, setFilterMontantMin, filterMontantMax, setFilterMontantMax, viewMode, setViewMode, resetFilters };
 }
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -247,6 +250,10 @@ export default function Paiements() {
           <div className="flex gap-3">
             <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date début</label><input type="date" value={filters.filterDateDebut} onChange={e => filters.setFilterDateDebut(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
             <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Date fin</label><input type="date" value={filters.filterDateFin} onChange={e => filters.setFilterDateFin(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Montant min</label><input type="number" placeholder="0" value={filters.filterMontantMin} onChange={e => filters.setFilterMontantMin(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Montant max</label><input type="number" placeholder="∞" value={filters.filterMontantMax} onChange={e => filters.setFilterMontantMax(e.target.value)} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
           </div>
         </div>
       </div>

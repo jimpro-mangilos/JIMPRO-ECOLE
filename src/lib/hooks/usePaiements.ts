@@ -37,6 +37,8 @@ interface PaiementFilters {
   filterClasse: string[];
   filterDateDebut: string;
   filterDateFin: string;
+  filterMontantMin: string;
+  filterMontantMax: string;
   viewMode: 'general' | 'journalier' | 'jour_precedent' | 'mois' | 'mois_precedent' | 'compte_actif';
 }
 
@@ -128,6 +130,8 @@ export function usePaiements(filters: PaiementFilters) {
     if (filters.filterClasse.length > 0) filtered = filtered.filter(p => filters.filterClasse.includes(p.classe));
     if (filters.filterDateDebut) filtered = filtered.filter(p => new Date(p.created_at).toLocaleDateString('fr-CA') >= filters.filterDateDebut);
     if (filters.filterDateFin) filtered = filtered.filter(p => new Date(p.created_at).toLocaleDateString('fr-CA') <= filters.filterDateFin);
+    if (filters.filterMontantMin) filtered = filtered.filter(p => p.montant_paye >= Number(filters.filterMontantMin));
+    if (filters.filterMontantMax) filtered = filtered.filter(p => p.montant_paye <= Number(filters.filterMontantMax));
 
     return filtered;
   }, [paiements, filters, user?.id]);
