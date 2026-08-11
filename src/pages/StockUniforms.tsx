@@ -46,9 +46,8 @@ interface StockForm {
 }
 
 function StockUniforms() {
-  const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, isPromoteur, currentSchoolId } = useAuth();
+  const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, currentSchoolId } = useAuth();
   const canWrite = isAdmin() || profile?.role?.nom === 'secretaire';
-  const canApprove = isAdmin() || isItManager() || isPromoteur();
 
   const [stocks, setStocks] = useState<StockUniforme[]>([]);
   const [typesUniforme, setTypesUniforme] = useState<TypeUniforme[]>([]);
@@ -75,12 +74,6 @@ function StockUniforms() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'stock' | 'demandes'>('stock');
-  const [demandes, setDemandes] = useState<any[]>([]);
-  const [loadingDemandes, setLoadingDemandes] = useState(false);
-  const [demandeArticles, setDemandeArticles] = useState<Array<{ type_uniforme_id: string; annee_scolaire: string; section: string; quantite: string }>>([
-    { type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' },
-  ]);
 
   useEffect(() => {
     loadAll();
@@ -112,81 +105,6 @@ function StockUniforms() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // ─── Demandes d'approvisionnement ──────────────────────────────────────
-  const loadDemandes = async () => {
-    setLoadingDemandes(true);
-    try {
-      const { data } = await supabase.from('stock_demandes').select('*, types_uniforme:types_uniforme!inner(libelle), demandeur:demandeur_id(nom, prenom), approbateur:approbateur_id(nom, prenom)').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
-      setDemandes(data || []);
-    } catch { /* ignore */ } finally {
-      setLoadingDemandes(false);
-    }
-  };
-
-  // Auto-charger les demandes quand on bascule sur l'onglet
-  useEffect(() => { if (activeTab === 'demandes') loadDemandes(); }, [activeTab]);
-
-  const createDemande = async () => {
-    const valid = demandeArticles.filter(a => a.type_uniforme_id && a.quantite && parseInt(a.quantite) > 0);
-    if (valid.length === 0) return alert('Remplissez au moins un article avec type et quantite');
-    const { error } = await supabase.from('stock_demandes').insert(
-      valid.map(a => ({
-        type_uniforme_id: a.type_uniforme_id,
-        annee_scolaire: a.annee_scolaire || '',
-        section: a.section || '',
-        quantite: parseInt(a.quantite),
-        ecole_id: currentSchoolId,
-        demandeur_id: (userProfile as any)?.id,
-        statut: 'en_attente'
-      }))
-    );
-    if (error) { alert('Erreur: ' + error.message); return; }
-    alert(`${valid.length} demande(s) envoyee(s)`);
-    setDemandeArticles([{ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' }]);
-    loadDemandes();
-  };
-
-  const approuverDemande = async (demandeId: string) => {
-    const demande = demandes.find((d: any) => d.id === demandeId);
-    if (!demande) return;
-    try {
-      // 1. Marquer comme approuvé
-      const { error: updErr } = await supabase.from('stock_demandes').update({ statut: 'approuve', approbateur_id: (userProfile as any)?.id, date_approbation: new Date().toISOString() }).eq('id', demandeId);
-      if (updErr) { alert('Erreur approbation: ' + updErr.message); return; }
-
-      // 2. Récupérer le stock existant pour additionner (pas écraser)
-      const { data: existant } = await supabase.from('stock_uniformes').select('id, quantite_stock').eq('ecole_id', currentSchoolId).eq('type_uniforme_id', demande.type_uniforme_id).eq('annee_scolaire', demande.annee_scolaire).eq('section', demande.section || '').maybeSingle();
-
-      if (existant) {
-        const { error: updErr2 } = await supabase.from('stock_uniformes').update({ quantite_stock: existant.quantite_stock + demande.quantite }).eq('id', existant.id);
-        if (updErr2) { alert('Erreur mise à jour stock: ' + updErr2.message); return; }
-      } else {
-        const { error: insErr } = await supabase.from('stock_uniformes').insert({
-          type_uniforme_id: demande.type_uniforme_id,
-          type_uniforme_libelle: demande.types_uniforme?.libelle || '',
-          annee_scolaire: demande.annee_scolaire || '',
-          section: demande.section || '',
-          quantite_stock: demande.quantite,
-          ecole_id: currentSchoolId,
-          nom_comptable: '',
-          comptable_id: null,
-        });
-        if (insErr) { alert('Erreur création stock: ' + insErr.message); return; }
-      }
-      alert('Demande approuvée et stock mis à jour ✓');
-      loadDemandes();
-      loadAll();
-    } catch (err: any) {
-      alert('Erreur: ' + (err?.message || 'Inconnue'));
-    }
-  };
-
-  const rejeterDemande = async (demandeId: string) => {
-    await supabase.from('stock_demandes').update({ statut: 'rejete', approbateur_id: (userProfile as any)?.id, date_approbation: new Date().toISOString() }).eq('id', demandeId);
-    alert('Demande rejetee');
-    loadDemandes();
   };
 
   const openApprovisionner = () => {
@@ -442,15 +360,7 @@ function StockUniforms() {
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-           {/* Tabs Stock | Demandes */}
-           <div className="flex bg-gray-100 rounded-lg p-0.5 mr-2">
-             {(['stock', 'demandes'] as const).map(tab => (
-               <button key={tab} onClick={() => setActiveTab(tab)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                 {tab === 'stock' ? 'Stock' : 'Demandes'}
-               </button>
-             ))}
-           </div>
-           {canWrite && (
+          {canWrite && (
             <button
               onClick={openApprovisionner}
               className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2 rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-medium"
@@ -698,7 +608,6 @@ function StockUniforms() {
       </div>
 
       {/* Table */}
-       {activeTab === 'stock' && (
       <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         {isItManager() && selectedIds.size > 0 && (
           <div className="px-5 py-3 bg-red-50 border-b border-red-200 flex items-center justify-between">
@@ -863,116 +772,8 @@ function StockUniforms() {
               </tbody>
             </table>
           </div>
-          )}
+        )}
       </div>
-      )}
-
-      {/* ─── Panel Demandes ────────────────────────────────────────────────── */}
-      {activeTab === 'demandes' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Package className="w-5 h-5 text-teal-600" /> Demandes d'approvisionnement</h3>
-          </div>
-
-          {/* Formulaire de demande multi-articles */}
-          <div className="bg-teal-50 rounded-lg p-4 mb-6 space-y-3">
-            {demandeArticles.map((art, idx) => (
-              <div key={idx} className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
-                <div>
-                  {idx === 0 && <label className="block text-xs font-medium text-gray-700 mb-1">Type *</label>}
-                  <select value={art.type_uniforme_id} onChange={e => {
-                    const cp = [...demandeArticles];
-                    cp[idx].type_uniforme_id = e.target.value;
-                    setDemandeArticles(cp);
-                  }} className="w-full px-2 py-2 text-sm border rounded-lg">
-                    <option value="">--</option>
-                    {typesUniforme.map((t: any) => <option key={t.id} value={t.id}>{t.libelle}</option>)}
-                  </select>
-                </div>
-                <div>
-                  {idx === 0 && <label className="block text-xs font-medium text-gray-700 mb-1">Année</label>}
-                  <select value={art.annee_scolaire} onChange={e => {
-                    const cp = [...demandeArticles];
-                    cp[idx].annee_scolaire = e.target.value;
-                    setDemandeArticles(cp);
-                  }} className="w-full px-2 py-2 text-sm border rounded-lg">
-                    <option value="">--</option>
-                    {anneeScolaires.map((a: any) => <option key={a.annee} value={a.annee}>{a.annee}</option>)}
-                  </select>
-                </div>
-                <div>
-                  {idx === 0 && <label className="block text-xs font-medium text-gray-700 mb-1">Section</label>}
-                  <select value={art.section} onChange={e => {
-                    const cp = [...demandeArticles];
-                    cp[idx].section = e.target.value;
-                    setDemandeArticles(cp);
-                  }} className="w-full px-2 py-2 text-sm border rounded-lg">
-                    <option value="">Toutes</option>
-                    {sections.map((s: any) => <option key={s.nom} value={s.nom}>{s.nom}</option>)}
-                  </select>
-                </div>
-                <div>
-                  {idx === 0 && <label className="block text-xs font-medium text-gray-700 mb-1">Qté *</label>}
-                  <input type="number" min="1" value={art.quantite} onChange={e => {
-                    const cp = [...demandeArticles];
-                    cp[idx].quantite = e.target.value;
-                    setDemandeArticles(cp);
-                  }} className="w-full px-2 py-2 text-sm border rounded-lg" />
-                </div>
-                <div className="flex items-end gap-1">
-                  {idx === demandeArticles.length - 1 ? (
-                    <button type="button" onClick={() => setDemandeArticles([...demandeArticles, { type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' }])} className="text-teal-600 hover:bg-teal-100 p-1.5 rounded-lg" title="Ajouter un article"><Plus className="w-4 h-4" /></button>
-                  ) : (
-                    <button type="button" onClick={() => setDemandeArticles(demandeArticles.filter((_, i) => i !== idx))} className="text-red-400 hover:bg-red-50 p-1.5 rounded-lg" title="Retirer"><XCircle className="w-4 h-4" /></button>
-                  )}
-                </div>
-              </div>
-            ))}
-            <div className="flex justify-end pt-2">
-              <button onClick={createDemande} className="bg-teal-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-teal-700">Envoyer la demande</button>
-            </div>
-          </div>
-
-          {/* Liste des demandes */}
-          {loadingDemandes ? (
-            <div className="text-center py-8 text-gray-500"><Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />Chargement...</div>
-          ) : demandes.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">Aucune demande pour le moment.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                  <thead><tr className="border-b text-left text-gray-500">{['Type','Année','Section','Qté','Demandeur','Approbateur','Statut','Date',''].map(h => <th key={h} className="px-3 py-2 font-medium text-xs">{h}</th>)}</tr></thead>
-                <tbody>
-                  {demandes.map((d: any) => (
-                    <tr key={d.id} className={`border-b hover:bg-gray-50 ${d.statut === 'en_attente' ? 'border-l-4 border-l-amber-400' : d.statut === 'approuve' ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-red-400'}`}>
-                      <td className="px-3 py-2">{d.types_uniforme?.libelle || d.type_uniforme_id?.slice(0,8)}</td>
-                      <td className="px-3 py-2">{d.annee_scolaire || '—'}</td>
-                      <td className="px-3 py-2">{d.section || '—'}</td>
-                      <td className="px-3 py-2 font-medium">{d.quantite}</td>
-                      <td className="px-3 py-2 text-xs">{[d.demandeur?.prenom, d.demandeur?.nom].filter(Boolean).join(' ') || '—'}</td>
-                      <td className="px-3 py-2 text-xs">{[d.approbateur?.prenom, d.approbateur?.nom].filter(Boolean).join(' ') || '—'}</td>
-                      <td className="px-3 py-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${d.statut === 'en_attente' ? 'bg-amber-100 text-amber-700' : d.statut === 'approuve' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                          {d.statut === 'en_attente' ? 'En attente' : d.statut === 'approuve' ? 'Approuvé' : 'Rejeté'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-xs text-gray-400">{new Date(d.created_at).toLocaleDateString('fr-FR')}</td>
-                      <td className="px-3 py-2">
-                        {canApprove && d.statut === 'en_attente' && (
-                          <div className="flex gap-1">
-                            <button onClick={() => approuverDemande(d.id)} className="text-emerald-600 hover:bg-emerald-50 p-1 rounded" title="Approuver"><CheckCircle className="w-4 h-4" /></button>
-                            <button onClick={() => rejeterDemande(d.id)} className="text-red-500 hover:bg-red-50 p-1 rounded" title="Rejeter"><XCircle className="w-4 h-4" /></button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
