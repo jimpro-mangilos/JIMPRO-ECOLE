@@ -175,9 +175,9 @@ export default function Eleves() {
                   await new Promise(r => setTimeout(r, 300));
                 }
                 alert('Toutes les cartes ont été générées !');
-              } catch (err) {
+              } catch (err: any) {
                 console.error('Erreur génération cartes:', err);
-                alert('Erreur lors de la génération des cartes.');
+                alert('Erreur cartes: ' + (err?.message || 'Inconnue'));
               } finally {
                 setGeneratingCartes(false);
                 setGeneratingProgress({ current: 0, total: 0 });
