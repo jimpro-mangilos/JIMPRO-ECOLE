@@ -398,7 +398,7 @@ export default function Eleves() {
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Domicile</label><input type="text" value={formData.domicile} onChange={e => setFormData(p => ({ ...p, domicile: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1"><Camera className="w-4 h-4 text-gray-400" /> Photo</label>
-                  <input ref={photoInputRef} type="file" accept="image/*" onChange={e => {
+                  <input ref={photoInputRef} type="file" accept="image/*" capture="environment" onChange={e => {
                     const f = e.target.files?.[0];
                     setPhotoPreview(f ? URL.createObjectURL(f) : null);
                   }} className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
