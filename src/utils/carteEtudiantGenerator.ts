@@ -87,7 +87,8 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
     doc.setGState(new (doc as any).GState({ opacity: 0.06 }));
     const logoWm = CARD_W * 0.7;
     const logoHm = CARD_H * 0.5;
-    doc.addImage(logo, 'PNG', ox + (CARD_W - logoWm) / 2, oy + (CARD_H - logoHm) / 2, logoWm, logoHm);
+    const fmt = logo.startsWith('data:image/jpeg') || logo.endsWith('.jpg') || logo.endsWith('.jpeg') ? 'JPEG' : 'PNG';
+    doc.addImage(logo, fmt, ox + (CARD_W - logoWm) / 2, oy + (CARD_H - logoHm) / 2, logoWm, logoHm);
     doc.restoreGraphicsState();
   }
 
@@ -121,7 +122,8 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
 
   // ─── Logo ────────────────────────────────────────────────────────────────────
   if (logo) {
-    doc.addImage(logo, 'PNG', ox + CARD_W - 20, oy + 8, 10, 7);
+    const fmt2 = logo.startsWith('data:image/jpeg') || logo.endsWith('.jpg') || logo.endsWith('.jpeg') ? 'JPEG' : 'PNG';
+    doc.addImage(logo, fmt2, ox + CARD_W - 20, oy + 8, 10, 7);
   }
 
   // ─── Photo area ─────────────────────────────────────────────────────────────
