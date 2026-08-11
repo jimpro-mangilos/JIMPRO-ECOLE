@@ -12,6 +12,7 @@ import { generateElevesReport } from '../utils/pdfGenerator';
 import { generateCartesEtudiants } from '../utils/carteEtudiantGenerator';
 import { useLogo } from '../contexts/LogoContext';
 import { useAuth } from '../contexts/AuthContext';
+import { compressPhoto } from '../utils/photoCompression';
 
 type Eleve = Database['public']['Tables']['eleves']['Row'];
 
@@ -95,9 +96,9 @@ export default function Eleves() {
       let photoUrl = formData.photo_url;
       const file = photoInputRef.current?.files?.[0];
       if (file) {
-        const ext = file.name.split('.').pop();
-        const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from('photos').upload(path, file);
+        const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+        const compressed = await compressPhoto(file);
+        const { error: uploadError } = await supabase.storage.from('photos').upload(path, compressed, { contentType: 'image/jpeg' });
         if (uploadError) throw new Error(uploadError.message);
         const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
         photoUrl = urlData.publicUrl;
