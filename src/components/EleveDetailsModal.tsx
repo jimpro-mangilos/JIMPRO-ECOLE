@@ -48,6 +48,7 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
   const [loading, setLoading] = useState(true);
   const [loadingUniformes, setLoadingUniformes] = useState(true);
   const [showUniformeForm, setShowUniformeForm] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(false);
 
   useEffect(() => {
     loadPaiements();
@@ -122,7 +123,10 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
           {/* Student info */}
           <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6">
             <div className="flex items-start gap-4">
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
+              <div
+                className={`w-24 h-24 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white text-2xl font-bold shrink-0 ${(eleve as any).photo_url ? 'cursor-pointer hover:ring-2 ring-blue-300 transition-all' : ''}`}
+                onClick={() => { if ((eleve as any).photo_url) setShowPhoto(true); }}
+              >
                 {(eleve as any).photo_url
                   ? <img src={(eleve as any).photo_url} alt="Photo" className="w-full h-full object-cover" />
                   : <>{eleve.prenom.charAt(0)}{eleve.nom.charAt(0)}</>
@@ -351,6 +355,16 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
           onSuccess={handleUniformeSuccess}
           eleve={eleve}
         />
+      )}
+
+      {/* Photo Lightbox */}
+      {showPhoto && (eleve as any).photo_url && (
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" onClick={() => setShowPhoto(false)}>
+          <button onClick={() => setShowPhoto(false)} className="absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <img src={(eleve as any).photo_url} alt="Photo" className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain" onClick={e => e.stopPropagation()} />
+        </div>
       )}
     </div>
   );
