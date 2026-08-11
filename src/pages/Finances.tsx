@@ -129,7 +129,7 @@ export default function Finances() {
                 <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Bénéficiaire</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Libellé</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Type</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Signataires</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
               </tr></thead><tbody className="divide-y divide-gray-50">
                 {group.map(t => (
-                  <tr key={t.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setDetailTransaction(t)}>
+                  <tr key={t.id} className={`border-l-4 ${t.type_operation === 'recette' ? 'border-l-emerald-500' : 'border-l-red-500'} hover:bg-gray-50/50 transition-colors cursor-pointer`} onClick={() => setDetailTransaction(t)}>
                     {canSupprimer() && <td className="px-2 py-1.5"><input type="checkbox" checked={selectedIds.has(t.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(t.id); }} className="rounded" /></td>}
                     <td className="px-2 py-1.5"><p className="text-sm font-medium text-gray-900">{t.beneficiaire}</p><p className="text-xs text-gray-400">{t.telephone}</p></td>
                     <td className="px-2 py-1.5 text-sm text-gray-600">{t.libelle}</td>
