@@ -48,6 +48,7 @@ interface StockForm {
 function StockUniforms() {
   const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, currentSchoolId } = useAuth();
   const canWrite = isAdmin() || profile?.role?.nom === 'secretaire';
+  const canApprove = isAdmin() || isItManager();
 
   const [stocks, setStocks] = useState<StockUniforme[]>([]);
   const [typesUniforme, setTypesUniforme] = useState<TypeUniforme[]>([]);
@@ -74,6 +75,10 @@ function StockUniforms() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showDemandeForm, setShowDemandeForm] = useState(false);
+  const [demandes, setDemandes] = useState<any[]>([]);
+  const [loadingDemandes, setLoadingDemandes] = useState(false);
+  const [demandeForm, setDemandeForm] = useState({ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' });
 
   useEffect(() => {
     loadAll();
@@ -105,6 +110,64 @@ function StockUniforms() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ─── Demandes d'approvisionnement ──────────────────────────────────────
+  const loadDemandes = async () => {
+    setLoadingDemandes(true);
+    try {
+      const { data } = await supabase.from('stock_demandes').select('*, types_uniforme:types_uniforme!inner(libelle)').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false });
+      setDemandes(data || []);
+    } catch { /* ignore */ } finally {
+      setLoadingDemandes(false);
+    }
+  };
+
+  const createDemande = async () => {
+    if (!demandeForm.type_uniforme_id || !demandeForm.quantite) return alert('Remplissez le type et la quantite');
+    const { error } = await supabase.from('stock_demandes').insert({
+      ...demandeForm,
+      quantite: parseInt(demandeForm.quantite),
+      ecole_id: currentSchoolId,
+      demandeur_id: (userProfile as any)?.id,
+      statut: 'en_attente'
+    });
+    if (error) { alert('Erreur: ' + error.message); return; }
+    alert('Demande envoyee');
+    setShowDemandeForm(false);
+    setDemandeForm({ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '' });
+    loadDemandes();
+  };
+
+  const approuverDemande = async (demandeId: string) => {
+    const demande = demandes.find((d: any) => d.id === demandeId);
+    if (!demande) return;
+    const { error: updErr } = await supabase.from('stock_demandes').update({ statut: 'approuve', approbateur_id: (userProfile as any)?.id, date_approbation: new Date().toISOString() }).eq('id', demandeId);
+    if (updErr) { alert('Erreur: ' + updErr.message); return; }
+    const { data: existing } = await supabase.from('stock_uniformes').select('id, quantite_stock').eq('ecole_id', currentSchoolId).eq('type_uniforme_id', demande.type_uniforme_id).eq('annee_scolaire', demande.annee_scolaire).eq('section', demande.section).maybeSingle();
+    if (existing) {
+      await supabase.from('stock_uniformes').update({ quantite_stock: existing.quantite_stock + demande.quantite }).eq('id', existing.id);
+    } else {
+      await supabase.from('stock_uniformes').insert({
+        type_uniforme_id: demande.type_uniforme_id,
+        type_uniforme_libelle: demande.types_uniforme?.libelle || '',
+        annee_scolaire: demande.annee_scolaire,
+        section: demande.section,
+        quantite_stock: demande.quantite,
+        ecole_id: currentSchoolId,
+        nom_comptable: '',
+        comptable_id: '',
+      });
+    }
+    alert('Demande approuvee et stock mis a jour');
+    loadDemandes();
+    loadAll();
+  };
+
+  const rejeterDemande = async (demandeId: string) => {
+    await supabase.from('stock_demandes').update({ statut: 'rejete', approbateur_id: (userProfile as any)?.id, date_approbation: new Date().toISOString() }).eq('id', demandeId);
+    alert('Demande rejetee');
+    loadDemandes();
   };
 
   const openApprovisionner = () => {
@@ -360,7 +423,16 @@ function StockUniforms() {
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-          {canWrite && (
+           {canWrite && (
+            <button
+              onClick={() => { setShowDemandeForm(!showDemandeForm); if (!showDemandeForm) loadDemandes(); }}
+              className="flex items-center gap-2 border border-teal-300 text-teal-700 bg-teal-50 px-4 py-2 rounded-lg hover:bg-teal-100 transition-colors text-sm font-medium"
+            >
+              <Package className="w-4 h-4" />
+              Demandes
+            </button>
+           )}
+           {canWrite && (
             <button
               onClick={openApprovisionner}
               className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2 rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-medium"
@@ -772,8 +844,87 @@ function StockUniforms() {
               </tbody>
             </table>
           </div>
-        )}
+          )}
       </div>
+
+      {/* ─── Panel Demandes ────────────────────────────────────────────────── */}
+      {showDemandeForm && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Package className="w-5 h-5 text-teal-600" /> Demandes d'approvisionnement</h3>
+            <button onClick={() => setShowDemandeForm(false)} className="p-1 hover:bg-gray-100 rounded-lg"><XCircle className="w-5 h-5 text-gray-400" /></button>
+          </div>
+
+          {/* Formulaire de demande */}
+          <div className="bg-teal-50 rounded-lg p-4 mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Type uniforme *</label>
+              <select value={demandeForm.type_uniforme_id} onChange={e => setDemandeForm(f => ({ ...f, type_uniforme_id: e.target.value }))} className="w-full px-2 py-2 text-sm border rounded-lg">
+                <option value="">--</option>
+                {typesUniforme.map((t: any) => <option key={t.id} value={t.id}>{t.libelle}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Année scolaire</label>
+              <select value={demandeForm.annee_scolaire} onChange={e => setDemandeForm(f => ({ ...f, annee_scolaire: e.target.value }))} className="w-full px-2 py-2 text-sm border rounded-lg">
+                <option value="">--</option>
+                {anneeScolaires.map((a: any) => <option key={a.annee} value={a.annee}>{a.annee}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Section</label>
+              <select value={demandeForm.section} onChange={e => setDemandeForm(f => ({ ...f, section: e.target.value }))} className="w-full px-2 py-2 text-sm border rounded-lg">
+                <option value="">Toutes</option>
+                {sections.map((s: any) => <option key={s.nom} value={s.nom}>{s.nom}</option>)}
+              </select>
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Quantité *</label>
+                <input type="number" min="1" value={demandeForm.quantite} onChange={e => setDemandeForm(f => ({ ...f, quantite: e.target.value }))} className="w-full px-2 py-2 text-sm border rounded-lg" />
+              </div>
+              <button onClick={createDemande} className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 shrink-0">Envoyer</button>
+            </div>
+          </div>
+
+          {/* Liste des demandes */}
+          {loadingDemandes ? (
+            <div className="text-center py-8 text-gray-500"><Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />Chargement...</div>
+          ) : demandes.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">Aucune demande pour le moment.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="border-b text-left text-gray-500">{['Type','Année','Section','Qté','Statut','Date',''].map(h => <th key={h} className="px-3 py-2 font-medium text-xs">{h}</th>)}</tr></thead>
+                <tbody>
+                  {demandes.map((d: any) => (
+                    <tr key={d.id} className={`border-b hover:bg-gray-50 ${d.statut === 'en_attente' ? 'border-l-4 border-l-amber-400' : d.statut === 'approuve' ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-red-400'}`}>
+                      <td className="px-3 py-2">{d.types_uniforme?.libelle || d.type_uniforme_id?.slice(0,8)}</td>
+                      <td className="px-3 py-2">{d.annee_scolaire || '—'}</td>
+                      <td className="px-3 py-2">{d.section || '—'}</td>
+                      <td className="px-3 py-2 font-medium">{d.quantite}</td>
+                      <td className="px-3 py-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${d.statut === 'en_attente' ? 'bg-amber-100 text-amber-700' : d.statut === 'approuve' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                          {d.statut === 'en_attente' ? 'En attente' : d.statut === 'approuve' ? 'Approuvé' : 'Rejeté'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-400">{new Date(d.created_at).toLocaleDateString('fr-FR')}</td>
+                      <td className="px-3 py-2">
+                        {canApprove && d.statut === 'en_attente' && (
+                          <div className="flex gap-1">
+                            <button onClick={() => approuverDemande(d.id)} className="text-emerald-600 hover:bg-emerald-50 p-1 rounded" title="Approuver"><CheckCircle className="w-4 h-4" /></button>
+                            <button onClick={() => rejeterDemande(d.id)} className="text-red-500 hover:bg-red-50 p-1 rounded" title="Rejeter"><XCircle className="w-4 h-4" /></button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
