@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import MultiSelectFilter from '../components/MultiSelectFilter';
-import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { calculateAverageAge } from '../utils/calculations';
@@ -397,7 +397,7 @@ export default function Eleves() {
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label><input type="text" value={formData.telephone} onChange={e => setFormData(p => ({ ...p, telephone: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Domicile</label><input type="text" value={formData.domicile} onChange={e => setFormData(p => ({ ...p, domicile: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1"><Camera className="w-4 h-4 text-gray-400" /> Photo</label>
                   <input ref={photoInputRef} type="file" accept="image/*" onChange={e => {
                     const f = e.target.files?.[0];
                     setPhotoPreview(f ? URL.createObjectURL(f) : null);
