@@ -122,8 +122,11 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
           {/* Student info */}
           <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6">
             <div className="flex items-start gap-4">
-              <div className="bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                {eleve.prenom.charAt(0)}{eleve.nom.charAt(0)}
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
+                {(eleve as any).photo_url
+                  ? <img src={(eleve as any).photo_url} alt="Photo" className="w-full h-full object-cover" />
+                  : <>{eleve.prenom.charAt(0)}{eleve.nom.charAt(0)}</>
+                }
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
