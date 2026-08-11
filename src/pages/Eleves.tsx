@@ -63,6 +63,7 @@ export default function Eleves() {
   const [generatingProgress, setGeneratingProgress] = useState({ current: 0, total: 0 });
   const [, setPhotoUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const sectionList = sections as { id: string; nom: string }[];
   const optionList = options as { id: string; nom: string; section_id: string }[];
@@ -82,7 +83,15 @@ export default function Eleves() {
   }
 
   // ─── Form handlers ────────────────────────────────────────────────────────
-  const handleOpenForm = () => openCreate();
+  const handleOpenForm = () => {
+    setPhotoPreview(null);
+    openCreate();
+  };
+
+  const handleCloseModal = () => {
+    setPhotoPreview(null);
+    setShowModal(false);
+  };
 
   const handleEditClick = (eleve: Eleve) => {
     openEdit(eleve);
@@ -335,12 +344,12 @@ export default function Eleves() {
 
       {/* Create/Edit Modal (inline form) */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={handleCloseModal}>
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <form onSubmit={handleFormSubmit}>
               <div className="px-6 py-4 border-b flex items-center justify-between">
                 <h2 className="text-lg font-bold text-gray-900">{selectedEleve ? 'Modifier' : 'Ajouter'} un élève</h2>
-                <button type="button" onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-gray-100"><XCircle className="w-5 h-5 text-gray-400" /></button>
+                <button type="button" onClick={handleCloseModal} className="p-1 rounded-lg hover:bg-gray-100"><XCircle className="w-5 h-5 text-gray-400" /></button>
               </div>
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -389,14 +398,17 @@ export default function Eleves() {
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Domicile</label><input type="text" value={formData.domicile} onChange={e => setFormData(p => ({ ...p, domicile: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
-                  <input ref={photoInputRef} type="file" accept="image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                  {formData.photo_url && (
-                    <img src={formData.photo_url} alt="Aperçu" className="mt-1 w-16 h-16 object-cover rounded-lg border" />
+                  <input ref={photoInputRef} type="file" accept="image/*" onChange={e => {
+                    const f = e.target.files?.[0];
+                    setPhotoPreview(f ? URL.createObjectURL(f) : null);
+                  }} className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                  {(photoPreview || formData.photo_url) && (
+                    <img src={photoPreview || formData.photo_url} alt="Aperçu" className="mt-1 w-16 h-16 object-cover rounded-lg border" />
                   )}
                 </div>
               </div>
               <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
+                <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
                 <button type="submit" className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">{selectedEleve ? 'Mettre à jour' : 'Enregistrer'}</button>
               </div>
             </form>
