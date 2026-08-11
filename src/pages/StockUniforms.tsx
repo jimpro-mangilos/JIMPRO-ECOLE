@@ -149,26 +149,32 @@ function StockUniforms() {
   const approuverDemande = async (demandeId: string) => {
     const demande = demandes.find((d: any) => d.id === demandeId);
     if (!demande) return;
-    const { error: updErr } = await supabase.from('stock_demandes').update({ statut: 'approuve', approbateur_id: (userProfile as any)?.id, date_approbation: new Date().toISOString() }).eq('id', demandeId);
-    if (updErr) { alert('Erreur: ' + updErr.message); return; }
-    const { data: existing } = await supabase.from('stock_uniformes').select('id, quantite_stock').eq('ecole_id', currentSchoolId).eq('type_uniforme_id', demande.type_uniforme_id).eq('annee_scolaire', demande.annee_scolaire).eq('section', demande.section).maybeSingle();
-    if (existing) {
-      await supabase.from('stock_uniformes').update({ quantite_stock: existing.quantite_stock + demande.quantite }).eq('id', existing.id);
-    } else {
-      await supabase.from('stock_uniformes').insert({
-        type_uniforme_id: demande.type_uniforme_id,
-        type_uniforme_libelle: demande.types_uniforme?.libelle || '',
-        annee_scolaire: demande.annee_scolaire,
-        section: demande.section,
-        quantite_stock: demande.quantite,
-        ecole_id: currentSchoolId,
-        nom_comptable: '',
-        comptable_id: '',
-      });
+    try {
+      const { error: updErr } = await supabase.from('stock_demandes').update({ statut: 'approuve', approbateur_id: (userProfile as any)?.id, date_approbation: new Date().toISOString() }).eq('id', demandeId);
+      if (updErr) { alert('Erreur approbation: ' + updErr.message); return; }
+      const { data: existing } = await supabase.from('stock_uniformes').select('id, quantite_stock').eq('ecole_id', currentSchoolId).eq('type_uniforme_id', demande.type_uniforme_id).eq('annee_scolaire', demande.annee_scolaire).eq('section', demande.section).maybeSingle();
+      if (existing) {
+        const { error: upd2Err } = await supabase.from('stock_uniformes').update({ quantite_stock: existing.quantite_stock + demande.quantite }).eq('id', existing.id);
+        if (upd2Err) { alert('Erreur mise à jour stock: ' + upd2Err.message); return; }
+      } else {
+        const { error: insErr } = await supabase.from('stock_uniformes').insert({
+          type_uniforme_id: demande.type_uniforme_id,
+          type_uniforme_libelle: demande.types_uniforme?.libelle || '',
+          annee_scolaire: demande.annee_scolaire,
+          section: demande.section,
+          quantite_stock: demande.quantite,
+          ecole_id: currentSchoolId,
+          nom_comptable: '',
+          comptable_id: null,
+        });
+        if (insErr) { alert('Erreur création stock: ' + insErr.message); return; }
+      }
+      alert('Demande approuvée et stock mis à jour ✓');
+      loadDemandes();
+      loadAll();
+    } catch (err: any) {
+      alert('Erreur: ' + (err?.message || 'Inconnue'));
     }
-    alert('Demande approuvee et stock mis a jour');
-    loadDemandes();
-    loadAll();
   };
 
   const rejeterDemande = async (demandeId: string) => {
