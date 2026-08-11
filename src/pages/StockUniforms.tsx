@@ -152,18 +152,22 @@ function StockUniforms() {
     const demande = demandes.find((d: any) => d.id === demandeId);
     if (!demande) return;
     try {
+      // 1. Marquer comme approuvé
       const { error: updErr } = await supabase.from('stock_demandes').update({ statut: 'approuve', approbateur_id: (userProfile as any)?.id, date_approbation: new Date().toISOString() }).eq('id', demandeId);
       if (updErr) { alert('Erreur approbation: ' + updErr.message); return; }
-      const { data: existing } = await supabase.from('stock_uniformes').select('id, quantite_stock').eq('ecole_id', currentSchoolId).eq('type_uniforme_id', demande.type_uniforme_id).eq('annee_scolaire', demande.annee_scolaire).eq('section', demande.section).maybeSingle();
-      if (existing) {
-        const { error: upd2Err } = await supabase.from('stock_uniformes').update({ quantite_stock: existing.quantite_stock + demande.quantite }).eq('id', existing.id);
-        if (upd2Err) { alert('Erreur mise à jour stock: ' + upd2Err.message); return; }
+
+      // 2. Récupérer le stock existant pour additionner (pas écraser)
+      const { data: existant } = await supabase.from('stock_uniformes').select('id, quantite_stock').eq('ecole_id', currentSchoolId).eq('type_uniforme_id', demande.type_uniforme_id).eq('annee_scolaire', demande.annee_scolaire).eq('section', demande.section || '').maybeSingle();
+
+      if (existant) {
+        const { error: updErr2 } = await supabase.from('stock_uniformes').update({ quantite_stock: existant.quantite_stock + demande.quantite }).eq('id', existant.id);
+        if (updErr2) { alert('Erreur mise à jour stock: ' + updErr2.message); return; }
       } else {
         const { error: insErr } = await supabase.from('stock_uniformes').insert({
           type_uniforme_id: demande.type_uniforme_id,
           type_uniforme_libelle: demande.types_uniforme?.libelle || '',
-          annee_scolaire: demande.annee_scolaire,
-          section: demande.section,
+          annee_scolaire: demande.annee_scolaire || '',
+          section: demande.section || '',
           quantite_stock: demande.quantite,
           ecole_id: currentSchoolId,
           nom_comptable: '',
