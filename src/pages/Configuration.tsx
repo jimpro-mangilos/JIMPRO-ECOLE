@@ -189,14 +189,19 @@ export default function Configuration() {
           }
         }
         let errors: string[] = [];
+        let created = 0;
         for (const combo of combos) {
           try {
             const { section_ids, option_ids, ...cleanForm } = classeForm as any;
             await upsertClasse({ ...cleanForm, section_id: combo.section_id, option_id: combo.option_id || '' } as any, undefined, 0);
-          } catch (err: any) { errors.push(err?.message || 'Erreur inconnue'); }
+            created++;
+          } catch (err: any) {
+            const msg = err?.message || '';
+            if (!msg.includes('duplicate key')) errors.push(msg);
+          }
         }
         if (errors.length > 0) alert(`${errors.length} erreur(s):\n${errors.join('\n')}`);
-        else { setShowClasseForm(false); setClasseForm({ nom: '', section_ids: [], option_ids: [], niveau: '', designation: '', description: '', is_active: true }); }
+        else { setShowClasseForm(false); setClasseForm({ nom: '', section_ids: [], option_ids: [], niveau: '', designation: '', description: '', is_active: true }); alert(`${created} classe(s) créée(s)`); }
       }}>
          <Field label="Nom" value={classeForm.nom} onChange={v => setClasseForm((p: any) => ({ ...p, nom: v }))} />
         <div><label className="block text-sm font-medium mb-1">Sections (Ctrl+clic)</label><select multiple value={classeForm.section_ids} onChange={e => { const vals = Array.from(e.target.selectedOptions, o => o.value); setClasseForm((p: any) => ({ ...p, section_ids: vals, option_ids: [] })); }} className="w-full px-2 py-1.5 border rounded-lg text-sm min-h-[80px]">{sections.map((s: any) => <option key={s.id} value={s.id}>{s.nom}</option>)}</select></div>
