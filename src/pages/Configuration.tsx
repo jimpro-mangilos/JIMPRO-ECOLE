@@ -191,7 +191,8 @@ export default function Configuration() {
         let errors: string[] = [];
         for (const combo of combos) {
           try {
-            await upsertClasse({ ...classeForm, section_id: combo.section_id, option_id: combo.option_id || '' } as any, undefined, 0);
+            const { section_ids, option_ids, ...cleanForm } = classeForm as any;
+            await upsertClasse({ ...cleanForm, section_id: combo.section_id, option_id: combo.option_id || '' } as any, undefined, 0);
           } catch (err: any) { errors.push(err?.message || 'Erreur inconnue'); }
         }
         if (errors.length > 0) alert(`${errors.length} erreur(s):\n${errors.join('\n')}`);
