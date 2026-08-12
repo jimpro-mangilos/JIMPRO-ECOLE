@@ -15,10 +15,11 @@ export interface CarteEtudiantEleve {
   annee_scolaire?: string;
 }
 
-// ─── Design System ────────────────────────────────────────────────────────────
-const GREEN = '#2f8f68';
-const GOLD = '#b58a2a';
-const INK = '#16213e';
+// ─── Design System — Premium Dark ─────────────────────────────────────────────
+const NAVY = '#0f0c29';
+const NAVY_MID = '#1a1a2e';
+const GOLD = '#d4a853';
+const GOLD_LIGHT = '#f0d060';
 const WHITE = '#ffffff';
 const CARD_W = 85, CARD_H = 54;
 
@@ -80,198 +81,233 @@ async function loadImage(url: string): Promise<string | null> {
 
 async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: number, logo?: string | null) {
   const nomComplet = `${e.nom} ${e.postnom ? e.postnom + ' ' : ''}${e.prenom}`;
-  const annee = e.annee_scolaire || new Date().getFullYear().toString();
+  const annee = e.annee_scolaire || '2026-2027';
+  const initials = (e.nom.charAt(0) + e.prenom.charAt(0)).toUpperCase();
+  const dateNaiss = e.date_naissance
+    ? (m => m ? `${m[3]}/${m[2]}/${m[1]}` : e.date_naissance!)(e.date_naissance.match(/^(\d{4})-(\d{2})-(\d{2})/))
+    : '—';
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // 1. Background
+  // 1. Dark background
   // ══════════════════════════════════════════════════════════════════════════════
-  doc.setFillColor(WHITE);
+  doc.setFillColor(NAVY);
   doc.roundedRect(ox, oy, CARD_W, CARD_H, 2, 2, 'F');
 
-  // Subtle green tint gradient effect
+  // Dot grid pattern (subtle)
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.06 }));
-  doc.setFillColor(GREEN);
-  doc.rect(ox + CARD_W - 25, oy, 25, CARD_H, 'F');
-  doc.restoreGraphicsState();
-
-  // Grid lines
-  doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
-  doc.setDrawColor(GREEN);
-  doc.setLineWidth(0.08);
-  for (let gx = ox + 5; gx < ox + CARD_W; gx += 22) {
-    doc.line(gx, oy, gx, oy + CARD_H);
-  }
-  for (let gy = oy + 5; gy < oy + CARD_H; gy += 22) {
-    doc.line(ox + 15, gy, ox + CARD_W, gy);
+  doc.setGState(new (doc as any).GState({ opacity: 0.04 }));
+  doc.setFillColor(WHITE);
+  for (let dx = ox + 3; dx < ox + CARD_W; dx += 5) {
+    for (let dy = oy + 3; dy < oy + CARD_H; dy += 5) {
+      (doc as any).circle(dx, dy, 0.2, 'F');
+    }
   }
   doc.restoreGraphicsState();
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // 2. Green accent bar (left edge)
+  // 2. Gold top bar
   // ══════════════════════════════════════════════════════════════════════════════
-  doc.setFillColor(GREEN);
-  doc.rect(ox, oy, 2, CARD_H, 'F');
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // 3. Decorative circles
-  // ══════════════════════════════════════════════════════════════════════════════
-  doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.12 }));
-  doc.setDrawColor(GREEN);
-  doc.setLineWidth(0.5);
-  (doc as any).circle(ox + CARD_W + 12, oy - 8, 18, 'S');
-  (doc as any).circle(ox + CARD_W + 12, oy - 8, 14, 'S');
-  doc.restoreGraphicsState();
-
-  doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.1 }));
   doc.setFillColor(GOLD);
-  (doc as any).circle(ox + CARD_W / 2 + 5, oy + CARD_H + 12, 14, 'F');
-  doc.restoreGraphicsState();
+  doc.rect(ox, oy, CARD_W, 0.8, 'F');
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // 4. "OFFICIEL" badge (top-right)
+  // 3. Gold bottom bar (large)
+  // ══════════════════════════════════════════════════════════════════════════════
+  doc.setFillColor(GOLD_LIGHT);
+  doc.rect(ox, oy + CARD_H - 1.8, CARD_W, 1.8, 'F');
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 4. Decorative circles
   // ══════════════════════════════════════════════════════════════════════════════
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
-  doc.setFillColor(GOLD);
-  doc.restoreGraphicsState();
+  doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
   doc.setDrawColor(GOLD);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(ox + CARD_W - 24, oy + 2.5, 21, 4, 2, 2, 'S');
-  doc.setTextColor(GOLD);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(2.8);
-  doc.text('OFFICIEL', ox + CARD_W - 13.5, oy + 5.2, { align: 'center' });
+  doc.setLineWidth(0.4);
+  (doc as any).circle(ox + CARD_W + 8, oy - 6, 16, 'S');
+  (doc as any).circle(ox + CARD_W + 8, oy - 6, 12, 'S');
+  doc.restoreGraphicsState();
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // 5. School identity (top-left area)
+  // 5. Header: logo + school name + OFFICIEL badge
   // ══════════════════════════════════════════════════════════════════════════════
-  const leftPad = ox + 5;
+  const leftPad = ox + 4;
 
-  // School logo placeholder
+  // Logo
   if (logo) {
     const fmt = logo.startsWith('data:image/jpeg') || logo.endsWith('.jpg') || logo.endsWith('.jpeg') ? 'JPEG' : 'PNG';
-    doc.addImage(logo, fmt, leftPad + 1, oy + 4, 8, 8);
+    doc.addImage(logo, fmt, leftPad + 1, oy + 3, 7, 7);
   } else {
-    doc.setFillColor(GREEN);
-    doc.roundedRect(leftPad + 1, oy + 4, 8, 8, 1.5, 1.5, 'F');
-    doc.setTextColor(WHITE);
+    doc.setFillColor(GOLD);
+    doc.roundedRect(leftPad + 1, oy + 3, 7, 7, 1.5, 1.5, 'F');
+    doc.setTextColor(NAVY);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(4.5);
-    doc.text('GA', leftPad + 5, oy + 7.5, { align: 'center' });
+    doc.setFontSize(4);
+    doc.text('GA', leftPad + 4.5, oy + 7.5, { align: 'center' });
   }
 
-  // "Student Pass" label
-  doc.setTextColor(GREEN);
+  // Carte d'élève
+  doc.setTextColor(GOLD);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(2.5);
-  doc.text('STUDENT PASS', leftPad + 12, oy + 6);
+  doc.setFontSize(1.5);
+  doc.text("CARTE D'ÉLÈVE", leftPad + 10, oy + 6);
 
-  // School name
-  doc.setTextColor(INK);
+  // OFFICIEL badge
+  doc.setDrawColor(GOLD);
+  doc.setLineWidth(0.25);
+  doc.roundedRect(ox + CARD_W - 22, oy + 2.5, 18, 3.5, 1.5, 1.5, 'S');
+  doc.setTextColor(GOLD);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(3.2);
-  doc.text('GOLDEN ACADEMY', leftPad + 12, oy + 9);
+  doc.setFontSize(2.2);
+  doc.text('OFFICIEL', ox + CARD_W - 13, oy + 4.8, { align: 'center' });
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // 6. Photo (circle)
+  // 6. Gold hairline separator
   // ══════════════════════════════════════════════════════════════════════════════
-  const photoCx = leftPad + 12;
-  const photoCy = oy + 30;
-  const photoR = 10;
+  doc.saveGraphicsState();
+  doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
+  doc.setDrawColor(GOLD);
+  doc.setLineWidth(0.1);
+  doc.line(leftPad, oy + 13, ox + CARD_W - 4, oy + 13);
+  doc.restoreGraphicsState();
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 7. Photo
+  // ══════════════════════════════════════════════════════════════════════════════
+  const photoX = leftPad + 2;
+  const photoY = oy + 16;
+  const photoW = 16;
+  const photoH = 20;
+
+  // Année scolaire (above photo)
+  doc.setTextColor(GOLD);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(1.3);
+  doc.text(`ANNÉE ${annee}`, photoX + photoW / 2, photoY + photoH + 2.5, { align: 'center' });
 
   // Shadow
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.12 }));
+  doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
   doc.setFillColor('#000000');
-  (doc as any).circle(photoCx + 0.5, photoCy + 0.5, photoR, 'F');
+  doc.roundedRect(photoX + 0.5, photoY + 0.5, photoW, photoH, 3, 3, 'F');
   doc.restoreGraphicsState();
 
-  // Photo circle background
-  doc.saveGraphicsState();
-  doc.setFillColor('#e8f5e9');
-  (doc as any).circle(photoCx, photoCy, photoR, 'F');
-  doc.clip();
+  // Photo background
+  doc.setFillColor('#1a1a2e');
+  doc.roundedRect(photoX, photoY, photoW, photoH, 3, 3, 'F');
 
   if (e.photo_url) {
     try {
       const img = await loadImage(e.photo_url);
-      if (img) doc.addImage(img, 'JPEG', photoCx - photoR, photoCy - photoR, photoR * 2, photoR * 2);
+      if (img) {
+        doc.saveGraphicsState();
+        doc.roundedRect(photoX, photoY, photoW, photoH, 3, 3, 'S');
+        doc.clip();
+        doc.addImage(img, 'JPEG', photoX, photoY, photoW, photoH);
+        doc.restoreGraphicsState();
+      }
     } catch { /* skip */ }
   }
 
   if (!e.photo_url) {
-    const init = (e.nom.charAt(0) + e.prenom.charAt(0)).toUpperCase();
-    doc.setTextColor(GREEN);
+    doc.setTextColor(GOLD);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text(init, photoCx, photoCy + 2, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text(initials, photoX + photoW / 2, photoY + photoH / 2 + 3, { align: 'center' });
   }
 
-  doc.restoreGraphicsState();
-
-  // White border
-  doc.setDrawColor(WHITE);
-  doc.setLineWidth(2);
-  (doc as any).circle(photoCx, photoCy, photoR + 0.5, 'S');
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // 7. Student name & program
-  // ══════════════════════════════════════════════════════════════════════════════
-  const infoX = photoCx + photoR + 5;
-
-  doc.setTextColor(INK);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.5);
-  doc.text(nomComplet, infoX, oy + 25, { maxWidth: CARD_W - infoX - 8 });
-
-  const program = [e.section, e.classe, e.option].filter(Boolean).join(' - ');
-  doc.setTextColor(GREEN);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(3);
-  doc.text(program || '—', infoX, oy + 28.5);
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // 8. Separator line
-  // ══════════════════════════════════════════════════════════════════════════════
+  // Gold border
   doc.setDrawColor(GOLD);
-  doc.setLineWidth(0.2);
-  doc.line(leftPad, oy + 39, ox + CARD_W - 28, oy + 39);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(photoX, photoY, photoW, photoH, 3, 3, 'S');
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // 9. Matricule + Year (bottom section)
+  // 8. Name + program
   // ══════════════════════════════════════════════════════════════════════════════
-  // Left: Matricule
-  doc.setTextColor(GREEN);
+  const infoX = photoX + photoW + 4;
+
+  // NOM ÉLÈVE label
+  doc.setTextColor(GOLD);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(2.2);
-  doc.text('N° ÉTUDIANT', leftPad, oy + 42);
-  doc.setTextColor(INK);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(1.3);
+  doc.text('NOM ÉLÈVE', infoX, oy + 16.5);
+
+  // Nom
+  doc.setTextColor(WHITE);
+  doc.setFontSize(3.2);
+  doc.text(`${e.nom} ${e.postnom}`, infoX, oy + 19.5);
+
+  // PRÉNOM label
+  doc.setTextColor(GOLD);
+  doc.setFontSize(1.3);
+  doc.text('PRÉNOM', infoX, oy + 22.5);
+
+  // Prénom
+  doc.setTextColor(WHITE);
   doc.setFontSize(3);
-  doc.text(e.matricule, leftPad, oy + 45);
+  doc.text(e.prenom, infoX, oy + 25.5);
 
-  // Right: Year
-  doc.setTextColor(GREEN);
+  // CLASSE label
+  doc.setTextColor(GOLD);
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(1.3);
+  doc.text('CLASSE', infoX, oy + 28);
+
+  // Classe value
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(2.5);
+  doc.text(e.classe || '—', infoX, oy + 30.5);
+
+  // SEXE label
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(1.3);
+  doc.text('SEXE', infoX + 22, oy + 28);
+
+  // Sexe value
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(2.5);
+  doc.text(e.sexe, infoX + 22, oy + 30.5);
+
+  // OPTION label
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(1.3);
+  doc.text('OPTION', infoX, oy + 33);
+
+  // Option value
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(2.5);
+  doc.text(e.option || '—', infoX, oy + 35.5);
+
+  // MATRICULE label
+  doc.setTextColor(GOLD);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(1.3);
+  doc.text('MATRICULE', infoX, oy + 38.5);
+
+  // Matricule value
+  doc.setTextColor(WHITE);
   doc.setFontSize(2.2);
-  doc.text('ANNÉE', ox + CARD_W - 28, oy + 42, { align: 'right' });
-  doc.setTextColor(INK);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(3);
-  doc.text(annee, ox + CARD_W - 28, oy + 45, { align: 'right' });
+  doc.text(e.matricule, infoX, oy + 41);
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // 10. QR Code (bottom-right)
+  // 9. Bottom meta
   // ══════════════════════════════════════════════════════════════════════════════
+  doc.setTextColor(WHITE);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(1.3);
+  doc.text(`Naissance: ${dateNaiss}`, leftPad, oy + 46);
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 10. JIMPRO label + QR Code (25×25mm)
+  // ══════════════════════════════════════════════════════════════════════════════
+  doc.setTextColor(GOLD);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(1.3);
+  doc.text('JIMPRO', ox + CARD_W - 13, oy + 8.5, { align: 'center' });
   const qrData = `MATRICULE:${e.matricule}|ELEVE:${nomComplet}|SECTION:${e.section}|CLASSE:${e.classe || ''}`;
-  const qrUrl = await QRCode.toDataURL(qrData, { width: 400, margin: 0, errorCorrectionLevel: 'H' });
-  const qs = 16;
-  const qx = ox + CARD_W - qs - 3;
-  const qy = oy + CARD_H - qs - 3;
+  const qrUrl = await QRCode.toDataURL(qrData, { width: 600, margin: 2, errorCorrectionLevel: 'H' });
+  const qs = 25;
+  const qx = ox + CARD_W - qs - 1.5;
+  const qy = oy + CARD_H - qs - 4.5;
 
   doc.setFillColor(WHITE);
   doc.roundedRect(qx - 1, qy - 1, qs + 2, qs + 2, 1, 1, 'F');

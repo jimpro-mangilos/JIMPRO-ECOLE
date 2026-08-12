@@ -39,6 +39,7 @@ const PortailProfesseur = lazy(() => import('./pages/PortailProfesseur'));
 const GestionCours = lazy(() => import('./pages/GestionCours'));
 const GestionDevoirs = lazy(() => import('./pages/GestionDevoirs'));
 const PortailRecouvrement = lazy(() => import('./pages/PortailRecouvrement'));
+const CarteEtudiant = lazy(() => import('./pages/CarteEtudiant'));
 
 function LoadingFallback() {
   return (
@@ -77,6 +78,16 @@ function App() {
           />
           <Routes>
             {/* Public routes */}
+            <Route
+              path="/carte/:matricule"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <CarteEtudiant />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
             <Route
               path="/portail-parent"
               element={
