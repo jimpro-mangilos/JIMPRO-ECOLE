@@ -45,6 +45,8 @@ export default function Configuration() {
   const [showSectionForm, setShowSectionForm] = useState(false); const [editingSection, setEditingSection] = useState<any>(null); const [sectionForm, setSectionForm] = useState(emptyForm());
   const [showOptionForm, setShowOptionForm] = useState(false); const [editingOption, setEditingOption] = useState<any>(null); const [optionForm, setOptionForm] = useState(emptyForm({ section_id: '' }));
   const [showClasseForm, setShowClasseForm] = useState(false); const [editingClasse, setEditingClasse] = useState<any>(null); const [classeForm, setClasseForm] = useState(emptyForm({ section_id: '', option_id: '', niveau: '', designation: '' }));
+  const [classFilterSections, setClassFilterSections] = useState<string[]>([]);
+  const [classFilterOptions, setClassFilterOptions] = useState<string[]>([]);
   const [showMotifForm, setShowMotifForm] = useState(false); const [editingMotif, setEditingMotif] = useState<any>(null); const [motifForm, setMotifForm] = useState(libForm());
   const [showTypePaiementForm, setShowTypePaiementForm] = useState(false); const [editingTypePaiement, setEditingTypePaiement] = useState<any>(null); const [typePaiementForm, setTypePaiementForm] = useState(libForm());
   const [showAnneeScolaireForm, setShowAnneeScolaireForm] = useState(false); const [editingAnneeScolaire, setEditingAnneeScolaire] = useState<any>(null); const [anneeScolaireForm, setAnneeScolaireForm] = useState({ annee: '', date_debut: '', date_fin: '', is_active: true });
