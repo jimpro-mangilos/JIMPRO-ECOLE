@@ -20,7 +20,14 @@ const DARK    = '#07518a';
 const GOLD    = '#f6b21c';
 const WHITE   = '#fcfcfd';
 const SURFACE = '#eff4f6';
-const BORDER  = '#cdd9e2'; // approx rgba(7,65,112,.2)
+
+// RGBA via GState (jsPDF ne supporte pas rgba en string)
+const rgba = (doc: jsPDF, r: number, g: number, b: number, a: number) => {
+  doc.saveGraphicsState();
+  doc.setGState(new (doc as any).GState({ opacity: a }));
+  doc.setDrawColor(r, g, b);
+  return () => doc.restoreGraphicsState();
+};
 
 const CARD_W = 85; // mm
 const CARD_H = 54; // mm
@@ -155,11 +162,12 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   const pw = 21;
   const ph = 27;
 
-  doc.setDrawColor(BORDER);
+  let endRgba = rgba(doc, 7, 65, 112, 0.2);
   doc.setLineWidth(0.4);
   doc.roundedRect(px, py, pw, ph, 1.5, 1.5, 'S');
+  endRgba();
   doc.setFillColor(SURFACE);
-  doc.roundedRect(px + 0.3, py + 0.3, pw - 0.6, ph - 0.6, 1.2, 1.2, 'F');
+doc.roundedRect(px + 0.3, py + 0.3, pw - 0.6, ph - 0.6, 1.2, 1.2, 'F');
 
   if (e.photo_url) {
     try {
@@ -188,7 +196,7 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   cy += 1.2;
   doc.setDrawColor(GOLD);
   doc.setLineWidth(0.25);
-  doc.line(ox + ix, cy, ox + ix + 30, cy);
+doc.line(ox + ix, cy, ox + ix + 30, cy);
 
   // NOM PRENOM (uppercase)
   cy += 2.5;
@@ -198,9 +206,10 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
 
   // Thin separator line
   cy += 1.8;
-  doc.setDrawColor(BORDER);
+  endRgba = rgba(doc, 7, 65, 112, 0.2);
   doc.setLineWidth(0.15);
-  doc.line(ox + ix, cy, ox + ix + 32, cy);
+  endRgba();
+doc.line(ox + ix, cy, ox + ix + 32, cy);
 
   // Détails
   cy += 2.5;
@@ -241,13 +250,14 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
 
   // White background behind QR
   doc.setFillColor(WHITE);
-  doc.roundedRect(qx - 1, qy - 1, qs + 2, qs + 2, 1.5, 1.5, 'F');
+doc.roundedRect(qx - 1, qy - 1, qs + 2, qs + 2, 1.5, 1.5, 'F');
   // QR image
   doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
   // Border
-  doc.setDrawColor(BORDER);
+  endRgba = rgba(doc, 7, 65, 112, 0.2);
   doc.setLineWidth(0.3);
-  doc.roundedRect(qx - 1, qy - 1, qs + 2, qs + 2, 1.5, 1.5, 'S');
+  endRgba();
+doc.roundedRect(qx - 1, qy - 1, qs + 2, qs + 2, 1.5, 1.5, 'S');
 
   // ─── Micro text (rotated 90°, bottom-right of blue zone) ─────────────────────
   doc.setTextColor(WHITE);
