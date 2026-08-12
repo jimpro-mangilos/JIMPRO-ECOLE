@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 
-interface CarteEtudiantEleve {
+export interface CarteEtudiantEleve {
   matricule: string;
   nom: string;
   postnom: string;
@@ -15,17 +15,14 @@ interface CarteEtudiantEleve {
   annee_scolaire?: string;
 }
 
-// ─── Modern Design System ──────────────────────────────────────────────────────
-const DEEP_BLUE   = '#0f172a';
-const ACCENT_TEAL = '#06b6d4';
-const PURE_WHITE  = '#ffffff';
-const SOFT_GRAY   = '#f1f5f9';
-const TEXT_GRAY   = '#64748b';
+// ─── Design System ────────────────────────────────────────────────────────────
+const GREEN = '#2f8f68';
+const GOLD = '#b58a2a';
+const INK = '#16213e';
+const WHITE = '#ffffff';
+const CARD_W = 85, CARD_H = 54;
 
-const CARD_W = 85;
-const CARD_H = 54;
-
-// ─── Public API ────────────────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export async function generateCarteEtudiant(
   eleve: CarteEtudiantEleve,
@@ -51,23 +48,19 @@ export async function generateCartesEtudiants(
     const idx = i % perPage;
     const x = sx + (idx % perRow) * (CARD_W + sx);
     const y = sy + Math.floor(idx / perRow) * (CARD_H + sy);
-
     doc.setDrawColor('#cbd5e1');
     doc.setLineWidth(0.05);
     const cm = 5;
     [[x, y], [x + CARD_W, y], [x, y + CARD_H], [x + CARD_W, y + CARD_H]].forEach(([cx, cy]) => {
-      const hw = cx === x ? 1 : -1, vw = cy === y ? 1 : -1;
-      doc.line(cx, cy + vw * cm, cx, cy + vw * 1);
-      doc.line(cx + hw * cm, cy, cx + hw * 1, cy);
+      doc.line(cx, cy + (cy === y ? cm : -cm), cx, cy + (cy === y ? 1 : -1));
+      doc.line(cx + (cx === x ? cm : -cm), cy, cx + (cx === x ? 1 : -1), cy);
     });
-
     await drawCard(doc, eleves[i], x, y, logoBase64);
   }
-
   return doc;
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function loadImage(url: string): Promise<string | null> {
   try {
@@ -75,236 +68,212 @@ async function loadImage(url: string): Promise<string | null> {
     if (!resp.ok) return null;
     const blob = await resp.blob();
     return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(blob);
     });
   } catch { return null; }
 }
 
-// ─── Core Card Drawing ─────────────────────────────────────────────────────────
+// ─── Card Drawing ─────────────────────────────────────────────────────────────
 
 async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: number, logo?: string | null) {
+  const nomComplet = `${e.nom} ${e.postnom ? e.postnom + ' ' : ''}${e.prenom}`;
   const annee = e.annee_scolaire || new Date().getFullYear().toString();
-  const nomComplet = `${e.nom} ${e.postnom ? e.postnom + ' ' : ''}${e.prenom}`.toUpperCase();
-  const displayNom = e.nom.toUpperCase() + (e.postnom ? ' ' + e.postnom.toUpperCase() : '');
 
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 1. BACKGROUND
-  // ═══════════════════════════════════════════════════════════════════════════════
-  doc.setFillColor(PURE_WHITE);
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 1. Background
+  // ══════════════════════════════════════════════════════════════════════════════
+  doc.setFillColor(WHITE);
   doc.roundedRect(ox, oy, CARD_W, CARD_H, 2, 2, 'F');
 
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 2. BANDE LATÉRALE GAUCHE
-  // ═══════════════════════════════════════════════════════════════════════════════
-  const bandWidth = 24;
-  doc.setFillColor(DEEP_BLUE);
-  doc.rect(ox, oy, bandWidth, CARD_H, 'F');
-
+  // Subtle green tint gradient effect
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
-  doc.setFillColor(ACCENT_TEAL);
-  doc.rect(ox, oy, bandWidth, 18, 'F');
+  doc.setGState(new (doc as any).GState({ opacity: 0.06 }));
+  doc.setFillColor(GREEN);
+  doc.rect(ox + CARD_W - 25, oy, 25, CARD_H, 'F');
   doc.restoreGraphicsState();
 
-  // Cercles subtils
+  // Grid lines
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
-  doc.setDrawColor(PURE_WHITE);
-  doc.setLineWidth(0.3);
-  for (let r = 5; r < 40; r += 5) {
-    (doc as any).circle(ox + bandWidth / 2, oy + CARD_H / 2, r, 'S');
+  doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
+  doc.setDrawColor(GREEN);
+  doc.setLineWidth(0.08);
+  for (let gx = ox + 5; gx < ox + CARD_W; gx += 22) {
+    doc.line(gx, oy, gx, oy + CARD_H);
+  }
+  for (let gy = oy + 5; gy < oy + CARD_H; gy += 22) {
+    doc.line(ox + 15, gy, ox + CARD_W, gy);
   }
   doc.restoreGraphicsState();
 
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 3. PHOTO ZONE
-  // ═══════════════════════════════════════════════════════════════════════════════
-  const photoX = ox + 4;
-  const photoY = oy + 6;
-  const photoW = 16;
-  const photoH = 20;
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 2. Green accent bar (left edge)
+  // ══════════════════════════════════════════════════════════════════════════════
+  doc.setFillColor(GREEN);
+  doc.rect(ox, oy, 2, CARD_H, 'F');
 
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 3. Decorative circles
+  // ══════════════════════════════════════════════════════════════════════════════
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.2 }));
-  doc.setFillColor('#000000');
-  doc.roundedRect(photoX + 0.5, photoY + 0.5, photoW, photoH, 2, 2, 'F');
+  doc.setGState(new (doc as any).GState({ opacity: 0.12 }));
+  doc.setDrawColor(GREEN);
+  doc.setLineWidth(0.5);
+  (doc as any).circle(ox + CARD_W + 12, oy - 8, 18, 'S');
+  (doc as any).circle(ox + CARD_W + 12, oy - 8, 14, 'S');
   doc.restoreGraphicsState();
 
-  doc.setFillColor(SOFT_GRAY);
-  doc.roundedRect(photoX, photoY, photoW, photoH, 2, 2, 'F');
+  doc.saveGraphicsState();
+  doc.setGState(new (doc as any).GState({ opacity: 0.1 }));
+  doc.setFillColor(GOLD);
+  (doc as any).circle(ox + CARD_W / 2 + 5, oy + CARD_H + 12, 14, 'F');
+  doc.restoreGraphicsState();
 
-  let photoDrawn = false;
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 4. "OFFICIEL" badge (top-right)
+  // ══════════════════════════════════════════════════════════════════════════════
+  doc.saveGraphicsState();
+  doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
+  doc.setFillColor(GOLD);
+  doc.restoreGraphicsState();
+  doc.setDrawColor(GOLD);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(ox + CARD_W - 24, oy + 2.5, 21, 4, 2, 2, 'S');
+  doc.setTextColor(GOLD);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(2.8);
+  doc.text('OFFICIEL', ox + CARD_W - 13.5, oy + 5.2, { align: 'center' });
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 5. School identity (top-left area)
+  // ══════════════════════════════════════════════════════════════════════════════
+  const leftPad = ox + 5;
+
+  // School logo placeholder
+  if (logo) {
+    const fmt = logo.startsWith('data:image/jpeg') || logo.endsWith('.jpg') || logo.endsWith('.jpeg') ? 'JPEG' : 'PNG';
+    doc.addImage(logo, fmt, leftPad + 1, oy + 4, 8, 8);
+  } else {
+    doc.setFillColor(GREEN);
+    doc.roundedRect(leftPad + 1, oy + 4, 8, 8, 1.5, 1.5, 'F');
+    doc.setTextColor(WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(4.5);
+    doc.text('GA', leftPad + 5, oy + 7.5, { align: 'center' });
+  }
+
+  // "Student Pass" label
+  doc.setTextColor(GREEN);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(2.5);
+  doc.text('STUDENT PASS', leftPad + 12, oy + 6);
+
+  // School name
+  doc.setTextColor(INK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(3.2);
+  doc.text('GOLDEN ACADEMY', leftPad + 12, oy + 9);
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 6. Photo (circle)
+  // ══════════════════════════════════════════════════════════════════════════════
+  const photoCx = leftPad + 12;
+  const photoCy = oy + 30;
+  const photoR = 10;
+
+  // Shadow
+  doc.saveGraphicsState();
+  doc.setGState(new (doc as any).GState({ opacity: 0.12 }));
+  doc.setFillColor('#000000');
+  (doc as any).circle(photoCx + 0.5, photoCy + 0.5, photoR, 'F');
+  doc.restoreGraphicsState();
+
+  // Photo circle background
+  doc.saveGraphicsState();
+  doc.setFillColor('#e8f5e9');
+  (doc as any).circle(photoCx, photoCy, photoR, 'F');
+  doc.clip();
+
   if (e.photo_url) {
     try {
       const img = await loadImage(e.photo_url);
-      if (img) {
-        doc.addImage(img, 'JPEG', photoX, photoY, photoW, photoH);
-        photoDrawn = true;
-      }
-    } catch { /* ignore */ }
+      if (img) doc.addImage(img, 'JPEG', photoCx - photoR, photoCy - photoR, photoR * 2, photoR * 2);
+    } catch { /* skip */ }
   }
 
-  if (!photoDrawn) {
+  if (!e.photo_url) {
     const init = (e.nom.charAt(0) + e.prenom.charAt(0)).toUpperCase();
-    const cxP = photoX + photoW / 2;
-    const cyP = photoY + photoH / 2;
-    doc.setFillColor(ACCENT_TEAL);
-    (doc as any).circle(cxP, cyP, 6, 'F');
-    doc.setTextColor(PURE_WHITE);
+    doc.setTextColor(GREEN);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(init, cxP, cyP + 2.5, { align: 'center' });
+    doc.setFontSize(8);
+    doc.text(init, photoCx, photoCy + 2, { align: 'center' });
   }
 
-  doc.setDrawColor(PURE_WHITE);
-  doc.setLineWidth(0.8);
-  doc.roundedRect(photoX, photoY, photoW, photoH, 2, 2, 'S');
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 4. LOGO ÉCOLE (bas de la bande)
-  // ═══════════════════════════════════════════════════════════════════════════════
-  if (logo) {
-    const logoSize = 12;
-    const logoX = ox + (bandWidth - logoSize) / 2;
-    const logoY = oy + 30;
-    const fmt = logo.startsWith('data:image/jpeg') || logo.endsWith('.jpg') || logo.endsWith('.jpeg') ? 'JPEG' : 'PNG';
-    doc.setFillColor(PURE_WHITE);
-    doc.roundedRect(logoX - 1, logoY - 1, logoSize + 2, logoSize + 2, 1.5, 1.5, 'F');
-    doc.addImage(logo, fmt, logoX, logoY, logoSize, logoSize);
-  } else {
-    const badgeX = ox + bandWidth / 2;
-    const badgeY = oy + 36;
-    doc.setFillColor(ACCENT_TEAL);
-    doc.roundedRect(badgeX - 5, badgeY - 5, 10, 10, 2, 2, 'F');
-    doc.setTextColor(PURE_WHITE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6);
-    doc.text('GA', badgeX, badgeY + 1.5, { align: 'center' });
-  }
-
-  doc.setTextColor(PURE_WHITE);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(2.2);
-  doc.text('GOLDEN ACADEMY', ox + bandWidth / 2, oy + CARD_H - 4, { align: 'center' });
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 5. HEADER — badge + année
-  // ═══════════════════════════════════════════════════════════════════════════════
-  const contentX = ox + bandWidth + 4;
-  let cy = oy + 5;
-
-  doc.setFillColor(ACCENT_TEAL);
-  doc.roundedRect(contentX, cy, 28, 4, 1, 1, 'F');
-  doc.setTextColor(PURE_WHITE);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(3.2);
-  doc.text("CARTE D'ÉLÈVE", contentX + 14, cy + 2.8, { align: 'center' });
-
-  doc.setTextColor(TEXT_GRAY);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(2.8);
-  doc.text(annee, ox + CARD_W - 4, cy + 2.8, { align: 'right' });
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 6. NOM DE L'ÉTUDIANT
-  // ═══════════════════════════════════════════════════════════════════════════════
-  cy += 9;
-  doc.setTextColor(DEEP_BLUE);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.5);
-  doc.text(displayNom, contentX, cy);
-
-  cy += 5;
-  doc.setTextColor(TEXT_GRAY);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(3.5);
-  doc.text(e.prenom, contentX, cy);
-
-  // Séparateur
-  cy += 2.5;
-  doc.setDrawColor(ACCENT_TEAL);
-  doc.setLineWidth(0.3);
-  doc.line(contentX, cy, contentX + 30, cy);
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 7. INFORMATIONS ÉLÈVE — grille 2 colonnes
-  // ═══════════════════════════════════════════════════════════════════════════════
-  cy += 3;
-
-  const drawField = (label: string, value: string, x: number, maxW: number) => {
-    doc.setTextColor(TEXT_GRAY);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(2.2);
-    doc.text(label, x, cy);
-    doc.setTextColor(DEEP_BLUE);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(3);
-    const lines = doc.splitTextToSize(value, maxW);
-    doc.text(lines as string[] | string, x, cy + 2.2, { maxWidth: maxW });
-  };
-
-  const col1 = contentX;
-  const col2 = contentX + 24;
-  const colW = 22;
-
-  const dateNaissance = e.date_naissance
-    ? new Date(e.date_naissance).toLocaleDateString('fr-FR')
-    : '—';
-
-  drawField('Sexe', e.sexe === 'M' ? 'Masculin' : e.sexe === 'F' ? 'Féminin' : e.sexe, col1, colW);
-  drawField('Né(e) le', dateNaissance, col2, colW);
-
-  cy += 6;
-  drawField('Section', e.section || '—', col1, colW);
-  drawField('Classe', e.classe || '—', col2, colW);
-
-  if (e.option) {
-    cy += 6;
-    drawField('Option', e.option, col1, 30);
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 8. MATRICULE — style code-barres
-  // ═══════════════════════════════════════════════════════════════════════════════
-  cy += 7;
-  doc.setTextColor(TEXT_GRAY);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(2);
-  doc.text('MATRICULE', contentX, cy);
-  doc.setTextColor(DEEP_BLUE);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(3.2);
-  doc.text(e.matricule, contentX, cy + 2.2);
-
-  // Barres décoratives sous le matricule
-  const barY = cy + 3.5;
-  doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
-  doc.setFillColor(ACCENT_TEAL);
-  for (let i = 0; i < 12; i++) {
-    const bx = contentX + i * 2.8;
-    const bw = i % 3 === 0 ? 0.8 : i % 3 === 1 ? 1.6 : 0.4;
-    doc.rect(bx, barY, bw, 1, 'F');
-  }
   doc.restoreGraphicsState();
 
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 9. QR CODE — 34×34mm bottom right
-  // ═══════════════════════════════════════════════════════════════════════════════
-  const qrData = `MATRICULE:${e.matricule}|ELEVE:${nomComplet}|SECTION:${e.section}|CLASSE:${e.classe || ''}`;
-  const qrUrl = await QRCode.toDataURL(qrData, { width: 600, margin: 0, errorCorrectionLevel: 'H' });
-  const qs = 34;
-  const qx = ox + CARD_W - qs - 2;
-  const qy = oy + CARD_H - qs - 2;
+  // White border
+  doc.setDrawColor(WHITE);
+  doc.setLineWidth(2);
+  (doc as any).circle(photoCx, photoCy, photoR + 0.5, 'S');
 
-  doc.setFillColor(SOFT_GRAY);
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 7. Student name & program
+  // ══════════════════════════════════════════════════════════════════════════════
+  const infoX = photoCx + photoR + 5;
+
+  doc.setTextColor(INK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(5.5);
+  doc.text(nomComplet, infoX, oy + 25, { maxWidth: CARD_W - infoX - 8 });
+
+  const program = [e.section, e.classe, e.option].filter(Boolean).join(' - ');
+  doc.setTextColor(GREEN);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(3);
+  doc.text(program || '—', infoX, oy + 28.5);
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 8. Separator line
+  // ══════════════════════════════════════════════════════════════════════════════
+  doc.setDrawColor(GOLD);
+  doc.setLineWidth(0.2);
+  doc.line(leftPad, oy + 39, ox + CARD_W - 28, oy + 39);
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 9. Matricule + Year (bottom section)
+  // ══════════════════════════════════════════════════════════════════════════════
+  // Left: Matricule
+  doc.setTextColor(GREEN);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(2.2);
+  doc.text('N° ÉTUDIANT', leftPad, oy + 42);
+  doc.setTextColor(INK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(3);
+  doc.text(e.matricule, leftPad, oy + 45);
+
+  // Right: Year
+  doc.setTextColor(GREEN);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(2.2);
+  doc.text('ANNÉE', ox + CARD_W - 28, oy + 42, { align: 'right' });
+  doc.setTextColor(INK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(3);
+  doc.text(annee, ox + CARD_W - 28, oy + 45, { align: 'right' });
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 10. QR Code (bottom-right)
+  // ══════════════════════════════════════════════════════════════════════════════
+  const qrData = `MATRICULE:${e.matricule}|ELEVE:${nomComplet}|SECTION:${e.section}|CLASSE:${e.classe || ''}`;
+  const qrUrl = await QRCode.toDataURL(qrData, { width: 400, margin: 0, errorCorrectionLevel: 'H' });
+  const qs = 16;
+  const qx = ox + CARD_W - qs - 3;
+  const qy = oy + CARD_H - qs - 3;
+
+  doc.setFillColor(WHITE);
   doc.roundedRect(qx - 1, qy - 1, qs + 2, qs + 2, 1, 1, 'F');
-  doc.setFillColor(PURE_WHITE);
-  doc.rect(qx, qy, qs, qs, 'F');
   doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
 }
-
-export type { CarteEtudiantEleve };
