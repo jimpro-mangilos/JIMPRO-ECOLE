@@ -20,7 +20,7 @@ const DARK    = '#07518a';
 const GOLD    = '#f6b21c';
 const WHITE   = '#fcfcfd';
 const SURFACE = '#eff4f6';
-const BORDER  = 'rgba(7,65,112,.2)';
+const BORDER  = '#cdd9e2'; // approx rgba(7,65,112,.2)
 
 const CARD_W = 85; // mm
 const CARD_H = 54; // mm
