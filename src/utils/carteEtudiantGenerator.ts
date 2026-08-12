@@ -121,10 +121,10 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   // ═══════════════════════════════════════════════════════════════════════════════
   // 5. PHOTO ZONE (left, 36×48mm, bleeds to left edge)
   // ═══════════════════════════════════════════════════════════════════════════════
-  const photoX = ox;
+  const photoX = ox + 2;
   const photoY = oy + 2;
-  const photoW = 36;
-  const photoH = 48;
+  const photoW = 16;
+  const photoH = 20;
 
   // Photo interior fill
   doc.setFillColor(LIGHT_GRAY);
@@ -183,7 +183,7 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   // ═══════════════════════════════════════════════════════════════════════════════
   // 6. SCHOOL IDENTITY (top right)
   // ═══════════════════════════════════════════════════════════════════════════════
-  const rightX = ox + 39;
+  const rightX = ox + 20;
 
   doc.setTextColor(NAVY);
   doc.setFont('helvetica', 'bold');
@@ -300,10 +300,10 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   // 10. QR CODE ZONE (bottom right)
   // ═══════════════════════════════════════════════════════════════════════════════
   const qrData = `MATRICULE:${e.matricule}|ELEVE:${nomComplet}|SECTION:${e.section}|CLASSE:${e.classe || ''}`;
-  const qrUrl = await QRCode.toDataURL(qrData, { width: 400, margin: 1, errorCorrectionLevel: 'M' });
-  const qs = 16;
-  const qx = ox + 66;
-  const qy = oy + 33;
+  const qrUrl = await QRCode.toDataURL(qrData, { width: 600, margin: 0, errorCorrectionLevel: 'H' });
+  const qs = 34;
+  const qx = ox + CARD_W - qs - 2;
+  const qy = oy + CARD_H - qs - 2;
 
   // White border around QR
   doc.setFillColor(WARM_WHITE);
@@ -317,11 +317,7 @@ async function drawCard(doc: jsPDF, e: CarteEtudiantEleve, ox: number, oy: numbe
   // QR image
   doc.addImage(qrUrl, 'PNG', qx, qy, qs, qs);
 
-  // "SCAN ME" below QR
-  doc.setTextColor(MED_TEXT);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(2);
-  doc.text('SCAN ME', qx + qs / 2, qy + qs + 2.5, { align: 'center' });
+  // QR label (integrated into the card design — no separate label needed)
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // 11. BOTTOM STRIP
