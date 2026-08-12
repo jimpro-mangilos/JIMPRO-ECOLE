@@ -171,13 +171,19 @@ export default function Eleves() {
                 const BATCH = 40;
                 const total = eleves.length;
                 setGeneratingProgress({ current: 0, total });
+                // Récupérer le nom de l'école (pour l'affichage sur la carte)
+                let schoolName = 'ÉCOLE';
+                if (currentSchoolId) {
+                  const { data: ecole } = await supabase.from('ecoles').select('nom').eq('id', currentSchoolId).maybeSingle();
+                  if (ecole?.nom) schoolName = ecole.nom;
+                }
                 for (let i = 0; i < total; i += BATCH) {
                   const batch = eleves.slice(i, i + BATCH).map(e => ({
                     matricule: e.matricule, nom: e.nom, postnom: e.postnom, prenom: e.prenom,
                     sexe: e.sexe, section: e.section, option: e.option, classe: e.classe,
                     date_naissance: e.date_naissance, photo_url: (e as any).photo_url,
                   }));
-                  const doc = await generateCartesEtudiants(batch, logoUrl);
+                  const doc = await generateCartesEtudiants(batch, schoolName, logoUrl);
                   const batchNum = Math.floor(i / BATCH) + 1;
                   const totalBatches = Math.ceil(total / BATCH);
                   doc.save(`cartes-etudiants-${batchNum}-sur-${totalBatches}.pdf`);
