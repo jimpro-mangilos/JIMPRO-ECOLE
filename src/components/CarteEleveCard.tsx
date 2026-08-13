@@ -120,20 +120,8 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
         <div style={{ fontSize: 9, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 4 }}>Prénom</div>
         <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.prenom}</div>
         <div style={{ marginTop: 8 }}>
-          <div style={{ display: 'flex', gap: 24 }}>
-            <div>
-              <div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Classe</div>
-              <div style={{ fontSize: 16, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.classe || '—'}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Sexe</div>
-              <div style={{ fontSize: 16, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.sexe}</div>
-            </div>
-          </div>
-          <div style={{ marginTop: 5 }}>
-            <div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Option</div>
-            <div style={{ fontSize: 16, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.option || '—'}</div>
-          </div>
+          <div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Option</div>
+          <div style={{ fontSize: 16, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.option || '—'}</div>
         </div>
         <div style={{ marginTop: 8 }}>
           <div><div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Matricule</div><div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1, marginTop: 1 }}>{eleve.matricule}</div></div>
@@ -143,6 +131,18 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
       {/* Bottom meta */}
       <div style={{ position: 'absolute', bottom: 24, left: 24, right: CARTE_QR + 32, display: 'flex', gap: 24 }}>
         <div><div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Date de naissance</div><div style={{ fontSize: 16, fontWeight: 500, marginTop: 1 }}>{formatDateNaissance(eleve.date_naissance)}</div></div>
+      </div>
+
+      {/* Classe + Sexe (au-dessus du QR) */}
+      <div style={{ position: 'absolute', right: 12, bottom: CARTE_QR + 32, width: CARTE_QR, display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Classe</div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.classe || '—'}</div>
+        </div>
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Sexe</div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.sexe}</div>
+        </div>
       </div>
 
       {/* QR Code */}
