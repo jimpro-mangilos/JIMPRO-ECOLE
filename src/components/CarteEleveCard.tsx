@@ -83,7 +83,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
         )}
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 3, color: GOLD, textTransform: 'uppercase' }}>CARTE D'ÉLÈVE</div>
-          <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: 1, marginTop: 2, textTransform: 'uppercase', color: '#ffd24d' }}>{schoolName}</div>
+          <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, marginTop: 2, textTransform: 'uppercase', color: '#ffd24d' }}>{schoolName}</div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
           <div style={{ border: `1.5px solid ${GOLD}`, borderRadius: 20, padding: '4px 16px', opacity: 0.8 }}>
@@ -98,7 +98,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
 
       {/* Année scolaire */}
       <div style={{ position: 'absolute', top: 214, left: 32, width: 96, textAlign: 'center' }}>
-        <span style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>Année {annee}</span>
+        <span style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>{annee}</span>
       </div>
 
       {/* Photo */}
@@ -113,10 +113,12 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
 
       {/* Name + program */}
       <div style={{ position: 'absolute', top: 84, left: 160, right: 116 }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>Nom Élève</div>
-        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.nom} {eleve.postnom}</div>
-        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 6 }}>Prénom</div>
-        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.prenom}</div>
+        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>Nom</div>
+        <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.nom}</div>
+        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 5 }}>Postnom</div>
+        <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.postnom}</div>
+        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 5 }}>Prénom</div>
+        <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.prenom}</div>
         <div style={{ marginTop: 10 }}>
           <div style={{ display: 'flex', gap: 24 }}>
             <div>
@@ -134,7 +136,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
           </div>
         </div>
         <div style={{ marginTop: 10 }}>
-          <div><div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Matricule</div><div style={{ fontSize: 18, fontWeight: 600, letterSpacing: 1, marginTop: 2 }}>{eleve.matricule}</div></div>
+          <div><div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Matricule</div><div style={{ fontSize: 14, fontWeight: 600, letterSpacing: 1, marginTop: 2 }}>{eleve.matricule}</div></div>
         </div>
       </div>
 
