@@ -2,9 +2,6 @@ import { jsPDF } from 'jspdf';
 import { generateQrDataUrl, type CarteEleve } from '../components/CarteEleveCard';
 import { renderCarteEleveToCanvas } from './carteEleveRenderer';
 
-export type { CarteEleve } from '../components/CarteEleveCard';
-export type CarteEtudiantEleve = CarteEleve;
-
 // ─── Dimensions CR-80 ──────────────────────────────────────────────────────────
 const CARD_W = 85; // mm
 const CARD_H = 54; // mm

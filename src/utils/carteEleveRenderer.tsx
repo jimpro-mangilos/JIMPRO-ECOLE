@@ -52,6 +52,8 @@ export async function renderCarteEleveToCanvas(
     // Attendre le premier rendu React (microtask) puis les images
     await new Promise((r) => setTimeout(r, 0));
     await waitForImages(container);
+    // Laisser React flusher les fallbacks (logo/photo en erreur) avant la capture
+    await new Promise((r) => setTimeout(r, 60));
 
     const cardEl = container.firstElementChild as HTMLElement;
     if (!cardEl) throw new Error('Carte non rendue');

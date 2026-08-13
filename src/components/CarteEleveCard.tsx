@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import QRCode from 'qrcode';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -49,6 +50,8 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
 }) {
   const initials = (eleve.nom.charAt(0) + eleve.prenom.charAt(0)).toUpperCase();
   const annee = '2026-2027';
+  const [logoError, setLogoError] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
 
   return (
     <div style={{ width: CARTE_W, height: CARTE_H, position: 'relative', overflow: 'hidden', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif", background: 'linear-gradient(135deg, #0f0c29 0%, #1a1a2e 40%, #16213e 100%)', borderRadius: 12, color: '#ffffff', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
@@ -71,73 +74,73 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
       </svg>
 
       {/* Header */}
-      <div style={{ position: 'absolute', top: 18, left: 24, right: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
-        {logoUrl ? (
-          <img src={logoUrl} crossOrigin="anonymous" alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'contain', background: 'rgba(255,255,255,0.1)', padding: 2 }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+      <div style={{ position: 'absolute', top: 16, left: 24, right: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
+        {logoUrl && !logoError ? (
+          <img src={logoUrl} crossOrigin="anonymous" alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'contain', background: 'rgba(255,255,255,0.1)', padding: 2 }}
+            onError={() => setLogoError(true)} />
         ) : (
-          <div style={{ width: 40, height: 40, borderRadius: 8, background: 'linear-gradient(135deg, #b8860b, #d4a853)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 20, color: '#0f0c29' }}>GA</div>
+          <div style={{ width: 44, height: 44, borderRadius: 8, background: 'linear-gradient(135deg, #b8860b, #d4a853)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#0f0c29' }}>GA</div>
         )}
         <div>
-          <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: 3, color: GOLD, textTransform: 'uppercase' }}>CARTE D'ÉLÈVE</div>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, marginTop: 1, textTransform: 'uppercase', color: '#ffd24d' }}>{schoolName}</div>
+          <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 3, color: GOLD, textTransform: 'uppercase' }}>CARTE D'ÉLÈVE</div>
+          <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: 1, marginTop: 2, textTransform: 'uppercase', color: '#ffd24d' }}>{schoolName}</div>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <div style={{ border: `1.5px solid ${GOLD}`, borderRadius: 20, padding: '3px 14px', opacity: 0.8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: GOLD }}>OFFICIEL</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <div style={{ border: `1.5px solid ${GOLD}`, borderRadius: 20, padding: '4px 16px', opacity: 0.8 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 2, color: GOLD }}>OFFICIEL</span>
           </div>
-          <span style={{ fontSize: 5, fontWeight: 600, color: GOLD, letterSpacing: 2, opacity: 0.6 }}>JIMPRO</span>
+          <span style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 2, opacity: 0.6 }}>JIMPRO</span>
         </div>
       </div>
 
       {/* Gold hairline */}
-      <div style={{ position: 'absolute', top: 74, left: 24, right: 24, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}50, transparent)` }} />
+      <div style={{ position: 'absolute', top: 76, left: 24, right: 24, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}50, transparent)` }} />
 
       {/* Année scolaire */}
-      <div style={{ position: 'absolute', top: 218, left: 32, width: 96, textAlign: 'center' }}>
-        <span style={{ fontSize: 5, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>Année {annee}</span>
+      <div style={{ position: 'absolute', top: 214, left: 32, width: 96, textAlign: 'center' }}>
+        <span style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>Année {annee}</span>
       </div>
 
       {/* Photo */}
-      <div style={{ position: 'absolute', top: 92, left: 32, width: 96, height: 120, borderRadius: 16, overflow: 'hidden', border: `3px solid ${GOLD}`, boxShadow: '0 4px 20px rgba(180,140,0,0.25)', background: 'rgba(255,255,255,0.05)' }}>
-        {eleve.photo_url ? (
+      <div style={{ position: 'absolute', top: 90, left: 32, width: 96, height: 120, borderRadius: 16, overflow: 'hidden', border: `3px solid ${GOLD}`, boxShadow: '0 4px 20px rgba(180,140,0,0.25)', background: 'rgba(255,255,255,0.05)' }}>
+        {eleve.photo_url && !photoError ? (
           <img src={eleve.photo_url} crossOrigin="anonymous" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            onError={() => setPhotoError(true)} />
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 800, color: GOLD, opacity: 0.7 }}>{initials}</div>
         )}
       </div>
 
       {/* Name + program */}
-      <div style={{ position: 'absolute', top: 86, left: 160, right: 120 }}>
-        <div style={{ fontSize: 5, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>Nom Élève</div>
-        <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, letterSpacing: -0.5 }}>{eleve.nom} {eleve.postnom}</div>
-        <div style={{ fontSize: 5, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 4 }}>Prénom</div>
-        <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, letterSpacing: -0.5 }}>{eleve.prenom}</div>
-        <div style={{ marginTop: 8 }}>
+      <div style={{ position: 'absolute', top: 84, left: 160, right: 116 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>Nom Élève</div>
+        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.nom} {eleve.postnom}</div>
+        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 6 }}>Prénom</div>
+        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.prenom}</div>
+        <div style={{ marginTop: 10 }}>
           <div style={{ display: 'flex', gap: 24 }}>
             <div>
-              <div style={{ fontSize: 5, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Classe</div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.classe || '—'}</div>
+              <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Classe</div>
+              <div style={{ fontSize: 18, fontWeight: 500, color: GOLD, marginTop: 2 }}>{eleve.classe || '—'}</div>
             </div>
             <div>
-              <div style={{ fontSize: 5, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Sexe</div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.sexe}</div>
+              <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Sexe</div>
+              <div style={{ fontSize: 18, fontWeight: 500, color: GOLD, marginTop: 2 }}>{eleve.sexe}</div>
             </div>
           </div>
-          <div style={{ marginTop: 4 }}>
-            <div style={{ fontSize: 5, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Option</div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.option || '—'}</div>
+          <div style={{ marginTop: 6 }}>
+            <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Option</div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: GOLD, marginTop: 2 }}>{eleve.option || '—'}</div>
           </div>
         </div>
-        <div style={{ marginTop: 8 }}>
-          <div><div style={{ fontSize: 5, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Matricule</div><div style={{ fontSize: 12, fontWeight: 600, letterSpacing: 1, marginTop: 2 }}>{eleve.matricule}</div></div>
+        <div style={{ marginTop: 10 }}>
+          <div><div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Matricule</div><div style={{ fontSize: 18, fontWeight: 600, letterSpacing: 1, marginTop: 2 }}>{eleve.matricule}</div></div>
         </div>
       </div>
 
       {/* Bottom meta */}
-      <div style={{ position: 'absolute', bottom: 30, left: 24, right: CARTE_QR + 32, display: 'flex', gap: 24 }}>
-        <div><div style={{ fontSize: 5, letterSpacing: 1.5, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Date de naissance</div><div style={{ fontSize: 12, fontWeight: 500, marginTop: 1 }}>{formatDateNaissance(eleve.date_naissance)}</div></div>
+      <div style={{ position: 'absolute', bottom: 26, left: 24, right: CARTE_QR + 32, display: 'flex', gap: 24 }}>
+        <div><div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Date de naissance</div><div style={{ fontSize: 18, fontWeight: 500, marginTop: 2 }}>{formatDateNaissance(eleve.date_naissance)}</div></div>
       </div>
 
       {/* QR Code */}

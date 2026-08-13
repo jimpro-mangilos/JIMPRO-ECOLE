@@ -9,7 +9,7 @@ interface LogoContextType {
   refreshLogo: () => Promise<void>;
 }
 
-const DEFAULT_LOGO = '/image.jpg';
+const DEFAULT_LOGO = '/image.png';
 
 const LogoContext = createContext<LogoContextType>({
   logoUrl: DEFAULT_LOGO,
