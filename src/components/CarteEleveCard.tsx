@@ -65,7 +65,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(90deg, #b8860b, #d4a853, #f0d060, #d4a853, #b8860b)' }} />
 
       {/* Gold bottom bar — large */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 10, background: 'linear-gradient(90deg, #0d3b2e, #b8943a, #c9a84c, #e0c060, #f0d878, #e0c060, #c9a84c, #b8943a, #0d3b2e)' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 6, background: 'linear-gradient(90deg, #0d3b2e, #b8943a, #c9a84c, #e0c060, #f0d878, #e0c060, #c9a84c, #b8943a, #0d3b2e)' }} />
 
       {/* Decorative circles */}
       <svg style={{ position: 'absolute', top: -40, right: -40, opacity: 0.08 }} width="200" height="200">
@@ -89,16 +89,16 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
           <div style={{ border: `1.5px solid ${GOLD}`, borderRadius: 20, padding: '4px 16px', opacity: 0.8 }}>
             <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 2, color: GOLD }}>OFFICIEL</span>
           </div>
-          <span style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 2, opacity: 0.6 }}>JIMPRO</span>
+          <span style={{ fontSize: 9, fontWeight: 600, color: GOLD, letterSpacing: 2, opacity: 0.6 }}>JIMPRO</span>
         </div>
       </div>
 
       {/* Gold hairline */}
-      <div style={{ position: 'absolute', top: 76, left: 24, right: 24, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}50, transparent)` }} />
+      <div style={{ position: 'absolute', top: 74, left: 24, right: 24, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}50, transparent)` }} />
 
       {/* Année scolaire */}
       <div style={{ position: 'absolute', top: 214, left: 32, width: 96, textAlign: 'center' }}>
-        <span style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>{annee}</span>
+        <span style={{ fontSize: 9, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>{annee}</span>
       </div>
 
       {/* Photo */}
@@ -112,37 +112,37 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
       </div>
 
       {/* Name + program */}
-      <div style={{ position: 'absolute', top: 84, left: 160, right: 116 }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>Nom</div>
-        <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.nom}</div>
-        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 5 }}>Postnom</div>
-        <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.postnom}</div>
-        <div style={{ fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 5 }}>Prénom</div>
-        <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.prenom}</div>
-        <div style={{ marginTop: 10 }}>
+      <div style={{ position: 'absolute', top: 78, left: 160, right: 116 }}>
+        <div style={{ fontSize: 9, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase' }}>Nom</div>
+        <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.nom}</div>
+        <div style={{ fontSize: 9, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 4 }}>Postnom</div>
+        <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.postnom}</div>
+        <div style={{ fontSize: 9, fontWeight: 600, color: GOLD, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 4 }}>Prénom</div>
+        <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.5 }}>{eleve.prenom}</div>
+        <div style={{ marginTop: 8 }}>
           <div style={{ display: 'flex', gap: 24 }}>
             <div>
-              <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Classe</div>
-              <div style={{ fontSize: 18, fontWeight: 500, color: GOLD, marginTop: 2 }}>{eleve.classe || '—'}</div>
+              <div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Classe</div>
+              <div style={{ fontSize: 16, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.classe || '—'}</div>
             </div>
             <div>
-              <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Sexe</div>
-              <div style={{ fontSize: 18, fontWeight: 500, color: GOLD, marginTop: 2 }}>{eleve.sexe}</div>
+              <div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Sexe</div>
+              <div style={{ fontSize: 16, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.sexe}</div>
             </div>
           </div>
-          <div style={{ marginTop: 6 }}>
-            <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Option</div>
-            <div style={{ fontSize: 18, fontWeight: 500, color: GOLD, marginTop: 2 }}>{eleve.option || '—'}</div>
+          <div style={{ marginTop: 5 }}>
+            <div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Option</div>
+            <div style={{ fontSize: 16, fontWeight: 500, color: GOLD, marginTop: 1 }}>{eleve.option || '—'}</div>
           </div>
         </div>
-        <div style={{ marginTop: 10 }}>
-          <div><div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Matricule</div><div style={{ fontSize: 14, fontWeight: 600, letterSpacing: 1, marginTop: 2 }}>{eleve.matricule}</div></div>
+        <div style={{ marginTop: 8 }}>
+          <div><div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Matricule</div><div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1, marginTop: 1 }}>{eleve.matricule}</div></div>
         </div>
       </div>
 
       {/* Bottom meta */}
-      <div style={{ position: 'absolute', bottom: 26, left: 24, right: CARTE_QR + 32, display: 'flex', gap: 24 }}>
-        <div><div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Date de naissance</div><div style={{ fontSize: 18, fontWeight: 500, marginTop: 2 }}>{formatDateNaissance(eleve.date_naissance)}</div></div>
+      <div style={{ position: 'absolute', bottom: 24, left: 24, right: CARTE_QR + 32, display: 'flex', gap: 24 }}>
+        <div><div style={{ fontSize: 9, letterSpacing: 1.5, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Date de naissance</div><div style={{ fontSize: 16, fontWeight: 500, marginTop: 1 }}>{formatDateNaissance(eleve.date_naissance)}</div></div>
       </div>
 
       {/* QR Code */}
