@@ -219,8 +219,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return isItManager() || profile?.role?.nom === 'admin';
   }
 
-  // École courante : priorité override localStorage (admin), puis profile, puis JWT
-  const isAdminOrItManager = profile?.role?.nom === 'admin' || profile?.role?.nom === 'it_manager';
+  // École courante : priorité override localStorage (admin/promoteur), puis profile, puis JWT
+  const isAdminOrItManager = profile?.role?.nom === 'admin' || profile?.role?.nom === 'it_manager' || profile?.role?.nom === 'promoteur';
   const activeSchoolOverride: string | null = (() => {
     if (!isAdminOrItManager) return null;
     try {

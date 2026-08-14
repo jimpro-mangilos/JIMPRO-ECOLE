@@ -140,7 +140,8 @@ export async function loadLogoBase64(): Promise<string> {
 
     const { data } = await query.maybeSingle();
 
-    const url = (data as any)?.value || '/image.png';
+    const url = (data as any)?.value;
+    if (!url) return '';
     const resp = await fetch(url);
     const blob = await resp.blob();
     return new Promise((resolve) => {

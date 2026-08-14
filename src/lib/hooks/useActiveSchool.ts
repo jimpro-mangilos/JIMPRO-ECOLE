@@ -26,8 +26,8 @@ interface ActiveSchool {
  * - Admin/it_manager : peut overrider via switchSchool() → stocké dans localStorage
  */
 export function useActiveSchool(): ActiveSchool {
-  const { currentSchoolCode, homeSchoolId, isItManager, isAdmin } = useAuth();
-  const canSwitchSchool = isItManager() || (isAdmin() && !isItManager()); // admin = true, it_manager = true
+  const { currentSchoolCode, homeSchoolId, isItManager, isAdmin, isPromoteur } = useAuth();
+  const canSwitchSchool = isItManager() || isAdmin() || isPromoteur(); // admin, it_manager, promoteur
 
   // Récupérer l'override localStorage
   const getOverrideId = useCallback((): string | null => {
@@ -82,8 +82,8 @@ export function useActiveSchool(): ActiveSchool {
  * Retourne la liste + l'école sélectionnée.
  */
 export function useSchoolsList() {
-  const { currentSchoolId, currentSchoolCode, isItManager, isAdmin } = useAuth();
-  const canSwitchSchool = isItManager() || (isAdmin() && !isItManager());
+  const { currentSchoolId, currentSchoolCode, isItManager, isAdmin, isPromoteur } = useAuth();
+  const canSwitchSchool = isItManager() || isAdmin() || isPromoteur();
 
   // Récupérer l'override localStorage
   const getOverrideId = (): string | null => {
