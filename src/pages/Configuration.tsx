@@ -64,8 +64,23 @@ export default function Configuration() {
     const file = e.target.files?.[0]; if (!file) return;
     setLogoUploading(true);
     try {
-      const { error } = await supabase.storage.from('logos').upload(`logo.${file.name.split('.').pop()}`, file, { upsert: true, contentType: file.type });
+      const ext = file.name.split('.').pop() || 'png';
+      // Chemin unique par école : évite d'écraser le logo des autres écoles
+      const path = `logo_${currentSchoolId}_${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('logos').upload(path, file, { upsert: true, contentType: file.type });
       if (error) throw error;
+
+      // Récupérer l'URL publique du fichier uploadé
+      const { data: urlData } = supabase.storage.from('logos').getPublicUrl(path);
+      const publicUrl = urlData?.publicUrl;
+      if (!publicUrl) throw new Error('URL du logo introuvable');
+
+      // Sauvegarder l'URL dans app_settings pour cette école uniquement
+      const { error: upsertError } = await supabase
+        .from('app_settings')
+        .upsert({ ecole_id: currentSchoolId, key: 'logo_url', value: publicUrl }, { onConflict: 'ecole_id,key' });
+      if (upsertError) throw upsertError;
+
       await refreshLogo();
       showSuccess('Logo mis à jour');
     } catch (err: any) { showError('Erreur upload logo'); }
