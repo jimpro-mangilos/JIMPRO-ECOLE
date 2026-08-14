@@ -1,7 +1,8 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import QRCode from 'qrcode';
-import { sanitizePdfText, PDF_THEME, loadLogoBase64 } from './pdfTheme';
+import { sanitizePdfText, PDF_THEME, loadLogoBase64, loadSchoolName } from './pdfTheme';
+import { getSchoolInitials } from './schoolInitials';
 
 const S = sanitizePdfText;
 
@@ -68,6 +69,7 @@ function parseNomComplet(nomComplet: string | undefined) {
 export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = false) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const logoBase64 = await loadLogoBase64();
+  const schoolName = await loadSchoolName();
 
   const pageWidth = 210;
   const pageHeight = 297;
@@ -106,14 +108,14 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text('JP', margin + 9, 17, { align: 'center' });
+    doc.text(getSchoolInitials(schoolName), margin + 9, 17, { align: 'center' });
   }
 
   const textX = margin + logoW + 3;
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text(S('GOLDEN ACADEMY'), textX, 14);
+  doc.text(S(schoolName), textX, 14);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text(S('Systeme de Gestion Scolaire'), textX, 20);

@@ -16,6 +16,7 @@ import {
   sanitizePdfText,
   ReportHeaderOptions,
   loadLogoBase64,
+  loadSchoolName,
   drawVerticalBarChart,
 } from './pdfTheme';
 
@@ -120,8 +121,10 @@ function runAutoTable(doc: jsPDF, config: any, header: ReportHeaderOptions) {
 export async function generateElevesReport(eleves: Eleve[]) {
   const doc = landscape();
   const _logo = await loadLogoBase64();
+  const _schoolName = await loadSchoolName();
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
+    schoolName: _schoolName,
     title: 'Rapport des Eleves',
     subtitle: 'Liste nominative par section',
     period: `Effectif total : ${eleves.length}`,
@@ -191,8 +194,10 @@ export async function generateMinervalReport(minerval: MinervalRecord[], startDa
     ? `Du ${formatDatePDF(startDate)} au ${formatDatePDF(endDate)}`
     : 'Periode : tous les enregistrements';
   const _logo = await loadLogoBase64();
+  const _schoolName = await loadSchoolName();
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
+    schoolName: _schoolName,
     title: 'Rapport Minerval',
     subtitle: 'Suivi des paiements de scolarite',
     period,
@@ -263,8 +268,10 @@ export async function generateFinancesReport(finances: FinanceRecord[], filterIn
     ? `Du ${formatDatePDF(startDate)} au ${formatDatePDF(endDate)}`
     : 'Periode : toutes les operations';
   const _logo = await loadLogoBase64();
+  const _schoolName = await loadSchoolName();
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
+    schoolName: _schoolName,
     title: 'Rapport Financier',
     subtitle: filterInfo || 'Recettes et depenses consolidees',
     period,
@@ -423,8 +430,10 @@ export async function generateFournituresElevesReport(
     : 'Distribution des uniformes scolaires';
 
   const _logo = await loadLogoBase64();
+  const _schoolName = await loadSchoolName();
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
+    schoolName: _schoolName,
     title: 'Rapport Fournitures Eleves',
     subtitle,
   };
@@ -520,8 +529,10 @@ export async function generateFournituresElevesReport(
 export async function generateFournituresBureauReport(fournitures: FournitureBureau[]) {
   const doc = portrait();
   const _logo = await loadLogoBase64();
+  const _schoolName = await loadSchoolName();
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
+    schoolName: _schoolName,
     title: 'Rapport Fournitures Bureau',
     subtitle: 'Historique des distributions internes',
   };
@@ -575,8 +586,10 @@ export async function generateElevePaymentHistoryPDF(eleve: Eleve, paiements: Mi
   const doc = portrait();
   const nomComplet = `${eleve.nom} ${eleve.postnom} ${eleve.prenom}`.trim();
   const _logo = await loadLogoBase64();
+  const _schoolName = await loadSchoolName();
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
+    schoolName: _schoolName,
     title: 'Historique des Paiements',
     subtitle: nomComplet,
     period: `Matricule : ${eleve.matricule}`,
@@ -745,8 +758,10 @@ export async function generateRapportComptable(
     ? `Du ${formatDatePDF(startDate)} au ${formatDatePDF(endDate)}`
     : 'Periode : tous les enregistrements';
   const _logo = await loadLogoBase64();
+  const _schoolName = await loadSchoolName();
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
+    schoolName: _schoolName,
     title: 'Rapport par Comptable',
     subtitle: `Encaissements realises par ${nomComplet}`,
     period,
@@ -875,8 +890,10 @@ export async function generateRapportComparatifComptables(
     ? `Du ${formatDatePDF(startDate)} au ${formatDatePDF(endDate)}`
     : 'Periode : tous les enregistrements';
   const _logo = await loadLogoBase64();
+  const _schoolName = await loadSchoolName();
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
+    schoolName: _schoolName,
     title: 'Rapport Comparatif des Comptables',
     subtitle: 'Analyse de performance des encaisseurs',
     period,
@@ -1018,6 +1035,7 @@ interface PaiementsReportFilters {
 export async function generatePaiementsReport(paiements: PaiementReportRecord[], filters?: PaiementsReportFilters) {
   const doc = landscape();
   const _logo = await loadLogoBase64();
+  const _schoolName = await loadSchoolName();
 
   const activeFilters: string[] = [];
   if (filters?.section && filters.section !== 'tous') activeFilters.push(`Section: ${filters.section}`);
@@ -1037,6 +1055,7 @@ export async function generatePaiementsReport(paiements: PaiementReportRecord[],
 
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
+    schoolName: _schoolName,
     title: 'Rapport des Paiements',
     subtitle: 'Liste detaillee des paiements',
     period,

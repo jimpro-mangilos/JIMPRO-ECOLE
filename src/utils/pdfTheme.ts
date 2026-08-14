@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { supabase } from '../lib/supabase';
+import { getSchoolInitials } from './schoolInitials';
 
 export const PDF_THEME = {
   colors: {
@@ -83,6 +84,7 @@ export interface ReportHeaderOptions {
   period?: string;
   documentRef?: string;
   logoBase64?: string;
+  schoolName?: string;
 }
 
 let _logoCache: string | null = null;
@@ -142,6 +144,24 @@ export function invalidateLogoCache() {
   _logoCacheEcoleId = null;
 }
 
+/**
+ * Charge le nom de l'école active (pour l'en-tête des rapports/reçus).
+ */
+export async function loadSchoolName(): Promise<string> {
+  const ecoleId = await getCurrentEcoleId();
+  try {
+    if (!ecoleId) return 'GOLDEN ACADEMY';
+    const { data } = await (supabase as any)
+      .from('ecoles')
+      .select('nom')
+      .eq('id', ecoleId)
+      .maybeSingle();
+    return data?.nom || 'GOLDEN ACADEMY';
+  } catch {
+    return 'GOLDEN ACADEMY';
+  }
+}
+
 function drawRect(doc: jsPDF, x: number, y: number, w: number, h: number, color: [number, number, number]) {
   doc.setFillColor(color[0], color[1], color[2]);
   doc.rect(x, y, w, h, 'F');
@@ -157,6 +177,7 @@ export function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions) {
   const logoH = 20;
   const logoX = PDF_THEME.pageMargin;
   const logoY = (PDF_THEME.headerHeight - logoH) / 2;
+  const schoolName = options.schoolName || 'GOLDEN ACADEMY';
   if (options.logoBase64) {
     doc.addImage(options.logoBase64, 'PNG', logoX, logoY, logoW, logoH);
   } else {
@@ -164,14 +185,14 @@ export function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions) {
     doc.setTextColor(white[0], white[1], white[2]);
     doc.setFont(PDF_THEME.font, 'bold');
     doc.setFontSize(8);
-    doc.text('JP', logoX + 8, 16, { align: 'center' });
+    doc.text(getSchoolInitials(schoolName), logoX + 8, 16, { align: 'center' });
   }
 
   const textX = PDF_THEME.pageMargin + (options.logoBase64 ? logoW + 3 : 20);
   doc.setTextColor(white[0], white[1], white[2]);
   doc.setFont(PDF_THEME.font, 'bold');
   doc.setFontSize(14);
-  doc.text(sanitizePdfText('GOLDEN ACADEMY'), textX, 13);
+  doc.text(sanitizePdfText(schoolName), textX, 13);
 
   doc.setFont(PDF_THEME.font, 'normal');
   doc.setFontSize(8.5);

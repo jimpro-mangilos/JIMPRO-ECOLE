@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import QRCode from 'qrcode';
+import { getSchoolInitials } from '../utils/schoolInitials';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Données & helpers partagés — source unique pour la carte d'élève
@@ -79,7 +80,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
           <img src={logoUrl} crossOrigin="anonymous" alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'contain', background: 'rgba(255,255,255,0.1)', padding: 2 }}
             onError={() => setLogoError(true)} />
         ) : (
-          <div style={{ width: 44, height: 44, borderRadius: 8, background: 'linear-gradient(135deg, #b8860b, #d4a853)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#0f0c29' }}>GA</div>
+          <div style={{ width: 44, height: 44, borderRadius: 8, background: 'linear-gradient(135deg, #b8860b, #d4a853)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#0f0c29' }}>{getSchoolInitials(schoolName)}</div>
         )}
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 3, color: GOLD, textTransform: 'uppercase' }}>CARTE D'ÉLÈVE</div>
