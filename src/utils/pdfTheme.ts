@@ -95,16 +95,34 @@ let _logoCacheEcoleId: string | null = null;
  * sinon claim JWT (app_metadata.ecole_id).
  */
 async function getCurrentEcoleId(): Promise<string | null> {
+  // 1. Override localStorage (admin qui a basculé d'école)
   try {
     const stored = localStorage.getItem('jimpro_active_school_id');
     if (stored && stored !== 'null') return stored;
   } catch { /* localStorage indisponible */ }
+
+  // 2. Claim JWT app_metadata.ecole_id (peut être absent/stale)
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    return (session?.user?.app_metadata?.ecole_id as string | undefined) ?? null;
-  } catch {
-    return null;
-  }
+    const ecoleId = session?.user?.app_metadata?.ecole_id as string | undefined;
+    if (ecoleId) return ecoleId;
+  } catch { /* ignore */ }
+
+  // 3. Table profiles (source de vérité — même logique que AuthContext)
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (userId) {
+      const { data: profile } = await (supabase as any)
+        .from('profiles')
+        .select('ecole_id')
+        .eq('id', userId)
+        .maybeSingle();
+      if (profile?.ecole_id) return profile.ecole_id;
+    }
+  } catch { /* ignore */ }
+
+  return null;
 }
 
 export async function loadLogoBase64(): Promise<string> {
