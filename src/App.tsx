@@ -40,6 +40,7 @@ const GestionCours = lazy(() => import('./pages/GestionCours'));
 const GestionDevoirs = lazy(() => import('./pages/GestionDevoirs'));
 const PortailRecouvrement = lazy(() => import('./pages/PortailRecouvrement'));
 const CarteEtudiant = lazy(() => import('./pages/CarteEtudiant'));
+const ApercuCartes = lazy(() => import('./pages/ApercuCartes'));
 
 function LoadingFallback() {
   return (
@@ -84,6 +85,16 @@ function App() {
                 <ErrorBoundary>
                   <Suspense fallback={<LoadingFallback />}>
                     <CarteEtudiant />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/apercu-cartes"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <ApercuCartes />
                   </Suspense>
                 </ErrorBoundary>
               }

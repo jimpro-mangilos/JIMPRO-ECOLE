@@ -87,6 +87,23 @@ export default function Configuration() {
     finally { setLogoUploading(false); }
   };
 
+  const handleDeleteLogo = async () => {
+    if (!logoUrl) return;
+    if (!confirm('Supprimer le logo de cette école ?')) return;
+    setLogoUploading(true);
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .delete()
+        .eq('ecole_id', currentSchoolId)
+        .eq('key', 'logo_url');
+      if (error) throw error;
+      await refreshLogo();
+      showSuccess('Logo supprimé');
+    } catch (err: any) { showError('Erreur suppression logo'); }
+    finally { setLogoUploading(false); }
+  };
+
   // ─── Generic submit helper ─────────────────────────────────────────────────
   const handleSubmit = async (upsertFn: Function, form: any, setShow: (v: boolean) => void, resetForm: () => void, entityName: string, isEdit: boolean, extra?: any) => {
     clearMsg();
@@ -125,11 +142,16 @@ export default function Configuration() {
             ) : (
               <div className="w-32 h-32 border rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 text-sm text-center px-2">Aucun logo</div>
             )}
-            <div>
+            <div className="space-y-2">
               <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
               <button onClick={() => logoInputRef.current?.click()} disabled={logoUploading} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm">
                 {logoUploading ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Changer le logo
               </button>
+              {logoUrl && (
+                <button onClick={handleDeleteLogo} disabled={logoUploading} className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-100 disabled:opacity-50 text-sm">
+                  <Trash2 className="w-4 h-4" /> Supprimer le logo
+                </button>
+              )}
             </div>
           </div>
         </div>
