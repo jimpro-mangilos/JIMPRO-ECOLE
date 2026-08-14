@@ -20,6 +20,7 @@ import { MENU_ICON_MAP, MENU_PATH_MAP } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { BROADCAST_CONVERSATION_ID } from '../lib/hooks/useChat';
 import { useActiveSchool, useSchoolsList } from '../lib/hooks/useActiveSchool';
+import { getSchoolInitials } from '../utils/schoolInitials';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db: any = supabase;
@@ -172,11 +173,17 @@ export default function Layout({ children }: LayoutProps) {
         <div className="h-full px-3 py-4 overflow-y-auto">
           {/* Logo */}
           <div className="flex items-center justify-center mb-8 px-3 pt-2">
-            <img
-              src={logoUrl}
-              alt="JIMPRO"
-              className="w-48 object-contain drop-shadow-lg"
-            />
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="JIMPRO"
+                className="w-48 object-contain drop-shadow-lg"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">{getSchoolInitials(activeSchoolName)}</span>
+              </div>
+            )}
           </div>
 
           {/* Navigation */}

@@ -9,7 +9,7 @@ interface LogoContextType {
   refreshLogo: () => Promise<void>;
 }
 
-const DEFAULT_LOGO = '/image.png';
+const DEFAULT_LOGO = '';
 
 const LogoContext = createContext<LogoContextType>({
   logoUrl: DEFAULT_LOGO,
@@ -23,6 +23,7 @@ export function LogoProvider({ children }: { children: ReactNode }) {
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
 
   const loadBase64FromUrl = useCallback(async (url: string) => {
+    if (!url) return null;
     try {
       const resp = await fetch(url);
       const blob = await resp.blob();
@@ -45,15 +46,13 @@ export function LogoProvider({ children }: { children: ReactNode }) {
         .eq('key', 'logo_url')
         .maybeSingle();
 
-      const url = data?.value || DEFAULT_LOGO;
+      const url = data?.value || '';
       setLogoUrl(url);
       invalidateLogoCache();
-      const b64 = await loadBase64FromUrl(url);
-      setLogoBase64(b64);
+      setLogoBase64(url ? await loadBase64FromUrl(url) : null);
     } catch {
-      setLogoUrl(DEFAULT_LOGO);
-      const b64 = await loadBase64FromUrl(DEFAULT_LOGO);
-      setLogoBase64(b64);
+      setLogoUrl('');
+      setLogoBase64(null);
     }
   }, [loadBase64FromUrl, currentSchoolId]);
 

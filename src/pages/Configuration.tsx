@@ -120,7 +120,11 @@ export default function Configuration() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-lg font-bold mb-3">Logo de l'établissement</h2>
           <div className="flex items-center gap-4">
-            <img src={logoUrl} alt="Logo" className="w-32 h-32 object-contain border rounded-lg bg-gray-50" />
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="w-32 h-32 object-contain border rounded-lg bg-gray-50" />
+            ) : (
+              <div className="w-32 h-32 border rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 text-sm text-center px-2">Aucun logo</div>
+            )}
             <div>
               <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
               <button onClick={() => logoInputRef.current?.click()} disabled={logoUploading} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm">
