@@ -86,24 +86,50 @@ export interface ReportHeaderOptions {
 }
 
 let _logoCache: string | null = null;
+let _logoCacheEcoleId: string | null = null;
+
+/**
+ * Détermine l'école active hors-React : priorité override localStorage (admin),
+ * sinon claim JWT (app_metadata.ecole_id).
+ */
+async function getCurrentEcoleId(): Promise<string | null> {
+  try {
+    const stored = localStorage.getItem('jimpro_active_school_id');
+    if (stored && stored !== 'null') return stored;
+  } catch { /* localStorage indisponible */ }
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return (session?.user?.app_metadata?.ecole_id as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function loadLogoBase64(): Promise<string> {
-  if (_logoCache) return _logoCache;
+  const ecoleId = await getCurrentEcoleId();
+  if (_logoCache && _logoCacheEcoleId === ecoleId) return _logoCache;
+
   try {
     // app_settings not yet in generated Database types
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (supabase as any)
+    const query = (supabase as any)
       .from('app_settings')
       .select('value')
-      .eq('key', 'logo_url')
-      .maybeSingle();
+      .eq('key', 'logo_url');
+    if (ecoleId) query.eq('ecole_id', ecoleId);
+
+    const { data } = await query.maybeSingle();
 
     const url = (data as any)?.value || '/image.png';
     const resp = await fetch(url);
     const blob = await resp.blob();
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => { _logoCache = reader.result as string; resolve(_logoCache!); };
+      reader.onloadend = () => {
+        _logoCache = reader.result as string;
+        _logoCacheEcoleId = ecoleId;
+        resolve(_logoCache!);
+      };
       reader.readAsDataURL(blob);
     });
   } catch {
@@ -113,6 +139,7 @@ export async function loadLogoBase64(): Promise<string> {
 
 export function invalidateLogoCache() {
   _logoCache = null;
+  _logoCacheEcoleId = null;
 }
 
 function drawRect(doc: jsPDF, x: number, y: number, w: number, h: number, color: [number, number, number]) {

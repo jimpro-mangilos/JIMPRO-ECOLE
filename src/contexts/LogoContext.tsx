@@ -55,7 +55,7 @@ export function LogoProvider({ children }: { children: ReactNode }) {
       const b64 = await loadBase64FromUrl(DEFAULT_LOGO);
       setLogoBase64(b64);
     }
-  }, [loadBase64FromUrl]);
+  }, [loadBase64FromUrl, currentSchoolId]);
 
   useEffect(() => {
     refreshLogo();
