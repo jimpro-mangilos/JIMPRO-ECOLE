@@ -21,7 +21,7 @@ export interface CarteEleve {
 
 export const CARTE_W = 510;
 export const CARTE_H = 324;
-export const CARTE_QR = 138;
+export const CARTE_QR = 180; // 30 × 30 mm
 
 export function formatDateNaissance(d?: string | null): string {
   if (!d) return '—';
@@ -39,37 +39,36 @@ export async function generateQrDataUrl(eleve: CarteEleve): Promise<string> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Palette — ivoire + marine + or, avec une couleur de section (discrète mais visible)
+// Palette — ivoire + marine, avec couleurs de section vives
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const IVORY = '#fcfbf8';
 const INK = '#16233a';
 const GOLD = '#c19a3d';
-const GOLD_DARK = '#8f6f24';
-const MUTED = '#64748b';   // gris lisible pour les labels
+const MUTED = '#64748b';
 const HAIRLINE = '#e9e6df';
 
 export interface CardTheme {
-  accent: string;       // couleur de section (liseré, labels, photo)
-  accentDark: string;   // teinte foncée de la section
-  accentSoft: string;   // teinte claire (fond de la pastille)
+  accent: string;       // couleur de section vive (liseré, labels, photo, QR)
+  accentDark: string;   // teinte foncée
+  accentSoft: string;   // teinte claire (fond de pastille)
 }
 
 const THEMES: Record<string, CardTheme> = {
   MATERNELLE: {
-    accent: '#b06070',
-    accentDark: '#7d4550',
-    accentSoft: '#f6ebed',
+    accent: '#e11d48',
+    accentDark: '#9f1239',
+    accentSoft: '#ffe4e6',
   },
   PRIMAIRE: {
-    accent: '#4c8a6a',
-    accentDark: '#3d604d',
-    accentSoft: '#eaf1ec',
+    accent: '#16a34a',
+    accentDark: '#166534',
+    accentSoft: '#dcfce7',
   },
   SECONDAIRE: {
-    accent: GOLD,
-    accentDark: GOLD_DARK,
-    accentSoft: '#f4ecd8',
+    accent: '#d4a017',
+    accentDark: '#8f6f00',
+    accentSoft: '#fef3c7',
   },
 };
 
@@ -113,16 +112,16 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
   const watermark = sectionWatermark(eleve.section);
 
   const label = {
-    fontSize: 9, fontWeight: 600, color: MUTED, letterSpacing: 2, textTransform: 'uppercase' as const,
+    fontSize: 9, fontWeight: 600, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase' as const,
   };
   const labelAccent = {
-    fontSize: 9, fontWeight: 700, color: t.accentDark, letterSpacing: 2, textTransform: 'uppercase' as const,
+    fontSize: 9, fontWeight: 700, color: t.accentDark, letterSpacing: 1.5, textTransform: 'uppercase' as const,
   };
 
   return (
     <div style={{ width: CARTE_W, height: CARTE_H, position: 'relative', overflow: 'hidden', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif", background: IVORY, borderRadius: 14, color: INK, boxShadow: '0 24px 64px rgba(22,35,58,0.20)' }}>
-      {/* Liseré coloré haut (couleur de section) */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 5, background: `linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentDark})` }} />
+      {/* Liseré coloré haut (couleur de section vive) */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentDark})` }} />
 
       {/* Fine bordure intérieure */}
       <div style={{ position: 'absolute', top: 12, left: 18, right: 18, bottom: 12, borderRadius: 10, border: `1px solid ${HAIRLINE}` }} />
@@ -132,26 +131,26 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
 
       {/* ═══ Header ═══ */}
       {logoUrl && !logoError ? (
-        <img src={logoUrl} crossOrigin="anonymous" alt="" style={{ position: 'absolute', top: 20, left: 28, width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', border: `1.5px solid ${t.accent}` }}
+        <img src={logoUrl} crossOrigin="anonymous" alt="" style={{ position: 'absolute', top: 16, left: 26, width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${t.accent}` }}
           onError={() => setLogoError(true)} />
       ) : (
-        <div style={{ position: 'absolute', top: 20, left: 28, width: 42, height: 42, borderRadius: '50%', background: INK, lineHeight: '42px', textAlign: 'center', fontWeight: 700, fontSize: 18, color: GOLD }}>{getSchoolInitials(schoolName)}</div>
+        <div style={{ position: 'absolute', top: 16, left: 26, width: 48, height: 48, borderRadius: '50%', background: INK, lineHeight: '48px', textAlign: 'center', fontWeight: 700, fontSize: 20, color: GOLD }}>{getSchoolInitials(schoolName)}</div>
       )}
 
-      <div style={{ position: 'absolute', top: 20, left: 82, fontSize: 9, fontWeight: 700, letterSpacing: 3, color: t.accentDark, textTransform: 'uppercase' }}>Carte d'élève</div>
-      <div style={{ position: 'absolute', top: 35, left: 82, fontSize: 14, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: INK, maxWidth: 250, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName}</div>
+      <div style={{ position: 'absolute', top: 18, left: 86, fontSize: 10, fontWeight: 700, letterSpacing: 2.5, color: t.accentDark, textTransform: 'uppercase' }}>Carte d'élève</div>
+      <div style={{ position: 'absolute', top: 34, left: 86, fontSize: 16, fontWeight: 700, color: INK, maxWidth: 240, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName.toUpperCase()}</div>
 
-      <div style={{ position: 'absolute', top: 20, right: 28, fontSize: 10, fontWeight: 600, letterSpacing: 1.5, color: MUTED }}>{annee}</div>
-      <div style={{ position: 'absolute', top: 40, right: 28, padding: '3px 10px', borderRadius: 20, background: t.accentSoft }}>
+      <div style={{ position: 'absolute', top: 18, right: 26, fontSize: 10, fontWeight: 600, color: MUTED }}>{annee}</div>
+      <div style={{ position: 'absolute', top: 38, right: 26, padding: '3px 10px', borderRadius: 20, background: t.accentSoft }}>
         <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: t.accent, marginRight: 5, verticalAlign: 'middle' }} />
         <span style={{ display: 'inline-block', fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: t.accentDark, verticalAlign: 'middle' }}>{getSectionLabel(eleve.section)}</span>
       </div>
 
       {/* Ligne fine */}
-      <div style={{ position: 'absolute', top: 76, left: 28, right: 28, height: 1, background: `linear-gradient(90deg, ${t.accent}55, ${HAIRLINE}, ${t.accent}55)` }} />
+      <div style={{ position: 'absolute', top: 74, left: 26, right: 26, height: 1, background: `linear-gradient(90deg, ${t.accent}55, ${HAIRLINE}, ${t.accent}55)` }} />
 
       {/* ═══ Photo ═══ */}
-      <div style={{ position: 'absolute', top: 92, left: 28, width: 100, height: 128, borderRadius: 14, overflow: 'hidden', border: `2px solid ${t.accent}`, background: t.accentSoft }}>
+      <div style={{ position: 'absolute', top: 88, left: 26, width: 100, height: 128, borderRadius: 14, overflow: 'hidden', border: `2px solid ${t.accent}`, background: t.accentSoft }}>
         {eleve.photo_url && !photoError ? (
           <img src={eleve.photo_url} crossOrigin="anonymous" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onError={() => setPhotoError(true)} />
@@ -161,7 +160,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
       </div>
 
       {/* ═══ Identité ═══ */}
-      <div style={{ position: 'absolute', top: 90, left: 148, width: 205 }}>
+      <div style={{ position: 'absolute', top: 86, left: 142, width: 150 }}>
         <div style={{ ...label }}>Nom</div>
         <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, letterSpacing: -0.3, color: INK }}>{eleve.nom}</div>
         <div style={{ ...label, marginTop: 9 }}>Postnom</div>
@@ -170,17 +169,25 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
         <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, letterSpacing: -0.3, color: INK }}>{eleve.prenom}</div>
       </div>
 
-      {/* ═══ Chips : option / classe / sexe ═══ */}
-      <div style={{ position: 'absolute', top: 232, left: 148 }}>
-        {eleve.option ? (
-          <span style={{ display: 'inline-block', padding: '4px 11px', borderRadius: 8, background: '#f6f5f1', border: `1px solid ${HAIRLINE}`, marginRight: 6, fontSize: 10, fontWeight: 600, color: '#4a5568' }}>{eleve.option}</span>
-        ) : null}
-        <span style={{ display: 'inline-block', padding: '4px 11px', borderRadius: 8, background: '#f6f5f1', border: `1px solid ${HAIRLINE}`, marginRight: 6, fontSize: 10, fontWeight: 600, color: '#4a5568' }}>{eleve.classe || '—'}</span>
-        <span style={{ display: 'inline-block', padding: '4px 11px', borderRadius: 8, background: '#f6f5f1', border: `1px solid ${HAIRLINE}`, fontSize: 10, fontWeight: 600, color: '#4a5568' }}>{eleve.sexe}</span>
+      {/* ═══ Option (chip) ═══ */}
+      {eleve.option ? (
+        <div style={{ position: 'absolute', top: 232, left: 142 }}>
+          <span style={{ display: 'inline-block', padding: '4px 11px', borderRadius: 8, background: '#f6f5f1', border: `1px solid ${HAIRLINE}`, fontSize: 10, fontWeight: 600, color: '#4a5568' }}>{eleve.option}</span>
+        </div>
+      ) : null}
+
+      {/* ═══ Classe + Sexe (au-dessus du QR) ═══ */}
+      <div style={{ position: 'absolute', top: 92, left: 318, width: 78, textAlign: 'center' }}>
+        <div style={{ ...label }}>Classe</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginTop: 3, color: t.accentDark }}>{eleve.classe || '—'}</div>
+      </div>
+      <div style={{ position: 'absolute', top: 92, left: 402, width: 78, textAlign: 'center' }}>
+        <div style={{ ...label }}>Sexe</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginTop: 3, color: t.accentDark }}>{eleve.sexe}</div>
       </div>
 
       {/* ═══ Pied : matricule + naissance ═══ */}
-      <div style={{ position: 'absolute', bottom: 24, left: 28 }}>
+      <div style={{ position: 'absolute', bottom: 20, left: 26 }}>
         <div style={{ display: 'inline-block', marginRight: 40, verticalAlign: 'top' }}>
           <div style={{ ...labelAccent }}>Matricule</div>
           <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.4, marginTop: 3, color: INK }}>{eleve.matricule}</div>
@@ -191,7 +198,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
         </div>
       </div>
 
-      {/* ═══ QR Code ═══ */}
+      {/* ═══ QR Code (30 × 30 mm) ═══ */}
       <div style={{ position: 'absolute', bottom: 16, right: 16, width: CARTE_QR, height: CARTE_QR, background: '#ffffff', borderRadius: 12, padding: 8, border: `1px solid ${t.accent}66`, boxShadow: '0 6px 20px rgba(22,35,58,0.10)' }}>
         <img src={qrDataUrl} alt="" style={{ width: '100%', height: '100%' }} />
         <div style={{ position: 'absolute', top: -7, left: '50%', transform: 'translateX(-50%)', background: `linear-gradient(135deg, ${t.accentDark}, ${t.accent})`, color: '#ffffff', fontSize: 7, fontWeight: 700, letterSpacing: 1, padding: '2px 10px', borderRadius: 8 }}>SCAN</div>
