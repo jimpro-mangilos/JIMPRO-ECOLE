@@ -13,6 +13,14 @@ export interface PersonnelRecord {
   prenom: string;
   sexe: string | null;
   fonction: string;
+  etat_civil: string | null;
+  nombre_enfants: number | null;
+  niveau_etude_id: string | null;
+  piece_etude: string | null;
+  nationalite: string | null;
+  date_naissance: string | null;
+  intitule_compte: string | null;
+  num_compte: string | null;
   telephone: string | null;
   email: string | null;
   date_embauche: string | null;
@@ -25,31 +33,22 @@ export interface PersonnelRecord {
 
 export type PersonnelInput = Omit<PersonnelRecord, 'id' | 'ecole_id' | 'created_at' | 'updated_at'>;
 
-export const FONCTIONS_SUGGEREES = [
-  'Enseignant',
-  'Directeur',
-  'Directeur adjoint',
-  'Coordonnateur',
-  'Comptable',
-  'Secrétaire',
-  'Surveillant',
-  'Gardien',
-  'Bibliothécaire',
-  'Infirmier',
-  'Autre',
-];
+export const FONCTIONS_SUGGEREES = ['Enseignant', 'Directeur', 'Directeur adjoint', 'Coordonnateur', 'Comptable', 'Secrétaire', 'Surveillant', 'Gardien', 'Bibliothécaire', 'Infirmier', 'Autre'];
+export const ETATS_CIVILS = ['Célibataire', 'Marié(e)', 'Divorcé(e)', 'Veuf/Veuve'];
 
-export const STATUT_PERSONNEL_LABELS: Record<string, string> = {
-  actif: 'Actif',
-  inactif: 'Inactif',
-  suspendu: 'Suspendu',
-};
+export const STATUT_PERSONNEL_LABELS: Record<string, string> = { actif: 'Actif', inactif: 'Inactif', suspendu: 'Suspendu' };
+export const STATUT_PERSONNEL_COLORS: Record<string, string> = { actif: 'bg-green-100 text-green-700', inactif: 'bg-gray-100 text-gray-600', suspendu: 'bg-amber-100 text-amber-700' };
 
-export const STATUT_PERSONNEL_COLORS: Record<string, string> = {
-  actif: 'bg-green-100 text-green-700',
-  inactif: 'bg-gray-100 text-gray-600',
-  suspendu: 'bg-amber-100 text-amber-700',
-};
+export async function generatePersonnelMatricule(schoolId: string): Promise<string> {
+  const { data: pref } = await supabase.from('app_settings').select('value').eq('ecole_id', schoolId).eq('key', 'personnel_matricule_prefix').maybeSingle();
+  const prefix = ((pref as any)?.value || '').trim() || 'PER';
+  const d = new Date();
+  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let uid = '';
+  for (let i = 0; i < 5; i++) uid += chars[Math.floor(Math.random() * chars.length)];
+  return `${prefix}-${ymd}-${uid}`;
+}
 
 export function usePersonnel() {
   const { currentSchoolId } = useAuth();
@@ -58,11 +57,7 @@ export function usePersonnel() {
   const { data: personnel = [], isLoading: loading } = useQuery({
     queryKey: [...queryKeys.personnel.all, { schoolId: currentSchoolId }],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('personnel')
-        .select('*')
-        .eq('ecole_id', currentSchoolId)
-        .order('nom', { ascending: true });
+      const { data, error } = await supabase.from('personnel').select('*').eq('ecole_id', currentSchoolId).order('nom', { ascending: true });
       if (error) throw error;
       return (data as PersonnelRecord[]) || [];
     },
@@ -77,10 +72,7 @@ export function usePersonnel() {
       toast.success('Personnel ajouté');
       invalidate();
       return true;
-    } catch (err: any) {
-      toast.error(err?.message || 'Erreur lors de l\'ajout');
-      return false;
-    }
+    } catch (err: any) { toast.error(err?.message || "Erreur lors de l'ajout"); return false; }
   };
 
   const update = async (id: string, input: PersonnelInput): Promise<boolean> => {
@@ -90,10 +82,7 @@ export function usePersonnel() {
       toast.success('Personnel mis à jour');
       invalidate();
       return true;
-    } catch (err: any) {
-      toast.error(err?.message || 'Erreur lors de la mise à jour');
-      return false;
-    }
+    } catch (err: any) { toast.error(err?.message || 'Erreur lors de la mise à jour'); return false; }
   };
 
   const remove = async (id: string): Promise<boolean> => {
@@ -103,10 +92,7 @@ export function usePersonnel() {
       toast.success('Personnel supprimé');
       invalidate();
       return true;
-    } catch (err: any) {
-      toast.error(err?.message || 'Erreur lors de la suppression');
-      return false;
-    }
+    } catch (err: any) { toast.error(err?.message || 'Erreur lors de la suppression'); return false; }
   };
 
   return { personnel, loading, create, update, remove };

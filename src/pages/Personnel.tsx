@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
-  Plus, Search, Users, UserCog, Pencil, Trash2, X, Phone, Mail, Loader2, CalendarDays, Banknote,
+  Plus, Search, Users, UserCog, Pencil, Trash2, X, Phone, Mail, Loader2, CalendarDays, Banknote, Wand2,
 } from 'lucide-react';
 import {
   usePersonnel,
@@ -9,7 +9,11 @@ import {
   FONCTIONS_SUGGEREES,
   STATUT_PERSONNEL_LABELS,
   STATUT_PERSONNEL_COLORS,
+  generatePersonnelMatricule,
+  ETATS_CIVILS,
 } from '../lib/hooks/usePersonnel';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PersonnelForm {
   matricule: string;
@@ -18,6 +22,14 @@ interface PersonnelForm {
   prenom: string;
   sexe: string;
   fonction: string;
+  etat_civil: string;
+  nombre_enfants: string;
+  niveau_etude_id: string;
+  piece_etude: string;
+  nationalite: string;
+  date_naissance: string;
+  intitule_compte: string;
+  num_compte: string;
   telephone: string;
   email: string;
   date_embauche: string;
@@ -28,6 +40,8 @@ interface PersonnelForm {
 
 const EMPTY_FORM: PersonnelForm = {
   matricule: '', nom: '', postnom: '', prenom: '', sexe: 'M', fonction: '',
+  etat_civil: '', nombre_enfants: '', niveau_etude_id: '', piece_etude: '',
+  nationalite: '', date_naissance: '', intitule_compte: '', num_compte: '',
   telephone: '', email: '', date_embauche: '', salaire: '', adresse: '', statut: 'actif',
 };
 
@@ -52,6 +66,19 @@ export default function Personnel() {
   const [editing, setEditing] = useState<PersonnelRecord | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<PersonnelForm>(EMPTY_FORM);
+  const { currentSchoolId } = useAuth();
+  const [niveaux, setNiveaux] = useState<{ id: string; libelle: string }[]>([]);
+
+  useEffect(() => {
+    if (!currentSchoolId) return;
+    supabase.from('niveaux_etude').select('id, libelle').eq('ecole_id', currentSchoolId).order('ordre').then((res: any) => setNiveaux(res.data || []));
+  }, [currentSchoolId]);
+
+  async function genMatricule() {
+    if (!currentSchoolId) return;
+    const m = await generatePersonnelMatricule(currentSchoolId);
+    set('matricule', m);
+  }
 
   const fonctions = useMemo(() => {
     const set = new Set(personnel.map(p => p.fonction).filter(Boolean));
@@ -88,7 +115,12 @@ export default function Personnel() {
     setEditing(p);
     setForm({
       matricule: p.matricule || '', nom: p.nom, postnom: p.postnom || '', prenom: p.prenom,
-      sexe: p.sexe || 'M', fonction: p.fonction, telephone: p.telephone || '', email: p.email || '',
+      sexe: p.sexe || 'M', fonction: p.fonction,
+      etat_civil: p.etat_civil || '', nombre_enfants: p.nombre_enfants != null ? String(p.nombre_enfants) : '',
+      niveau_etude_id: p.niveau_etude_id || '', piece_etude: p.piece_etude || '',
+      nationalite: p.nationalite || '', date_naissance: p.date_naissance || '',
+      intitule_compte: p.intitule_compte || '', num_compte: p.num_compte || '',
+      telephone: p.telephone || '', email: p.email || '',
       date_embauche: p.date_embauche || '', salaire: p.salaire != null ? String(p.salaire) : '',
       adresse: p.adresse || '', statut: p.statut || 'actif',
     });
@@ -113,6 +145,14 @@ export default function Personnel() {
       prenom: form.prenom.trim(),
       sexe: form.sexe || null,
       fonction: form.fonction.trim(),
+      etat_civil: form.etat_civil || null,
+      nombre_enfants: form.nombre_enfants ? Number(form.nombre_enfants) : null,
+      niveau_etude_id: form.niveau_etude_id || null,
+      piece_etude: form.piece_etude || null,
+      nationalite: form.nationalite.trim() || null,
+      date_naissance: form.date_naissance || null,
+      intitule_compte: form.intitule_compte.trim() || null,
+      num_compte: form.num_compte.trim() || null,
       telephone: form.telephone.trim() || null,
       email: form.email.trim() || null,
       date_embauche: form.date_embauche || null,
@@ -258,7 +298,12 @@ export default function Personnel() {
             <form onSubmit={handleSubmit} className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Matricule</label>
-                <input className={inputClass} value={form.matricule} onChange={e => set('matricule', e.target.value)} placeholder="Optionnel" />
+                <div className="flex gap-2">
+                  <input className={inputClass} value={form.matricule} onChange={e => set('matricule', e.target.value)} placeholder="Auto" />
+                  <button type="button" onClick={genMatricule} className="px-3 rounded-lg bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300 whitespace-nowrap flex items-center gap-1">
+                    <Wand2 className="w-3.5 h-3.5" /> Générer
+                  </button>
+                </div>
               </div>
               <div>
                 <label className={labelClass}>Fonction *</label>
@@ -266,6 +311,44 @@ export default function Personnel() {
                 <datalist id="fonctions-list">
                   {FONCTIONS_SUGGEREES.map(f => <option key={f} value={f} />)}
                 </datalist>
+              </div>
+              <div>
+                <label className={labelClass}>État-civil</label>
+                <select className={inputClass} value={form.etat_civil} onChange={e => set('etat_civil', e.target.value)}>
+                  <option value="">—</option>
+                  {ETATS_CIVILS.map(e => <option key={e} value={e}>{e}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Nombre d'enfants</label>
+                <input type="number" min="0" className={inputClass} value={form.nombre_enfants} onChange={e => set('nombre_enfants', e.target.value)} placeholder="0" />
+              </div>
+              <div>
+                <label className={labelClass}>Niveau d'étude</label>
+                <select className={inputClass} value={form.niveau_etude_id} onChange={e => set('niveau_etude_id', e.target.value)}>
+                  <option value="">—</option>
+                  {niveaux.map(n => <option key={n.id} value={n.id}>{n.libelle}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Pièce d'étude (URL)</label>
+                <input className={inputClass} value={form.piece_etude} onChange={e => set('piece_etude', e.target.value)} placeholder="Lien du diplôme" />
+              </div>
+              <div>
+                <label className={labelClass}>Nationalité</label>
+                <input className={inputClass} value={form.nationalite} onChange={e => set('nationalite', e.target.value)} placeholder="Ex : Congolaise" />
+              </div>
+              <div>
+                <label className={labelClass}>Date de naissance</label>
+                <input type="date" className={inputClass} value={form.date_naissance} onChange={e => set('date_naissance', e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Intitulé du compte</label>
+                <input className={inputClass} value={form.intitule_compte} onChange={e => set('intitule_compte', e.target.value)} placeholder="Ex : Salaire mensuel" />
+              </div>
+              <div>
+                <label className={labelClass}>Numéro de compte</label>
+                <input className={inputClass} value={form.num_compte} onChange={e => set('num_compte', e.target.value)} placeholder="Numéro bancaire" />
               </div>
               <div>
                 <label className={labelClass}>Nom *</label>

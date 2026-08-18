@@ -5,6 +5,7 @@ import { useLogo } from '../contexts/LogoContext';
 import { invalidatePrefixCache } from '../utils/matriculeGenerator';
 import { Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Upload, RotateCcw } from 'lucide-react';
 import MenuConfigTab from '../components/MenuConfigTab';
+import PersonnelConfigTab from '../components/PersonnelConfigTab';
 import { useSections, useOptions, useClasses, useMotifsPaiement, useTypesPaiement, useAnneesScolaires } from '../lib/hooks/useReferenceData';
 import { useConfiguration } from '../lib/hooks/useConfiguration';
 
@@ -12,11 +13,11 @@ import { useConfiguration } from '../lib/hooks/useConfiguration';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const emptyForm = (extra?: Record<string, any>): any => ({ nom: '', description: '', is_active: true, ...extra });
 const libForm = (extra?: Record<string, string | boolean>) => ({ libelle: '', description: '', is_active: true, ...extra });
-type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'menu_par_role';
+type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'menu_par_role' | 'personnel';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'sections', label: 'Sections' }, { key: 'options', label: 'Options' }, { key: 'classes', label: 'Classes' },
   { key: 'motifs', label: 'Motifs' }, { key: 'types_paiement', label: 'Types Paiement' }, { key: 'annees_scolaires', label: 'Années Scolaires' },
-  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'menu_par_role', label: 'Menus' },
+  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' },
 ];
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -47,8 +48,6 @@ export default function Configuration() {
   const [showClasseForm, setShowClasseForm] = useState(false); const [editingClasse, setEditingClasse] = useState<any>(null);
   // Multi-section/option : on stocke des tableaux
   const [classeForm, setClasseForm] = useState<{ nom: string; section_ids: string[]; option_ids: string[]; niveau: string; designation: string; description: string; is_active: boolean }>({ nom: '', section_ids: [], option_ids: [], niveau: '', designation: '', description: '', is_active: true });
-  const [classFilterSections, setClassFilterSections] = useState<string[]>([]);
-  const [classFilterOptions, setClassFilterOptions] = useState<string[]>([]);
   const [showMotifForm, setShowMotifForm] = useState(false); const [editingMotif, setEditingMotif] = useState<any>(null); const [motifForm, setMotifForm] = useState(libForm());
   const [showTypePaiementForm, setShowTypePaiementForm] = useState(false); const [editingTypePaiement, setEditingTypePaiement] = useState<any>(null); const [typePaiementForm, setTypePaiementForm] = useState(libForm());
   const [showAnneeScolaireForm, setShowAnneeScolaireForm] = useState(false); const [editingAnneeScolaire, setEditingAnneeScolaire] = useState<any>(null); const [anneeScolaireForm, setAnneeScolaireForm] = useState({ annee: '', date_debut: '', date_fin: '', is_active: true });
@@ -159,6 +158,7 @@ export default function Configuration() {
 
       {/* ─── Menu Tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'menu_par_role' && <MenuConfigTab />}
+      {activeTab === 'personnel' && <PersonnelConfigTab />}
 
       {/* ─── CRUD Tabs (generic pattern) ──────────────────────────────────── */}
       {(activeTab === 'sections' || activeTab === 'options' || activeTab === 'classes' || activeTab === 'motifs' || activeTab === 'types_paiement' || activeTab === 'annees_scolaires' || activeTab === 'prefixes_matricule' || activeTab === 'types_uniforme') && (
