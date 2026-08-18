@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { CalendarDays, UserCheck, Clock, CheckCircle2, XCircle, Search } from 'lucide-react';
+import { CalendarDays, UserCheck, Clock, CheckCircle2, XCircle, Search, FileDown } from 'lucide-react';
 import { usePersonnel } from '../lib/hooks/usePersonnel';
 import { usePointage, STATUT_POINTAGE, type PointageRecord } from '../lib/hooks/usePointage';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { generatePointageReport } from '../utils/pointageReportGenerator';
 
 function today(): string {
   const d = new Date();
@@ -11,8 +14,24 @@ function today(): string {
 export default function PointagePersonnel() {
   const [date, setDate] = useState(today());
   const [search, setSearch] = useState('');
+  const { currentSchoolId } = useAuth();
   const { personnel, loading: loadingPersonnel } = usePersonnel();
   const { pointages, save } = usePointage(date);
+
+  async function exportMonthly() {
+    if (!currentSchoolId) return;
+    const [y, m] = date.split('-').map(Number);
+    const start = `${y}-${String(m).padStart(2, '0')}-01`;
+    const lastDay = new Date(y, m, 0).getDate();
+    const end = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    const { data } = await supabase
+      .from('pointages_personnel')
+      .select('*')
+      .eq('ecole_id', currentSchoolId)
+      .gte('date_pointage', start)
+      .lte('date_pointage', end);
+    await generatePointageReport({ month: m, year: y, personnel, pointages: (data as PointageRecord[]) || [] });
+  }
 
   const byPersonnel = new Map<string, PointageRecord>();
   for (const p of pointages) byPersonnel.set(p.personnel_id, p);
@@ -73,6 +92,9 @@ export default function PointagePersonnel() {
         <div className="flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-gray-400" />
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
+          <button onClick={exportMonthly} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
+            <FileDown className="w-4 h-4" /> Rapport mensuel
+          </button>
         </div>
       </div>
 
