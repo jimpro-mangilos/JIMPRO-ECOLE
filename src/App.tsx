@@ -39,6 +39,7 @@ const PortailProfesseur = lazy(() => import('./pages/PortailProfesseur'));
 const GestionCours = lazy(() => import('./pages/GestionCours'));
 const GestionDevoirs = lazy(() => import('./pages/GestionDevoirs'));
 const PortailRecouvrement = lazy(() => import('./pages/PortailRecouvrement'));
+const PortailPointage = lazy(() => import('./pages/PortailPointage'));
 const CarteEtudiant = lazy(() => import('./pages/CarteEtudiant'));
 const ApercuCartes = lazy(() => import('./pages/ApercuCartes'));
 const Personnel = lazy(() => import('./pages/Personnel'));
@@ -117,6 +118,16 @@ function App() {
                 <ErrorBoundary>
                   <Suspense fallback={<LoadingFallback />}>
                     <PortailRecouvrement />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/portail-pointage"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <PortailPointage />
                   </Suspense>
                 </ErrorBoundary>
               }
