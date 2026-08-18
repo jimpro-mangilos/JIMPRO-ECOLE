@@ -119,9 +119,23 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
   };
 
   return (
-    <div style={{ width: CARTE_W, height: CARTE_H, position: 'relative', overflow: 'hidden', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif", background: IVORY, borderRadius: 14, color: INK, boxShadow: '0 24px 64px rgba(22,35,58,0.20)' }}>
+    <div style={{ width: CARTE_W, height: CARTE_H, position: 'relative', overflow: 'hidden', fontFamily: 'Arial, Helvetica, sans-serif', background: IVORY, borderRadius: 14, color: INK, boxShadow: '0 24px 64px rgba(22,35,58,0.20)' }}>
+      {/* Vagues colorées de fond (multi-dégradé, en dessous de la photo : 40→54mm hauteur, 0→85mm largeur) */}
+      <svg style={{ position: 'absolute', bottom: 0, left: 0, width: CARTE_W, height: 126 }} viewBox="0 0 510 84" preserveAspectRatio="none">
+        <path d="M0 66 C 85 44, 170 44, 255 66 S 425 88, 510 66 L 510 84 L 0 84 Z" fill={t.accentDark} opacity={0.16} />
+        <path d="M0 52 C 85 30, 170 30, 255 52 S 425 74, 510 52 L 510 84 L 0 84 Z" fill={t.accent} opacity={0.20} />
+        <path d="M0 38 C 85 16, 170 16, 255 38 S 425 60, 510 38 L 510 84 L 0 84 Z" fill={GOLD} opacity={0.18} />
+      </svg>
+
       {/* Liseré coloré haut (couleur de section vive) */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentDark})` }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 10, background: `linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentDark})` }} />
+
+      {/* Liseré coloré bas */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 10, background: `linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentDark})` }} />
+
+      {/* Lignes décoratives de couleur (fond) */}
+      <div style={{ position: 'absolute', top: 66, left: 18, right: 18, height: 5, background: `${t.accent}55` }} />
+      <div style={{ position: 'absolute', top: 228, left: 18, right: 18, height: 5, background: `${t.accent}44` }} />
 
       {/* Fine bordure intérieure */}
       <div style={{ position: 'absolute', top: 12, left: 18, right: 18, bottom: 12, borderRadius: 10, border: `1px solid ${HAIRLINE}` }} />
@@ -138,7 +152,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
       )}
 
       <div style={{ position: 'absolute', top: 18, left: 86, fontSize: 10, fontWeight: 700, letterSpacing: 2.5, color: t.accentDark, textTransform: 'uppercase' }}>Carte d'élève</div>
-      <div style={{ position: 'absolute', top: 34, left: 86, fontSize: 16, fontWeight: 700, color: INK, maxWidth: 240, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName.toUpperCase()}</div>
+      <div style={{ position: 'absolute', top: 34, left: 86, fontSize: 16, fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>{schoolName.toUpperCase()}</div>
 
       <div style={{ position: 'absolute', top: 18, right: 26, fontSize: 10, fontWeight: 600, color: MUTED }}>{annee}</div>
       <div style={{ position: 'absolute', top: 38, right: 26, padding: '3px 10px', borderRadius: 20, background: t.accentSoft }}>
@@ -150,12 +164,12 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
       <div style={{ position: 'absolute', top: 74, left: 26, right: 26, height: 1, background: `linear-gradient(90deg, ${t.accent}55, ${HAIRLINE}, ${t.accent}55)` }} />
 
       {/* ═══ Photo ═══ */}
-      <div style={{ position: 'absolute', top: 88, left: 26, width: 100, height: 128, borderRadius: 14, overflow: 'hidden', border: `2px solid ${t.accent}`, background: t.accentSoft }}>
+      <div style={{ position: 'absolute', top: 88, left: 26, width: 100, height: 134, borderRadius: 14, overflow: 'hidden', border: `2px solid ${t.accent}`, background: t.accentSoft }}>
         {eleve.photo_url && !photoError ? (
           <img src={eleve.photo_url} crossOrigin="anonymous" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onError={() => setPhotoError(true)} />
         ) : (
-          <div style={{ width: '100%', height: '100%', lineHeight: '124px', textAlign: 'center', fontSize: 40, fontWeight: 700, color: t.accentDark, opacity: 0.55 }}>{initials}</div>
+          <div style={{ width: '100%', height: '100%', lineHeight: '130px', textAlign: 'center', fontSize: 40, fontWeight: 700, color: t.accentDark, opacity: 0.55 }}>{initials}</div>
         )}
       </div>
 
@@ -171,17 +185,17 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
 
       {/* ═══ Option (chip) ═══ */}
       {eleve.option ? (
-        <div style={{ position: 'absolute', top: 232, left: 142 }}>
+        <div style={{ position: 'absolute', top: 236, left: 142 }}>
           <span style={{ display: 'inline-block', padding: '4px 11px', borderRadius: 8, background: '#f6f5f1', border: `1px solid ${HAIRLINE}`, fontSize: 10, fontWeight: 600, color: '#4a5568' }}>{eleve.option}</span>
         </div>
       ) : null}
 
       {/* ═══ Classe + Sexe (au-dessus du QR) ═══ */}
-      <div style={{ position: 'absolute', top: 92, left: 318, width: 78, textAlign: 'center' }}>
+      <div style={{ position: 'absolute', top: 82, left: 318, width: 78, textAlign: 'center' }}>
         <div style={{ ...label }}>Classe</div>
         <div style={{ fontSize: 14, fontWeight: 700, marginTop: 3, color: t.accentDark }}>{eleve.classe || '—'}</div>
       </div>
-      <div style={{ position: 'absolute', top: 92, left: 402, width: 78, textAlign: 'center' }}>
+      <div style={{ position: 'absolute', top: 82, left: 402, width: 78, textAlign: 'center' }}>
         <div style={{ ...label }}>Sexe</div>
         <div style={{ fontSize: 14, fontWeight: 700, marginTop: 3, color: t.accentDark }}>{eleve.sexe}</div>
       </div>
@@ -198,10 +212,12 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
         </div>
       </div>
 
-      {/* ═══ QR Code (30 × 30 mm) ═══ */}
-      <div style={{ position: 'absolute', bottom: 16, right: 16, width: CARTE_QR, height: CARTE_QR, background: '#ffffff', borderRadius: 12, padding: 8, border: `1px solid ${t.accent}66`, boxShadow: '0 6px 20px rgba(22,35,58,0.10)' }}>
-        <img src={qrDataUrl} alt="" style={{ width: '100%', height: '100%' }} />
-        <div style={{ position: 'absolute', top: -7, left: '50%', transform: 'translateX(-50%)', background: `linear-gradient(135deg, ${t.accentDark}, ${t.accent})`, color: '#ffffff', fontSize: 7, fontWeight: 700, letterSpacing: 1, padding: '2px 10px', borderRadius: 8 }}>SCAN</div>
+      {/* ═══ QR Code (30 × 30 mm) — anneau dégradé 7 couleurs vives ═══ */}
+      <div style={{ position: 'absolute', bottom: 8, right: 8, width: CARTE_QR + 12, height: CARTE_QR + 12, borderRadius: 16, background: 'linear-gradient(135deg, #ef4444, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6)', boxShadow: '0 6px 20px rgba(22,35,58,0.12)' }}>
+        <div style={{ position: 'absolute', top: 6, left: 6, right: 6, bottom: 6, background: '#ffffff', borderRadius: 12, padding: 8 }}>
+          <img src={qrDataUrl} alt="" style={{ width: '100%', height: '100%' }} />
+        </div>
+        <div style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', background: `linear-gradient(135deg, ${t.accentDark}, ${t.accent})`, color: '#ffffff', fontSize: 7, fontWeight: 700, letterSpacing: 1, padding: '2px 10px', borderRadius: 8 }}>SCAN</div>
       </div>
     </div>
   );
