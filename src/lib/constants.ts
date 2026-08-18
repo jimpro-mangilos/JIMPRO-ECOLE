@@ -12,6 +12,7 @@ import {
   Archive,
   MessageCircle,
   BookOpen,
+  UserCog,
 } from 'lucide-react';
 
 export const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -30,6 +31,7 @@ export const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: str
   'portail-professeur': BookOpen,
   'gestion-cours': BookOpen,
   'gestion-devoirs': FileText,
+  'personnel': UserCog,
 };
 
 export const MENU_PATH_MAP: Record<string, string> = {
@@ -48,6 +50,7 @@ export const MENU_PATH_MAP: Record<string, string> = {
   'portail-professeur': '/portail-professeur',
   'gestion-cours': '/gestion-cours',
   'gestion-devoirs': '/gestion-devoirs',
+  'personnel': '/personnel',
 };
 
 export const QUICK_ACCESS_COLORS: Record<string, { bg: string; hover: string; icon: string; border: string }> = {

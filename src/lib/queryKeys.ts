@@ -53,4 +53,7 @@ export const queryKeys = {
   users: {
     all: ['profiles'] as const,
   },
+  personnel: {
+    all: ['personnel'] as const,
+  },
 } as const;

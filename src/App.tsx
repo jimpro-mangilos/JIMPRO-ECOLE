@@ -41,6 +41,7 @@ const GestionDevoirs = lazy(() => import('./pages/GestionDevoirs'));
 const PortailRecouvrement = lazy(() => import('./pages/PortailRecouvrement'));
 const CarteEtudiant = lazy(() => import('./pages/CarteEtudiant'));
 const ApercuCartes = lazy(() => import('./pages/ApercuCartes'));
+const Personnel = lazy(() => import('./pages/Personnel'));
 
 function LoadingFallback() {
   return (
@@ -154,6 +155,17 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <LazyPage><Eleves /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/personnel"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><Personnel /></LazyPage>
                   </Layout>
                 </ProtectedRoute>
               }
