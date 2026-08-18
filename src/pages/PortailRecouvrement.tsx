@@ -100,8 +100,23 @@ export default function PortailRecouvrement() {
     setResultat({ type: 'loading' });
 
     try {
-      // Find student (scoped by school)
-      const { data: eleve } = await supabase.from('eleves').select('*').eq('ecole_id', schoolId).eq('matricule', matricule).maybeSingle();
+      // Find student — insensible à la casse, scoped par école (avec repli sans école)
+      const matriculeTrim = matricule.trim();
+      let { data: eleve } = await supabase
+        .from('eleves')
+        .select('*')
+        .eq('ecole_id', schoolId)
+        .ilike('matricule', matriculeTrim)
+        .maybeSingle();
+      if (!eleve) {
+        // Repli : matricules globalement uniques → recherche sans filtre école
+        const { data: fallback } = await supabase
+          .from('eleves')
+          .select('*')
+          .ilike('matricule', matriculeTrim)
+          .maybeSingle();
+        eleve = fallback;
+      }
       if (!eleve) { setResultat({ type: 'introuvable' }); return; }
 
       const info: EleveInfo = {
