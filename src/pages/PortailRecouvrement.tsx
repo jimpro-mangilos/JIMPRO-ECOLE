@@ -9,6 +9,12 @@ const MOIS = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Févr
 const CALENDRIER = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const _idxMoisCourant = MOIS.indexOf(CALENDRIER[new Date().getMonth()]);
 const currentMonthIdx = _idxMoisCourant >= 0 ? _idxMoisCourant : MOIS.length - 1; // Juillet par défaut hors période scolaire (ex : août)
+const MOIS_DEBUT_ANNEE = ['Septembre', 'Octobre', 'Novembre', 'Décembre'];
+const anneeCourante = new Date().getFullYear();
+const ANNEES = Array.from({ length: 8 }, (_, i) => anneeCourante - 1 + i); // 2025 → 2032
+function anneeScolaireDepuis(mois: string, annee: number): string {
+  return MOIS_DEBUT_ANNEE.includes(mois) ? `${annee}-${annee + 1}` : `${annee - 1}-${annee}`;
+}
 
 interface EleveInfo {
   matricule: string;
@@ -40,10 +46,9 @@ export default function PortailRecouvrement() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const [month, setMonth] = useState(currentMonthIdx);
+  const [year, setYear] = useState(anneeCourante);
   const [motifId, setMotifId] = useState<string>('');
-  const [anneeScolaire, setAnneeScolaire] = useState('');
   const [motifs, setMotifs] = useState<{ id: string; libelle: string }[]>([]);
-  const [annees, setAnnees] = useState<{ id: string; annee: string }[]>([]);
   const [resultat, setResultat] = useState<Resultat>(null);
   const [loading, setLoading] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -56,9 +61,6 @@ export default function PortailRecouvrement() {
     if (!schoolId) return;
     supabase.from('motifs_paiement').select('id, libelle').eq('ecole_id', schoolId).eq('is_active', true).order('ordre').then((r: any) => {
       if (r.data) setMotifs(r.data);
-    });
-    supabase.from('annees_scolaires').select('id, annee').eq('ecole_id', schoolId).eq('is_active', true).order('ordre').then((r: any) => {
-      if (r.data) setAnnees(r.data);
     });
   }, [schoolId]);
 
@@ -135,8 +137,8 @@ export default function PortailRecouvrement() {
         .eq('mois_minerval', moisActuel)
         .eq('statut', 'encaisse')
         .order('created_at', { ascending: false });
+      query = query.eq('annee_scolaire', anneeScolaireDepuis(moisActuel, year));
       if (motifId) query = query.eq('motif_id', motifId);
-      if (anneeScolaire) query = query.eq('annee_scolaire', anneeScolaire);
       const { data: paiement } = await query.maybeSingle();
 
       if (paiement) {
@@ -170,14 +172,18 @@ export default function PortailRecouvrement() {
 
         {/* Filters */}
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-4 space-y-3">
-          {/* Month */}
+          {/* Mois + Année (séparés) */}
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-white/50" />
             <select value={month} onChange={e => { setMonth(Number(e.target.value)); setResultat(null); }}
               className="flex-1 bg-transparent text-white text-sm font-medium outline-none cursor-pointer">
               {MOIS.map((m, i) => (
-                <option key={m} value={i} className="bg-slate-800 text-white">{m} {new Date().getFullYear()}</option>
+                <option key={m} value={i} className="bg-slate-800 text-white">{m}</option>
               ))}
+            </select>
+            <select value={year} onChange={e => { setYear(Number(e.target.value)); setResultat(null); }}
+              className="w-24 bg-transparent text-white text-sm font-medium outline-none cursor-pointer">
+              {ANNEES.map(y => (<option key={y} value={y} className="bg-slate-800 text-white">{y}</option>))}
             </select>
           </div>
           {/* Motif */}
@@ -187,15 +193,6 @@ export default function PortailRecouvrement() {
               className="flex-1 bg-transparent text-white text-sm outline-none cursor-pointer">
               <option value="" className="bg-slate-800">Tous les motifs</option>
               {motifs.map(m => (<option key={m.id} value={m.id} className="bg-slate-800 text-white">{m.libelle}</option>))}
-            </select>
-          </div>
-          {/* Année */}
-          <div className="flex items-center gap-2">
-            <span className="text-white/40 text-xs">Année</span>
-            <select value={anneeScolaire} onChange={e => { setAnneeScolaire(e.target.value); setResultat(null); }}
-              className="flex-1 bg-transparent text-white text-sm outline-none cursor-pointer">
-              <option value="" className="bg-slate-800">Toutes les années</option>
-              {annees.map(a => (<option key={a.id} value={a.annee} className="bg-slate-800 text-white">{a.annee}</option>))}
             </select>
           </div>
         </div>
@@ -255,7 +252,7 @@ export default function PortailRecouvrement() {
               <div className="bg-emerald-500/20 border border-emerald-400/30 rounded-2xl p-6 text-center animate-in">
                 <CheckCircle className="w-16 h-16 text-emerald-400 mx-auto mb-3" />
                 <h2 className="text-2xl font-bold text-emerald-300 mb-1">EN ORDRE</h2>
-                <p className="text-emerald-200/80 text-sm">Paiement confirmé pour {moisActuel}</p>
+                <p className="text-emerald-200/80 text-sm">Paiement confirmé pour {moisActuel} {year}</p>
               </div>
             )}
 
@@ -263,7 +260,7 @@ export default function PortailRecouvrement() {
               <div className="bg-red-500/20 border border-red-400/30 rounded-2xl p-6 text-center animate-in">
                 <XCircle className="w-16 h-16 text-red-400 mx-auto mb-3" />
                 <h2 className="text-2xl font-bold text-red-300 mb-1">PAS EN ORDRE</h2>
-                <p className="text-red-200/80 text-sm">Aucun paiement trouvé pour {moisActuel}</p>
+                <p className="text-red-200/80 text-sm">Aucun paiement trouvé pour {moisActuel} {year}</p>
               </div>
             )}
 
@@ -302,7 +299,7 @@ export default function PortailRecouvrement() {
 
                 {resultat.type === 'pas_en_ordre' && (
                   <p className="text-white/50 text-sm text-center py-2">
-                    Cet élève n'a pas encore effectué son paiement pour le mois de <strong className="text-white">{moisActuel}</strong>.
+                    Cet élève n'a pas encore effectué son paiement pour le mois de <strong className="text-white">{moisActuel} {year}</strong>.
                   </p>
                 )}
               </div>
