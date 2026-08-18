@@ -4,8 +4,11 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 
-const MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-const currentMonthIdx = new Date().getMonth();
+// Mois scolaires (conformes au calendrier des paiements : Septembre → Juillet)
+const MOIS = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'];
+const CALENDRIER = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+const _idxMoisCourant = MOIS.indexOf(CALENDRIER[new Date().getMonth()]);
+const currentMonthIdx = _idxMoisCourant >= 0 ? _idxMoisCourant : MOIS.length - 1; // Juillet par défaut hors période scolaire (ex : août)
 
 interface EleveInfo {
   matricule: string;
