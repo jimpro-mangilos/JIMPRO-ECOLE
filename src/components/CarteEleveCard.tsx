@@ -111,6 +111,15 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
 
   const watermark = sectionWatermark(eleve.section);
 
+  // Vagues en image SVG (data URL) — rendu fiable par html2canvas (les <path> inline ne le sont pas)
+  const waveDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="510" height="84" viewBox="0 0 510 84" preserveAspectRatio="none">` +
+    `<path d="M0 66 C 85 44, 170 44, 255 66 S 425 88, 510 66 L 510 84 L 0 84 Z" fill="${t.accentDark}" opacity="0.30"/>` +
+    `<path d="M0 52 C 85 30, 170 30, 255 52 S 425 74, 510 52 L 510 84 L 0 84 Z" fill="${t.accent}" opacity="0.35"/>` +
+    `<path d="M0 38 C 85 16, 170 16, 255 38 S 425 60, 510 38 L 510 84 L 0 84 Z" fill="${GOLD}" opacity="0.32"/>` +
+    `</svg>`
+  )}`;
+
   const label = {
     fontSize: 9, fontWeight: 600, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase' as const,
   };
@@ -121,11 +130,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
   return (
     <div style={{ width: CARTE_W, height: CARTE_H, position: 'relative', overflow: 'hidden', fontFamily: 'Arial, Helvetica, sans-serif', background: IVORY, borderRadius: 14, color: INK, boxShadow: '0 24px 64px rgba(22,35,58,0.20)' }}>
       {/* Vagues colorées de fond (multi-dégradé, en dessous de la photo : 40→54mm hauteur, 0→85mm largeur) */}
-      <svg style={{ position: 'absolute', bottom: 0, left: 0, width: CARTE_W, height: 126 }} viewBox="0 0 510 84" preserveAspectRatio="none">
-        <path d="M0 66 C 85 44, 170 44, 255 66 S 425 88, 510 66 L 510 84 L 0 84 Z" fill={t.accentDark} opacity={0.16} />
-        <path d="M0 52 C 85 30, 170 30, 255 52 S 425 74, 510 52 L 510 84 L 0 84 Z" fill={t.accent} opacity={0.20} />
-        <path d="M0 38 C 85 16, 170 16, 255 38 S 425 60, 510 38 L 510 84 L 0 84 Z" fill={GOLD} opacity={0.18} />
-      </svg>
+      <img src={waveDataUrl} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: CARTE_W, height: 126 }} />
 
       {/* Liseré coloré haut (couleur de section vive) */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 10, background: `linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentDark})` }} />
