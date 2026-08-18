@@ -41,7 +41,7 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 py-8 px-4 text-white text-center">
-          <img src={logoUrl} alt="JIMPRO" className="w-56 mx-auto drop-shadow-xl" />
+          <img src={logoUrl} alt="JIMPRO" className="w-32 h-32 mx-auto drop-shadow-xl rounded-full object-cover" />
           <p className="text-blue-100 mt-2 text-sm tracking-wide">Système de Gestion Scolaire</p>
         </div>
 

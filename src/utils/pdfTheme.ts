@@ -186,28 +186,45 @@ function drawRect(doc: jsPDF, x: number, y: number, w: number, h: number, color:
   doc.rect(x, y, w, h, 'F');
 }
 
+export function addRoundedImage(
+  doc: jsPDF,
+  img: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  radius = 3,
+  format = 'PNG',
+) {
+  doc.saveGraphicsState();
+  doc.roundedRect(x, y, w, h, radius, radius, null);
+  doc.clip();
+  doc.addImage(img, format, x, y, w, h);
+  doc.restoreGraphicsState();
+}
+
 export function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const { primary, white, accent, slate, muted } = PDF_THEME.colors;
 
   drawRect(doc, 0, 0, pageWidth, PDF_THEME.headerHeight, primary);
 
-  const logoW = 30;
-  const logoH = 20;
+  const logoSize = 18; // carré → cercle (rayon = logoSize / 2)
   const logoX = PDF_THEME.pageMargin;
-  const logoY = (PDF_THEME.headerHeight - logoH) / 2;
+  const logoY = (PDF_THEME.headerHeight - logoSize) / 2;
   const schoolName = options.schoolName || 'GOLDEN ACADEMY';
   if (options.logoBase64) {
-    doc.addImage(options.logoBase64, 'PNG', logoX, logoY, logoW, logoH);
+    addRoundedImage(doc, options.logoBase64, logoX, logoY, logoSize, logoSize, logoSize / 2);
   } else {
-    drawRect(doc, logoX, 6, 16, 16, accent);
+    doc.setFillColor(accent[0], accent[1], accent[2]);
+    doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 'F');
     doc.setTextColor(white[0], white[1], white[2]);
     doc.setFont(PDF_THEME.font, 'bold');
     doc.setFontSize(8);
-    doc.text(getSchoolInitials(schoolName), logoX + 8, 16, { align: 'center' });
+    doc.text(getSchoolInitials(schoolName), logoX + logoSize / 2, logoY + logoSize / 2 + 2, { align: 'center' });
   }
 
-  const textX = PDF_THEME.pageMargin + (options.logoBase64 ? logoW + 3 : 20);
+  const textX = PDF_THEME.pageMargin + logoSize + 3;
   doc.setTextColor(white[0], white[1], white[2]);
   doc.setFont(PDF_THEME.font, 'bold');
   doc.setFontSize(14);

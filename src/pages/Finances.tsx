@@ -50,7 +50,7 @@ export default function Finances() {
   const groupTotal = (list: Transaction[]) => list.filter(t => t.type_operation === 'recette').reduce((s, t) => s + t.montant_chiffre, 0) - list.filter(t => t.type_operation === 'dépense').reduce((s, t) => s + t.montant_chiffre, 0);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
-  const handleCreate = async (e: React.FormEvent) => { e.preventDefault(); if (await createTransaction(formData)) { setShowModal(false); setFormData({ montant_chiffre: 0, montant_lettre: '', beneficiaire: '', libelle: '', telephone: '', type_operation: 'recette' }); } };
+  const handleCreate = async (e: React.FormEvent) => { e.preventDefault(); if (await createTransaction(formData)) { setShowModal(false); setActiveTab('recette'); setFormData({ montant_chiffre: 0, montant_lettre: '', beneficiaire: '', libelle: '', telephone: '', type_operation: 'recette' }); } };
   const handleEditSubmit = async (e: React.FormEvent) => { e.preventDefault(); if (!editModal.transaction) return; setEditModal(p => ({ ...p, loading: true })); if (await editTransaction(editModal.transaction.id, editFormData)) setEditModal({ open: false, transaction: null, loading: false }); else setEditModal(p => ({ ...p, loading: false })); };
   const openEditModal = (t: Transaction) => { setEditFormData({ montant_chiffre: t.montant_chiffre, montant_lettre: t.montant_lettre || '', beneficiaire: t.beneficiaire, libelle: t.libelle, telephone: t.telephone || '', type_operation: t.type_operation, date_transaction: t.date_transaction ? t.date_transaction.split('T')[0] : '', statut: t.statut || 'en_attente' }); setEditModal({ open: true, transaction: t, loading: false }); };
   const handleMontantBlur = () => { if (formData.montant_chiffre && !formData.montant_lettre) setFormData(p => ({ ...p, montant_lettre: montantEnLettres(p.montant_chiffre) })); };
@@ -61,7 +61,7 @@ export default function Finances() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Gestion Financière</h1>
-        {canCreer() && <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-md"><Plus className="w-5 h-5" /> Nouvelle Transaction</button>}
+        {canCreer() && <button onClick={() => { setActiveTab('recette'); setFormData({ montant_chiffre: 0, montant_lettre: '', beneficiaire: '', libelle: '', telephone: '', type_operation: 'recette' }); setShowModal(true); }} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-md"><Plus className="w-5 h-5" /> Nouvelle Transaction</button>}
       </div>
 
       {/* View Mode Tabs */}

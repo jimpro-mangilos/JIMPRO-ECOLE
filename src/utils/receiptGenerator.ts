@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import QRCode from 'qrcode';
-import { sanitizePdfText, PDF_THEME, loadLogoBase64, loadSchoolName } from './pdfTheme';
+import { sanitizePdfText, PDF_THEME, loadLogoBase64, loadSchoolName, addRoundedImage } from './pdfTheme';
 import { getSchoolInitials } from './schoolInitials';
 
 const S = sanitizePdfText;
@@ -98,20 +98,19 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   doc.setFillColor(primary[0], primary[1], primary[2]);
   doc.rect(0, 0, pageWidth, 30, 'F');
 
-  const logoW = 30;
-  const logoH = 20;
+  const logoSize = 18;
   if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', margin, 5, logoW, logoH);
+    addRoundedImage(doc, logoBase64, margin, 6, logoSize, logoSize, logoSize / 2);
   } else {
     doc.setFillColor(accent[0], accent[1], accent[2]);
-    doc.rect(margin, 6, 18, 18, 'F');
+    doc.circle(margin + logoSize / 2, 15, logoSize / 2, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text(getSchoolInitials(schoolName), margin + 9, 17, { align: 'center' });
+    doc.text(getSchoolInitials(schoolName), margin + logoSize / 2, 17, { align: 'center' });
   }
 
-  const textX = margin + logoW + 3;
+  const textX = margin + logoSize + 3;
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);

@@ -138,7 +138,7 @@ export default function Configuration() {
           <h2 className="text-lg font-bold mb-3">Logo de l'établissement</h2>
           <div className="flex items-center gap-4">
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="w-32 h-32 object-contain border rounded-lg bg-gray-50" />
+              <img src={logoUrl} alt="Logo" className="w-32 h-32 object-cover border rounded-full bg-gray-50" />
             ) : (
               <div className="w-32 h-32 border rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 text-sm text-center px-2">Aucun logo</div>
             )}

@@ -177,10 +177,10 @@ export default function Layout({ children }: LayoutProps) {
               <img
                 src={logoUrl}
                 alt="JIMPRO"
-                className="w-48 object-contain drop-shadow-lg"
+                className="w-28 h-28 object-cover rounded-full drop-shadow-lg"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
                 <span className="text-2xl font-bold text-white">{getSchoolInitials(activeSchoolName)}</span>
               </div>
             )}
