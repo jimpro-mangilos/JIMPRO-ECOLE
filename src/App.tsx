@@ -42,6 +42,7 @@ const PortailRecouvrement = lazy(() => import('./pages/PortailRecouvrement'));
 const CarteEtudiant = lazy(() => import('./pages/CarteEtudiant'));
 const ApercuCartes = lazy(() => import('./pages/ApercuCartes'));
 const Personnel = lazy(() => import('./pages/Personnel'));
+const PointagePersonnel = lazy(() => import('./pages/PointagePersonnel'));
 
 function LoadingFallback() {
   return (
@@ -166,6 +167,17 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <LazyPage><Personnel /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/pointage"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><PointagePersonnel /></LazyPage>
                   </Layout>
                 </ProtectedRoute>
               }

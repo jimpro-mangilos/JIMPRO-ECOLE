@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
-  Plus, Search, Users, UserCog, Pencil, Trash2, X, Phone, Mail, Loader2, CalendarDays, Banknote, Wand2,
+  Plus, Search, Users, UserCog, Pencil, Trash2, X, Phone, Mail, Loader2, CalendarDays, Banknote, Wand2, CreditCard,
 } from 'lucide-react';
 import {
   usePersonnel,
@@ -14,6 +14,7 @@ import {
 } from '../lib/hooks/usePersonnel';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { generateCarteService } from '../utils/carteServiceGenerator';
 
 interface PersonnelForm {
   matricule: string;
@@ -26,6 +27,7 @@ interface PersonnelForm {
   nombre_enfants: string;
   niveau_etude_id: string;
   piece_etude: string;
+  photo_url: string;
   nationalite: string;
   date_naissance: string;
   intitule_compte: string;
@@ -40,7 +42,7 @@ interface PersonnelForm {
 
 const EMPTY_FORM: PersonnelForm = {
   matricule: '', nom: '', postnom: '', prenom: '', sexe: 'M', fonction: '',
-  etat_civil: '', nombre_enfants: '', niveau_etude_id: '', piece_etude: '',
+  etat_civil: '', nombre_enfants: '', niveau_etude_id: '', piece_etude: '', photo_url: '',
   nationalite: '', date_naissance: '', intitule_compte: '', num_compte: '',
   telephone: '', email: '', date_embauche: '', salaire: '', adresse: '', statut: 'actif',
 };
@@ -80,6 +82,36 @@ export default function Personnel() {
     set('matricule', m);
   }
 
+  async function uploadFile(file: File, folder: string): Promise<string | null> {
+    const ext = file.name.split('.').pop() || 'bin';
+    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from('personnel-docs').upload(path, file);
+    if (error) { alert('Erreur upload : ' + error.message); return null; }
+    return supabase.storage.from('personnel-docs').getPublicUrl(path).data.publicUrl;
+  }
+
+  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const url = await uploadFile(f, 'photos');
+    if (url) set('photo_url', url);
+  }
+
+  async function onPieceEtude(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const url = await uploadFile(f, 'docs');
+    if (url) set('piece_etude', url);
+  }
+
+  async function printCarte(p: PersonnelRecord) {
+    try {
+      await generateCarteService(p);
+    } catch {
+      alert('Erreur lors de la génération de la carte de service.');
+    }
+  }
+
   const fonctions = useMemo(() => {
     const set = new Set(personnel.map(p => p.fonction).filter(Boolean));
     return Array.from(set).sort();
@@ -117,7 +149,7 @@ export default function Personnel() {
       matricule: p.matricule || '', nom: p.nom, postnom: p.postnom || '', prenom: p.prenom,
       sexe: p.sexe || 'M', fonction: p.fonction,
       etat_civil: p.etat_civil || '', nombre_enfants: p.nombre_enfants != null ? String(p.nombre_enfants) : '',
-      niveau_etude_id: p.niveau_etude_id || '', piece_etude: p.piece_etude || '',
+      niveau_etude_id: p.niveau_etude_id || '', piece_etude: p.piece_etude || '', photo_url: p.photo_url || '',
       nationalite: p.nationalite || '', date_naissance: p.date_naissance || '',
       intitule_compte: p.intitule_compte || '', num_compte: p.num_compte || '',
       telephone: p.telephone || '', email: p.email || '',
@@ -149,6 +181,7 @@ export default function Personnel() {
       nombre_enfants: form.nombre_enfants ? Number(form.nombre_enfants) : null,
       niveau_etude_id: form.niveau_etude_id || null,
       piece_etude: form.piece_etude || null,
+      photo_url: form.photo_url || null,
       nationalite: form.nationalite.trim() || null,
       date_naissance: form.date_naissance || null,
       intitule_compte: form.intitule_compte.trim() || null,
@@ -276,6 +309,7 @@ export default function Personnel() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button onClick={() => printCarte(p)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Carte de service"><CreditCard className="w-4 h-4" /></button>
                       <button onClick={() => openEdit(p)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Modifier"><Pencil className="w-4 h-4" /></button>
                       <button onClick={() => handleDelete(p)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Supprimer"><Trash2 className="w-4 h-4" /></button>
                     </td>
@@ -331,8 +365,18 @@ export default function Personnel() {
                 </select>
               </div>
               <div>
-                <label className={labelClass}>Pièce d'étude (URL)</label>
-                <input className={inputClass} value={form.piece_etude} onChange={e => set('piece_etude', e.target.value)} placeholder="Lien du diplôme" />
+                <label className={labelClass}>Photo</label>
+                <div className="flex items-center gap-2">
+                  <input type="file" accept="image/*" onChange={onPhoto} className="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:text-xs hover:file:bg-blue-100" />
+                  {form.photo_url && <a href={form.photo_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline whitespace-nowrap">Voir</a>}
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Pièce d'étude (document)</label>
+                <div className="flex items-center gap-2">
+                  <input type="file" onChange={onPieceEtude} className="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:text-xs hover:file:bg-blue-100" />
+                  {form.piece_etude && <a href={form.piece_etude} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline whitespace-nowrap">Voir</a>}
+                </div>
               </div>
               <div>
                 <label className={labelClass}>Nationalité</label>

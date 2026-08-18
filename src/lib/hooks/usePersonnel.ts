@@ -17,6 +17,7 @@ export interface PersonnelRecord {
   nombre_enfants: number | null;
   niveau_etude_id: string | null;
   piece_etude: string | null;
+  photo_url: string | null;
   nationalite: string | null;
   date_naissance: string | null;
   intitule_compte: string | null;

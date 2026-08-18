@@ -13,6 +13,7 @@ import {
   MessageCircle,
   BookOpen,
   UserCog,
+  UserCheck,
 } from 'lucide-react';
 
 export const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -32,6 +33,7 @@ export const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: str
   'gestion-cours': BookOpen,
   'gestion-devoirs': FileText,
   'personnel': UserCog,
+  'pointage': UserCheck,
 };
 
 export const MENU_PATH_MAP: Record<string, string> = {
@@ -51,6 +53,7 @@ export const MENU_PATH_MAP: Record<string, string> = {
   'gestion-cours': '/gestion-cours',
   'gestion-devoirs': '/gestion-devoirs',
   'personnel': '/personnel',
+  'pointage': '/pointage',
 };
 
 export const QUICK_ACCESS_COLORS: Record<string, { bg: string; hover: string; icon: string; border: string }> = {
