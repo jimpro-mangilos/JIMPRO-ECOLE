@@ -62,7 +62,7 @@ export async function renderCarteEleveToCanvas(
       scale,
       useCORS: true,
       allowTaint: true,
-      backgroundColor: '#ffffff',
+      backgroundColor: '#fcfbf8',
     });
     return canvas;
   } finally {
