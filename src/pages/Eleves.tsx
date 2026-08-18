@@ -35,7 +35,7 @@ function useEleveFilters() {
 // ─── Page Component ───────────────────────────────────────────────────────────
 export default function Eleves() {
   const { isReadOnly, isItManager, currentSchoolId } = useAuth();
-  const { logoUrl } = useLogo();
+  const { logoUrl, logoBase64 } = useLogo();
   const filters = useEleveFilters();
   const schoolId = currentSchoolId!;
   const { data: sections = [] } = useSections(schoolId);
@@ -183,7 +183,7 @@ export default function Eleves() {
                     sexe: e.sexe, section: e.section, option: e.option, classe: e.classe,
                     date_naissance: e.date_naissance, photo_url: (e as any).photo_url,
                   }));
-                  const doc = await generateCartesEtudiants(batch, schoolName, logoUrl);
+                  const doc = await generateCartesEtudiants(batch, schoolName, logoBase64 || logoUrl);
                   const batchNum = Math.floor(i / BATCH) + 1;
                   const totalBatches = Math.ceil(total / BATCH);
                   doc.save(`cartes-etudiants-${batchNum}-sur-${totalBatches}.pdf`);

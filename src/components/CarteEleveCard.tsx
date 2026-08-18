@@ -150,7 +150,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
 
       {/* ═══ Header ═══ */}
       {logoUrl && !logoError ? (
-        <img src={logoUrl} crossOrigin="anonymous" alt="" style={{ position: 'absolute', top: 16, left: 26, width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${t.accent}` }}
+        <img src={logoUrl} alt="" style={{ position: 'absolute', top: 16, left: 26, width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${t.accent}` }}
           onError={() => setLogoError(true)} />
       ) : (
         <div style={{ position: 'absolute', top: 16, left: 26, width: 48, height: 48, borderRadius: '50%', background: INK, lineHeight: '48px', textAlign: 'center', fontWeight: 700, fontSize: 20, color: GOLD }}>{getSchoolInitials(schoolName)}</div>
@@ -171,7 +171,7 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
       {/* ═══ Photo ═══ */}
       <div style={{ position: 'absolute', top: 88, left: 26, width: 100, height: 134, borderRadius: 14, overflow: 'hidden', border: `2px solid ${t.accent}`, background: t.accentSoft }}>
         {eleve.photo_url && !photoError ? (
-          <img src={eleve.photo_url} crossOrigin="anonymous" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          <img src={eleve.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onError={() => setPhotoError(true)} />
         ) : (
           <div style={{ width: '100%', height: '100%', lineHeight: '130px', textAlign: 'center', fontSize: 40, fontWeight: 700, color: t.accentDark, opacity: 0.55 }}>{initials}</div>

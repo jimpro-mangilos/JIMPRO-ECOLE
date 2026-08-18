@@ -5,6 +5,22 @@ import html2canvas from 'html2canvas';
 import { supabase } from '../lib/supabase';
 import { CarteEleveCard, generateQrDataUrl, type CarteEleve } from '../components/CarteEleveCard';
 
+// Convertit une URL (Supabase storage) en data URL base64 pour un rendu html2canvas fiable (sans CORS)
+async function urlToBase64(url: string): Promise<string | null> {
+  try {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 type State =
   | { type: 'loading' }
   | { type: 'error'; message: string }
@@ -28,13 +44,15 @@ export default function CarteEtudiant() {
         const { data: eleve } = await supabase.from('eleves').select('*').eq('ecole_id', ecole.id).eq('matricule', matricule).maybeSingle();
         if (!eleve) { if (!cancelled) setState({ type: 'error', message: `Élève "${matricule}" introuvable.` }); return; }
         const { data: logo } = await supabase.from('app_settings').select('value').eq('ecole_id', ecole.id).eq('key', 'logo_url').maybeSingle();
+        const logoUrl = logo?.value || '';
+        const logoBase64 = logoUrl ? await urlToBase64(logoUrl) : null;
         const carteEleve: CarteEleve = {
           matricule: eleve.matricule, nom: eleve.nom, postnom: eleve.postnom || '', prenom: eleve.prenom,
           sexe: eleve.sexe, section: eleve.section, option: eleve.option, classe: eleve.classe,
           photo_url: (eleve as any).photo_url || null, date_naissance: eleve.date_naissance,
         };
         const qrDataUrl = await generateQrDataUrl(carteEleve);
-        if (!cancelled) setState({ type: 'ready', eleve: carteEleve, schoolName: ecole.nom, logoUrl: logo?.value || null, qrDataUrl });
+        if (!cancelled) setState({ type: 'ready', eleve: carteEleve, schoolName: ecole.nom, logoUrl: logoBase64 || logoUrl, qrDataUrl });
       } catch (err: any) { if (!cancelled) setState({ type: 'error', message: err.message }); }
     }
     load();
