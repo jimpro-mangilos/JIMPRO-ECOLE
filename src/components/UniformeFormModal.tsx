@@ -55,6 +55,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [loadingStock, setLoadingStock] = useState(false);
+  const [taillesList, setTaillesList] = useState<string[]>(TAILLES_UNIFORME);
 
   const [annee, setAnnee] = useState('');
   const [dateDistribution, setDateDistribution] = useState(new Date().toISOString().split('T')[0]);
@@ -78,11 +79,13 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [typesRes, anneesRes] = await Promise.all([
+      const [typesRes, anneesRes, taillesRes] = await Promise.all([
         supabase.from('types_uniforme').select('*').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
         supabase.from('annees_scolaires').select('*').eq('ecole_id', currentSchoolId).eq('is_active', true).order('annee', { ascending: false }),
+        supabase.from('tailles_uniforme').select('libelle').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
       ]);
       if (typesRes.data) setTypesUniforme(typesRes.data);
+      if (taillesRes.data && taillesRes.data.length) setTaillesList(taillesRes.data.map((t: any) => t.libelle));
       if (anneesRes.data) {
         setAnneeScolaires(anneesRes.data);
         const active = anneesRes.data.find((a: any) => a.is_active);
@@ -420,7 +423,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
                           onChange={(e) => updateItem(index, { taille: e.target.value })}
                           className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                         >
-                          {TAILLES_UNIFORME.map(t => <option key={t} value={t}>{t}</option>)}
+                          {taillesList.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
 
