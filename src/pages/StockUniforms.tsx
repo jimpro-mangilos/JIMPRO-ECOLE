@@ -90,6 +90,7 @@ function StockUniforms() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [demandes, setDemandes] = useState<DemandeStock[]>([]);
   const isApprover = isPromoteur() || isItManager() || isAdmin();
+  const canReception = canWrite || isApprover;
 
   useEffect(() => {
     loadAll();
@@ -292,6 +293,22 @@ function StockUniforms() {
   const handleApproveDemande = async (demande: DemandeStock) => {
     const nomApprobateur = `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim();
     try {
+      const { error } = await supabase.from('demandes_stock').update({
+        statut: 'approuvee',
+        approuveur_id: user?.id,
+        approuveur_nom: nomApprobateur,
+        date_decision: new Date().toISOString(),
+      }).eq('id', demande.id);
+      if (error) throw error;
+      await loadAll();
+    } catch (err: any) {
+      alert('Erreur lors de l\'approbation: ' + err.message);
+    }
+  };
+
+  const handleReceptionDemande = async (demande: DemandeStock) => {
+    const nomRecepteur = `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim();
+    try {
       const typeUniforme = typesUniforme.find(t => t.id === demande.type_uniforme_id);
       const existingStock = stocks.find(
         s => s.type_uniforme_id === demande.type_uniforme_id
@@ -304,7 +321,7 @@ function StockUniforms() {
           quantite_stock: existingStock.quantite_stock + demande.quantite,
           seuil_alerte: demande.seuil_alerte ?? existingStock.seuil_alerte,
           notes: demande.notes || existingStock.notes,
-          nom_comptable: nomApprobateur,
+          nom_comptable: nomRecepteur,
           comptable_id: user?.id,
           updated_at: new Date().toISOString(),
           ecole_id: currentSchoolId,
@@ -319,7 +336,7 @@ function StockUniforms() {
           quantite_stock: demande.quantite,
           seuil_alerte: demande.seuil_alerte,
           notes: demande.notes,
-          nom_comptable: nomApprobateur,
+          nom_comptable: nomRecepteur,
           comptable_id: user?.id,
           ecole_id: currentSchoolId,
         });
@@ -327,16 +344,16 @@ function StockUniforms() {
       }
 
       const { error } = await supabase.from('demandes_stock').update({
-        statut: 'approuvee',
+        statut: 'recue',
         approuveur_id: user?.id,
-        approuveur_nom: nomApprobateur,
+        approuveur_nom: nomRecepteur,
         date_decision: new Date().toISOString(),
       }).eq('id', demande.id);
       if (error) throw error;
 
       await loadAll();
     } catch (err: any) {
-      alert('Erreur lors de l\'approbation: ' + err.message);
+      alert('Erreur lors de la réception: ' + err.message);
     }
   };
 
@@ -919,7 +936,7 @@ function StockUniforms() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Qté</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Demandeur</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Statut</th>
-                  {isApprover && <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Décision</th>}
+                  {canReception && <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Décision</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -933,11 +950,12 @@ function StockUniforms() {
                     <td className="px-4 py-3">
                       {d.statut === 'en_attente' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">En attente</span>}
                       {d.statut === 'approuvee' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Approuvée</span>}
+                      {d.statut === 'recue' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Reçue</span>}
                       {d.statut === 'refusee' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Refusée</span>}
                     </td>
-                    {isApprover && (
+                    {canReception && (
                       <td className="px-4 py-3 text-right">
-                        {d.statut === 'en_attente' ? (
+                        {d.statut === 'en_attente' && isApprover ? (
                           <div className="flex items-center justify-end gap-1.5">
                             <button onClick={() => handleApproveDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700">
                               <CheckCircle className="w-3.5 h-3.5" /> Approuver
@@ -946,6 +964,10 @@ function StockUniforms() {
                               <Ban className="w-3.5 h-3.5" /> Refuser
                             </button>
                           </div>
+                        ) : d.statut === 'approuvee' ? (
+                          <button onClick={() => handleReceptionDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-teal-600 text-white text-xs font-semibold rounded-lg hover:bg-teal-700">
+                            <Package className="w-3.5 h-3.5" /> Réceptionner
+                          </button>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
                         )}
