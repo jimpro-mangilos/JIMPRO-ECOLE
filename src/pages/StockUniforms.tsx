@@ -497,7 +497,7 @@ function StockUniforms() {
             <ClipboardList className="w-5 h-5" />
             Demande d'entrée
           </button>
-          {canWrite && (
+          {isItManager() && (
             <button
               onClick={openApprovisionner}
               className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2 rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-medium"
@@ -866,27 +866,29 @@ function StockUniforms() {
                     {canWrite && (
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              // Quick appro for this specific article/year
-                              setEditingStock(null);
-                              setFormMode('approvisionner');
-                              setFormData({
-                                type_uniforme_id: stock.type_uniforme_id,
-                                annee_scolaire: stock.annee_scolaire,
-                                section: stock.section || '',
-                                quantite: '',
-                                seuil_alerte: stock.seuil_alerte != null ? String(stock.seuil_alerte) : '',
-                                notes: '',
-                              });
-                              setFormError('');
-                              setFormSuccess('');
-                            }}
-                            className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                            title="Approvisionner cet article"
-                          >
-                            <TrendingUp className="w-4 h-4" />
-                          </button>
+                          {isItManager() && (
+                            <button
+                              onClick={() => {
+                                // Quick appro for this specific article/year
+                                setEditingStock(null);
+                                setFormMode('approvisionner');
+                                setFormData({
+                                  type_uniforme_id: stock.type_uniforme_id,
+                                  annee_scolaire: stock.annee_scolaire,
+                                  section: stock.section || '',
+                                  quantite: '',
+                                  seuil_alerte: stock.seuil_alerte != null ? String(stock.seuil_alerte) : '',
+                                  notes: '',
+                                });
+                                setFormError('');
+                                setFormSuccess('');
+                              }}
+                              className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                              title="Approvisionner cet article"
+                            >
+                              <TrendingUp className="w-4 h-4" />
+                            </button>
+                          )}
                           {canManageConfiguration() && (
                             <>
                               <button
