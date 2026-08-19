@@ -30,7 +30,7 @@ interface DistributionUniforme {
 }
 
 export default function FournituresEleves() {
-  const { isReadOnly, isItManager, isGestionnaireUniforme, isPromoteur, isAdmin, currentSchoolId } = useAuth();
+  const { isReadOnly, isItManager, isGestionnaireUniforme, profile, currentSchoolId } = useAuth();
   const [distributions, setDistributions] = useState<DistributionUniforme[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -130,7 +130,7 @@ export default function FournituresEleves() {
     setSelectedEleve(null);
   };
 
-  const isApprover = isItManager() || isPromoteur() || isAdmin();
+  const isApprover = ['secretaire', 'comptable', 'coordonnateur', 'it_manager', 'admin', 'promoteur'].includes(profile?.role?.nom || '');
   const pendingDistributions = distributions.filter((d) => d.statut === 'en_attente');
 
   const handleApprove = async (id: string) => {
