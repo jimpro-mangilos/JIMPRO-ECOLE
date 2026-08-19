@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { Plus, Search, Package, X, Loader2, Users, Trash2, RotateCcw, Calendar, QrCode } from 'lucide-react';
+import { Plus, Search, Package, X, Loader2, Users, Trash2, RotateCcw, Calendar, QrCode, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
@@ -26,10 +26,11 @@ interface DistributionUniforme {
   nom_comptable: string;
   date_distribution: string;
   created_at: string;
+  statut: string;
 }
 
 export default function FournituresEleves() {
-  const { isReadOnly, isItManager, isGestionnaireUniforme, currentSchoolId } = useAuth();
+  const { isReadOnly, isItManager, isGestionnaireUniforme, isPromoteur, isAdmin, currentSchoolId } = useAuth();
   const [distributions, setDistributions] = useState<DistributionUniforme[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -127,6 +128,29 @@ export default function FournituresEleves() {
     loadDistributions();
     setShowUniformeForm(false);
     setSelectedEleve(null);
+  };
+
+  const isApprover = isItManager() || isPromoteur() || isAdmin();
+  const pendingDistributions = distributions.filter((d) => d.statut === 'en_attente');
+
+  const handleApprove = async (id: string) => {
+    try {
+      const { error } = await supabase.rpc('valider_distribution_uniforme', { p_id: id });
+      if (error) throw error;
+      loadDistributions();
+    } catch (err: any) {
+      alert('Erreur lors de la validation: ' + err.message);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    try {
+      const { error } = await supabase.from('gestion_uniformes').update({ statut: 'refuse' }).eq('id', id);
+      if (error) throw error;
+      loadDistributions();
+    } catch (err: any) {
+      alert('Erreur lors du refus: ' + err.message);
+    }
   };
 
   const types = useMemo(() => {
@@ -393,6 +417,44 @@ export default function FournituresEleves() {
         </div>
       </div>
 
+      {/* Distributions à valider (redistributions) */}
+      {isApprover && pendingDistributions.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg shadow-sm mb-4">
+          <div className="px-5 py-3 border-b border-amber-200 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <h2 className="text-lg font-bold text-gray-800">Distributions à valider</h2>
+            <span className="text-sm text-gray-500">({pendingDistributions.length})</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <tbody className="divide-y divide-amber-100">
+                {pendingDistributions.map((d) => (
+                  <tr key={d.id} className="hover:bg-amber-50">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{d.nom_eleve} {d.postnom} {d.prenom}</div>
+                      <div className="text-xs text-gray-500">{d.matricule} — {d.classe || '-'}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{d.type_uniforme_libelle}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">Qté {d.quantite}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{d.annee_scolaire || '-'}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button onClick={() => handleApprove(d.id)} className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700">
+                          <CheckCircle className="w-3.5 h-3.5" /> Valider
+                        </button>
+                        <button onClick={() => handleReject(d.id)} className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600">
+                          <XCircle className="w-3.5 h-3.5" /> Refuser
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {isItManager() && selectedIds.size > 0 && (
           <div className="px-4 py-3 bg-red-50 border-b border-red-200 flex items-center justify-between">
@@ -433,13 +495,14 @@ export default function FournituresEleves() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Année</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Notes</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Comptable</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Statut</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan={isItManager() ? 10 : 9} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
+                <tr><td colSpan={isItManager() ? 11 : 10} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={isItManager() ? 10 : 9} className="px-6 py-8 text-center text-gray-500">Aucune distribution trouvée</td></tr>
+                <tr><td colSpan={isItManager() ? 11 : 10} className="px-6 py-8 text-center text-gray-500">Aucune distribution trouvée</td></tr>
               ) : (
                 filtered.map((d) => (
                   <tr key={d.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.has(d.id) ? 'bg-red-50' : ''}`}>
@@ -472,6 +535,11 @@ export default function FournituresEleves() {
                     <td className="px-4 py-3 text-sm text-gray-700">{d.annee_scolaire || '-'}</td>
                     <td className="px-4 py-3 text-sm text-gray-500 italic">{d.notes || '-'}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{d.nom_comptable || '-'}</td>
+                    <td className="px-4 py-3">
+                      {d.statut === 'en_attente' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">En attente</span>}
+                      {d.statut === 'refuse' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Refusée</span>}
+                      {d.statut === 'valide' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Validée</span>}
+                    </td>
                   </tr>
                 ))
               )}

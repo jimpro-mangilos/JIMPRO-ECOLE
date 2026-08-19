@@ -56,6 +56,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
   const [loadingData, setLoadingData] = useState(true);
   const [loadingStock, setLoadingStock] = useState(false);
   const [taillesList, setTaillesList] = useState<string[]>(TAILLES_UNIFORME);
+  const [existingArticles, setExistingArticles] = useState<Set<string>>(new Set());
 
   const [annee, setAnnee] = useState('');
   const [dateDistribution, setDateDistribution] = useState(new Date().toISOString().split('T')[0]);
@@ -104,13 +105,13 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
     if (!a) return;
     setLoadingStock(true);
     try {
-      const { data, error } = await supabase
-        .from('stock_uniformes')
-        .select('type_uniforme_id, quantite_stock, taille')
-        .eq('ecole_id', currentSchoolId)
-        .eq('annee_scolaire', a)
-        .eq('section', eleve.section || '');
-      if (error) throw error;
+      const [stockRes, distRes] = await Promise.all([
+        supabase.from('stock_uniformes').select('type_uniforme_id, quantite_stock, taille').eq('ecole_id', currentSchoolId).eq('annee_scolaire', a).eq('section', eleve.section || ''),
+        supabase.from('gestion_uniformes').select('type_uniforme_id').eq('ecole_id', currentSchoolId).eq('eleve_id', eleve.id).eq('annee_scolaire', a),
+      ]);
+      const data = stockRes.data;
+      if (stockRes.error) throw stockRes.error;
+      setExistingArticles(new Set((distRes.data || []).map((d: any) => d.type_uniforme_id)));
       const map: StockInfo = {};
       (data || []).forEach((s: any) => { map[`${s.type_uniforme_id}:${s.taille || 'M'}`] = s.quantite_stock; });
       setStockInfo(map);
@@ -216,6 +217,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
           comptable_id: user?.id,
           nom_comptable: nomComptable,
           date_distribution: dateDistribution,
+          statut: existingArticles.has(item.type_uniforme_id) ? 'en_attente' : 'valide',
           ecole_id: currentSchoolId,
         };
       });
@@ -459,6 +461,14 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
 
                     {/* Per-item stock indicator */}
                     {renderStockIndicator(item)}
+
+                    {/* Alerte doublon : article déjà distribué → validation requise */}
+                    {existingArticles.has(item.type_uniforme_id) && (
+                      <div className="flex items-center gap-1.5 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 mt-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                        Article déjà distribué à cet élève — cette nouvelle distribution sera soumise à validation.
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
