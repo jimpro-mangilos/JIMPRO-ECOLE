@@ -106,7 +106,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
     try {
       const { data, error } = await supabase
         .from('stock_uniformes')
-        .select('type_uniforme_id, quantite_stock')
+        .select('type_uniforme_id, quantite_stock, taille')
         .eq('ecole_id', currentSchoolId)
         .eq('annee_scolaire', a)
         .eq('section', eleve.section || '');
@@ -115,11 +115,14 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
       (data || []).forEach((s: any) => { map[`${s.type_uniforme_id}:${s.taille || 'M'}`] = s.quantite_stock; });
       setStockInfo(map);
 
-      // Pré-sélectionne un article par type disponible (taille par défaut M)
-      const uniqueIds = Array.from(new Set((data || []).map((s: any) => s.type_uniforme_id)));
+      // Pré-sélectionne un article par type, en choisissant la première taille ayant du stock
+      const byType = new Map<string, string>();
+      (data || []).forEach((s: any) => {
+        if (!byType.has(s.type_uniforme_id)) byType.set(s.type_uniforme_id, s.taille || 'M');
+      });
       const availableItems = typesUniforme
-        .filter((t) => uniqueIds.includes(t.id))
-        .map((t) => ({ type_uniforme_id: t.id, quantite: '1', taille: 'M' }));
+        .filter((t) => byType.has(t.id))
+        .map((t) => ({ type_uniforme_id: t.id, quantite: '1', taille: byType.get(t.id) || 'M' }));
       setItems(availableItems.length > 0 ? availableItems : [emptyItem()]);
     } catch (err) {
       console.error('Erreur chargement stock:', err);
