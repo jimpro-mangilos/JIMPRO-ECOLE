@@ -75,6 +75,7 @@ function StockUniforms() {
   const [filterAnnee, setFilterAnnee] = useState('');
   const [filterArticle, setFilterArticle] = useState('');
   const [filterSection, setFilterSection] = useState('');
+  const [filterTaille, setFilterTaille] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   const [formMode, setFormMode] = useState<FormMode>(null);
@@ -433,11 +434,12 @@ function StockUniforms() {
     const matchesAnnee = !filterAnnee || s.annee_scolaire === filterAnnee;
     const matchesArticle = !filterArticle || s.type_uniforme_id === filterArticle;
     const matchesSection = !filterSection || (s.section || '') === filterSection;
+    const matchesTaille = !filterTaille || (s.taille || 'M') === filterTaille;
     const matchesSearch = !searchTerm ||
       s.type_uniforme_libelle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.annee_scolaire.includes(searchTerm) ||
       (s.section || '').toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesAnnee && matchesArticle && matchesSection && matchesSearch;
+    return matchesAnnee && matchesArticle && matchesSection && matchesTaille && matchesSearch;
   });
 
   // Stats
@@ -754,6 +756,16 @@ function StockUniforms() {
             <option value="">Toutes les sections</option>
             {sections.map(sec => (
               <option key={sec.id} value={sec.nom}>{sec.nom}</option>
+            ))}
+          </select>
+          <select
+            value={filterTaille}
+            onChange={(e) => setFilterTaille(e.target.value)}
+            className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+          >
+            <option value="">Toutes les tailles</option>
+            {TAILLES_UNIFORME.map(t => (
+              <option key={t} value={t}>{t}</option>
             ))}
           </select>
           <select
