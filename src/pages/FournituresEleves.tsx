@@ -145,7 +145,7 @@ export default function FournituresEleves() {
 
   const handleReject = async (id: string) => {
     try {
-      const { error } = await supabase.from('gestion_uniformes').update({ statut: 'refuse' }).eq('id', id);
+      const { error } = await supabase.rpc('refuser_distribution_uniforme', { p_id: id });
       if (error) throw error;
       loadDistributions();
     } catch (err: any) {
