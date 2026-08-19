@@ -77,6 +77,7 @@ function StockUniforms() {
   const [filterSection, setFilterSection] = useState('');
   const [filterTaille, setFilterTaille] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [taillesList, setTaillesList] = useState<string[]>(TAILLES_UNIFORME);
 
   const [formMode, setFormMode] = useState<FormMode>(null);
   const [editingStock, setEditingStock] = useState<StockUniforme | null>(null);
@@ -100,6 +101,8 @@ function StockUniforms() {
 
   useEffect(() => {
     loadAll();
+    supabase.from('tailles_uniforme').select('libelle').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre')
+      .then((res: { data: { libelle: string }[] | null }) => { if (res.data && res.data.length) setTaillesList(res.data.map(t => t.libelle)); });
   }, []);
 
   const loadAll = async () => {
@@ -631,7 +634,7 @@ function StockUniforms() {
                     onChange={(e) => setFormData({ ...formData, taille: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
                   >
-                    {TAILLES_UNIFORME.map(t => <option key={t} value={t}>{t}</option>)}
+                    {taillesList.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div className="md:col-span-2">
@@ -764,7 +767,7 @@ function StockUniforms() {
             className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
           >
             <option value="">Toutes les tailles</option>
-            {TAILLES_UNIFORME.map(t => (
+            {taillesList.map(t => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>

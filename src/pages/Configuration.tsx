@@ -6,6 +6,7 @@ import { invalidatePrefixCache } from '../utils/matriculeGenerator';
 import { Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Upload, RotateCcw } from 'lucide-react';
 import MenuConfigTab from '../components/MenuConfigTab';
 import PersonnelConfigTab from '../components/PersonnelConfigTab';
+import TaillesConfigTab from '../components/TaillesConfigTab';
 import { useSections, useOptions, useClasses, useMotifsPaiement, useTypesPaiement, useAnneesScolaires } from '../lib/hooks/useReferenceData';
 import { useConfiguration } from '../lib/hooks/useConfiguration';
 
@@ -13,11 +14,11 @@ import { useConfiguration } from '../lib/hooks/useConfiguration';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const emptyForm = (extra?: Record<string, any>): any => ({ nom: '', description: '', is_active: true, ...extra });
 const libForm = (extra?: Record<string, string | boolean>) => ({ libelle: '', description: '', is_active: true, ...extra });
-type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'menu_par_role' | 'personnel';
+type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'menu_par_role' | 'personnel' | 'tailles';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'sections', label: 'Sections' }, { key: 'options', label: 'Options' }, { key: 'classes', label: 'Classes' },
   { key: 'motifs', label: 'Motifs' }, { key: 'types_paiement', label: 'Types Paiement' }, { key: 'annees_scolaires', label: 'Années Scolaires' },
-  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' },
+  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' }, { key: 'tailles', label: 'Tailles' },
 ];
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -159,6 +160,7 @@ export default function Configuration() {
       {/* ─── Menu Tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'menu_par_role' && <MenuConfigTab />}
       {activeTab === 'personnel' && <PersonnelConfigTab />}
+      {activeTab === 'tailles' && <TaillesConfigTab />}
 
       {/* ─── CRUD Tabs (generic pattern) ──────────────────────────────────── */}
       {(activeTab === 'sections' || activeTab === 'options' || activeTab === 'classes' || activeTab === 'motifs' || activeTab === 'types_paiement' || activeTab === 'annees_scolaires' || activeTab === 'prefixes_matricule' || activeTab === 'types_uniforme') && (
