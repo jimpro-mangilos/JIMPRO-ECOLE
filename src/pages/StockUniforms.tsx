@@ -388,6 +388,18 @@ function StockUniforms() {
     }
   };
 
+  const handleDeleteDemande = async (demande: DemandeStock) => {
+    if (!isItManager()) return;
+    if (!confirm(`Supprimer la demande d'entrée de « ${demande.type_uniforme?.libelle || ''} » (${demande.annee_scolaire}, ${demande.taille || 'M'}) ?`)) return;
+    try {
+      const { error } = await supabase.from('demandes_stock').delete().eq('id', demande.id);
+      if (error) throw error;
+      await loadAll();
+    } catch (err: any) {
+      alert('Erreur lors de la suppression: ' + err.message);
+    }
+  };
+
   const toggleSelectOne = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -998,22 +1010,31 @@ function StockUniforms() {
                     </td>
                     {canReception && (
                       <td className="px-4 py-3 text-right">
-                        {d.statut === 'en_attente' && isApprover ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button onClick={() => handleApproveDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700">
-                              <CheckCircle className="w-3.5 h-3.5" /> Approuver
+                        <div className="flex items-center justify-end gap-1.5">
+                          {d.statut === 'en_attente' && isApprover && (
+                            <>
+                              <button onClick={() => handleApproveDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700">
+                                <CheckCircle className="w-3.5 h-3.5" /> Approuver
+                              </button>
+                              <button onClick={() => handleRefuseDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600">
+                                <Ban className="w-3.5 h-3.5" /> Refuser
+                              </button>
+                            </>
+                          )}
+                          {d.statut === 'approuvee' && (
+                            <button onClick={() => handleReceptionDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-teal-600 text-white text-xs font-semibold rounded-lg hover:bg-teal-700">
+                              <Package className="w-3.5 h-3.5" /> Réceptionner
                             </button>
-                            <button onClick={() => handleRefuseDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600">
-                              <Ban className="w-3.5 h-3.5" /> Refuser
+                          )}
+                          {d.statut !== 'en_attente' && d.statut !== 'approuvee' && (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                          {isItManager() && (
+                            <button onClick={() => handleDeleteDemande(d)} className="p-1.5 text-red-500 hover:bg-red-50 rounded" title="Supprimer">
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                          </div>
-                        ) : d.statut === 'approuvee' ? (
-                          <button onClick={() => handleReceptionDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-teal-600 text-white text-xs font-semibold rounded-lg hover:bg-teal-700">
-                            <Package className="w-3.5 h-3.5" /> Réceptionner
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-400">—</span>
-                        )}
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
