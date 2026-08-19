@@ -90,7 +90,7 @@ function StockUniforms() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [demandes, setDemandes] = useState<DemandeStock[]>([]);
   const isApprover = isPromoteur() || isItManager() || isAdmin();
-  const canReception = canWrite || isApprover;
+  const canReception = canWrite || isApprover || profile?.role?.nom === 'gestionnaire_uniforme';
 
   useEffect(() => {
     loadAll();
