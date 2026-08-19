@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Archive, Plus, CreditCard as Edit2, Trash2, AlertTriangle, CheckCircle, XCircle, Search, RefreshCw, Package, TrendingUp, AlertCircle, Loader2 } from 'lucide-react';
+import { Archive, Plus, CreditCard as Edit2, Trash2, AlertTriangle, CheckCircle, XCircle, Search, RefreshCw, Package, TrendingUp, AlertCircle, Loader2, ClipboardList, Ban } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -34,7 +34,7 @@ interface StockUniforme {
   updated_at: string;
 }
 
-type FormMode = 'approvisionner' | 'corriger' | null;
+type FormMode = 'approvisionner' | 'corriger' | 'demande' | null;
 
 interface StockForm {
   type_uniforme_id: string;
@@ -45,8 +45,22 @@ interface StockForm {
   notes: string;
 }
 
+interface DemandeStock {
+  id: string;
+  type_uniforme_id: string;
+  type_uniforme?: { libelle: string };
+  annee_scolaire: string;
+  section: string | null;
+  quantite: number;
+  seuil_alerte: number | null;
+  notes: string | null;
+  statut: string;
+  demandeur_nom: string | null;
+  date_demande: string;
+}
+
 function StockUniforms() {
-  const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, currentSchoolId } = useAuth();
+  const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, isPromoteur, currentSchoolId } = useAuth();
   const canWrite = isAdmin() || profile?.role?.nom === 'secretaire';
 
   const [stocks, setStocks] = useState<StockUniforme[]>([]);
@@ -74,6 +88,8 @@ function StockUniforms() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [demandes, setDemandes] = useState<DemandeStock[]>([]);
+  const isApprover = isPromoteur() || isItManager() || isAdmin();
 
   useEffect(() => {
     loadAll();
@@ -82,7 +98,7 @@ function StockUniforms() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [stocksRes, typesRes, anneesRes, sectionsRes] = await Promise.all([
+      const [stocksRes, typesRes, anneesRes, sectionsRes, demandesRes] = await Promise.all([
         supabase
           .from('stock_uniformes')
           .select('*')
@@ -93,6 +109,7 @@ function StockUniforms() {
         supabase.from('types_uniforme').select('id, libelle, is_active').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
         supabase.from('annees_scolaires').select('id, annee, is_active').eq('ecole_id', currentSchoolId).eq('is_active', true).order('annee', { ascending: false }),
         supabase.from('sections').select('id, nom, is_active').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
+        supabase.from('demandes_stock').select('*, type_uniforme:types_uniforme(libelle)').eq('ecole_id', currentSchoolId).order('date_demande', { ascending: false }),
       ]);
 
       if (stocksRes.error) throw stocksRes.error;
@@ -100,6 +117,7 @@ function StockUniforms() {
       setTypesUniforme(typesRes.data || []);
       setAnneeScolaires(anneesRes.data || []);
       setSections(sectionsRes.data || []);
+      setDemandes(demandesRes.data || []);
     } catch (err) {
       console.error('Erreur chargement stock:', err);
     } finally {
@@ -110,6 +128,14 @@ function StockUniforms() {
   const openApprovisionner = () => {
     setEditingStock(null);
     setFormMode('approvisionner');
+    setFormData({ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '', seuil_alerte: '', notes: '' });
+    setFormError('');
+    setFormSuccess('');
+  };
+
+  const openDemande = () => {
+    setEditingStock(null);
+    setFormMode('demande');
     setFormData({ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '', seuil_alerte: '', notes: '' });
     setFormError('');
     setFormSuccess('');
@@ -153,7 +179,27 @@ function StockUniforms() {
     try {
       setSubmitting(true);
 
-      if (formMode === 'corriger' && editingStock) {
+      if (formMode === 'demande') {
+        // Soumission d'une demande d'entrée en stock (aucun impact immédiat)
+        if (!formData.type_uniforme_id || !formData.annee_scolaire || !formData.section) {
+          setFormError('Veuillez sélectionner un article, une année scolaire et une section.');
+          return;
+        }
+        const { error } = await supabase.from('demandes_stock').insert({
+          ecole_id: currentSchoolId,
+          type_uniforme_id: formData.type_uniforme_id,
+          annee_scolaire: formData.annee_scolaire,
+          section: formData.section,
+          quantite,
+          seuil_alerte: formData.seuil_alerte ? parseInt(formData.seuil_alerte) : null,
+          notes: formData.notes || null,
+          statut: 'en_attente',
+          demandeur_id: user?.id,
+          demandeur_nom: nomComptable,
+        });
+        if (error) throw error;
+        setFormSuccess('Demande d\'entrée en stock soumise. En attente d\'approbation (Promoteur / IT Manager).');
+      } else if (formMode === 'corriger' && editingStock) {
         // Correction directe: update absolute value
         const { error } = await supabase
           .from('stock_uniformes')
@@ -240,6 +286,73 @@ function StockUniforms() {
       await loadAll();
     } catch (err: any) {
       alert('Erreur lors de la suppression: ' + err.message);
+    }
+  };
+
+  const handleApproveDemande = async (demande: DemandeStock) => {
+    const nomApprobateur = `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim();
+    try {
+      const typeUniforme = typesUniforme.find(t => t.id === demande.type_uniforme_id);
+      const existingStock = stocks.find(
+        s => s.type_uniforme_id === demande.type_uniforme_id
+          && s.annee_scolaire === demande.annee_scolaire
+          && (s.section || '') === (demande.section || '')
+      );
+
+      if (existingStock) {
+        const { error } = await supabase.from('stock_uniformes').update({
+          quantite_stock: existingStock.quantite_stock + demande.quantite,
+          seuil_alerte: demande.seuil_alerte ?? existingStock.seuil_alerte,
+          notes: demande.notes || existingStock.notes,
+          nom_comptable: nomApprobateur,
+          comptable_id: user?.id,
+          updated_at: new Date().toISOString(),
+          ecole_id: currentSchoolId,
+        }).eq('id', existingStock.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('stock_uniformes').insert({
+          type_uniforme_id: demande.type_uniforme_id,
+          type_uniforme_libelle: typeUniforme?.libelle || '',
+          annee_scolaire: demande.annee_scolaire,
+          section: demande.section || '',
+          quantite_stock: demande.quantite,
+          seuil_alerte: demande.seuil_alerte,
+          notes: demande.notes,
+          nom_comptable: nomApprobateur,
+          comptable_id: user?.id,
+          ecole_id: currentSchoolId,
+        });
+        if (error) throw error;
+      }
+
+      const { error } = await supabase.from('demandes_stock').update({
+        statut: 'approuvee',
+        approuveur_id: user?.id,
+        approuveur_nom: nomApprobateur,
+        date_decision: new Date().toISOString(),
+      }).eq('id', demande.id);
+      if (error) throw error;
+
+      await loadAll();
+    } catch (err: any) {
+      alert('Erreur lors de l\'approbation: ' + err.message);
+    }
+  };
+
+  const handleRefuseDemande = async (demande: DemandeStock) => {
+    const nomApprobateur = `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim();
+    try {
+      const { error } = await supabase.from('demandes_stock').update({
+        statut: 'refusee',
+        approuveur_id: user?.id,
+        approuveur_nom: nomApprobateur,
+        date_decision: new Date().toISOString(),
+      }).eq('id', demande.id);
+      if (error) throw error;
+      await loadAll();
+    } catch (err: any) {
+      alert('Erreur lors du refus: ' + err.message);
     }
   };
 
@@ -360,6 +473,13 @@ function StockUniforms() {
           >
             <RefreshCw className="w-5 h-5" />
           </button>
+          <button
+            onClick={openDemande}
+            className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2 rounded-lg hover:bg-amber-600 transition-colors shadow-sm font-medium"
+          >
+            <ClipboardList className="w-5 h-5" />
+            Demande d'entrée
+          </button>
           {canWrite && (
             <button
               onClick={openApprovisionner}
@@ -419,12 +539,14 @@ function StockUniforms() {
             <div className="bg-teal-100 p-2 rounded-lg">
               {formMode === 'approvisionner' ? (
                 <TrendingUp className="w-5 h-5 text-teal-600" />
+              ) : formMode === 'demande' ? (
+                <ClipboardList className="w-5 h-5 text-amber-600" />
               ) : (
                 <Edit2 className="w-5 h-5 text-teal-600" />
               )}
             </div>
             <h2 className="text-lg font-bold text-gray-800">
-              {formMode === 'approvisionner' ? 'Approvisionner le stock' : `Corriger le stock — ${editingStock?.type_uniforme_libelle} (${editingStock?.section || '—'} / ${editingStock?.annee_scolaire})`}
+              {formMode === 'approvisionner' ? 'Approvisionner le stock' : formMode === 'demande' ? 'Demande d\'entrée en stock' : `Corriger le stock — ${editingStock?.type_uniforme_libelle} (${editingStock?.section || '—'} / ${editingStock?.annee_scolaire})`}
             </h2>
           </div>
 
@@ -442,7 +564,7 @@ function StockUniforms() {
           )}
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {formMode === 'approvisionner' && (
+            {(formMode === 'approvisionner' || formMode === 'demande') && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Article *</label>
@@ -492,7 +614,7 @@ function StockUniforms() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                {formMode === 'approvisionner' ? 'Quantité à ajouter *' : 'Nouvelle quantité en stock *'}
+                {formMode === 'corriger' ? 'Nouvelle quantité en stock *' : 'Quantité à ajouter *'}
               </label>
               <input
                 type="number"
@@ -544,10 +666,12 @@ function StockUniforms() {
                   <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : formMode === 'approvisionner' ? (
                   <TrendingUp className="w-4 h-4" />
+                ) : formMode === 'demande' ? (
+                  <ClipboardList className="w-4 h-4" />
                 ) : (
                   <Edit2 className="w-4 h-4" />
                 )}
-                {submitting ? 'Enregistrement...' : formMode === 'approvisionner' ? 'Approvisionner' : 'Corriger'}
+                {submitting ? 'Enregistrement...' : formMode === 'approvisionner' ? 'Approvisionner' : formMode === 'demande' ? 'Soumettre la demande' : 'Corriger'}
               </button>
               <button
                 type="button"
@@ -765,6 +889,66 @@ function StockUniforms() {
                             </>
                           )}
                         </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Demandes d'entrée en stock */}
+      <div className="bg-white rounded-lg shadow-sm border border-amber-200 mt-6">
+        <div className="px-5 py-4 border-b border-amber-100 flex items-center gap-2">
+          <ClipboardList className="w-5 h-5 text-amber-600" />
+          <h2 className="text-lg font-bold text-gray-800">Demandes d'entrée en stock</h2>
+          <span className="text-sm text-gray-500">({demandes.length})</span>
+        </div>
+        {demandes.length === 0 ? (
+          <div className="py-10 text-center text-gray-500 text-sm">Aucune demande d'entrée en stock.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-amber-50 border-b border-amber-100">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Article</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Section</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Année</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Qté</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Demandeur</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Statut</th>
+                  {isApprover && <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Décision</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {demandes.map(d => (
+                  <tr key={d.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{d.type_uniforme?.libelle || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{d.section || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{d.annee_scolaire}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">{d.quantite}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{d.demandeur_nom || '—'}</td>
+                    <td className="px-4 py-3">
+                      {d.statut === 'en_attente' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">En attente</span>}
+                      {d.statut === 'approuvee' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Approuvée</span>}
+                      {d.statut === 'refusee' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Refusée</span>}
+                    </td>
+                    {isApprover && (
+                      <td className="px-4 py-3 text-right">
+                        {d.statut === 'en_attente' ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button onClick={() => handleApproveDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700">
+                              <CheckCircle className="w-3.5 h-3.5" /> Approuver
+                            </button>
+                            <button onClick={() => handleRefuseDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600">
+                              <Ban className="w-3.5 h-3.5" /> Refuser
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
                       </td>
                     )}
                   </tr>
