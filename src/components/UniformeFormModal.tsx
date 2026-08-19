@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Package, Loader2, AlertTriangle, XCircle, CheckCircle, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { TAILLES_UNIFORME } from '../lib/constants';
 import type { Database } from '../lib/database.types';
 
 type Eleve = Database['public']['Tables']['eleves']['Row'];
@@ -26,6 +27,7 @@ interface AnneeScolaire {
 interface ArticleItem {
   type_uniforme_id: string;
   quantite: string;
+  taille: string;
 }
 
 interface UniformeFormModalProps {
@@ -43,7 +45,7 @@ type StockStatus =
   | { type: 'ok'; disponible: number }
   | null;
 
-const emptyItem = (): ArticleItem => ({ type_uniforme_id: '', quantite: '1' });
+const emptyItem = (): ArticleItem => ({ type_uniforme_id: '', quantite: '1', taille: 'M' });
 
 export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }: UniformeFormModalProps) {
   const { user, userProfile, currentSchoolId } = useAuth();
@@ -107,13 +109,14 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
         .eq('section', eleve.section || '');
       if (error) throw error;
       const map: StockInfo = {};
-      (data || []).forEach((s: any) => { map[s.type_uniforme_id] = s.quantite_stock; });
+      (data || []).forEach((s: any) => { map[`${s.type_uniforme_id}:${s.taille || 'M'}`] = s.quantite_stock; });
       setStockInfo(map);
 
-      // Pre-select all available articles with quantity 1
+      // Pré-sélectionne un article par type disponible (taille par défaut M)
+      const uniqueIds = Array.from(new Set((data || []).map((s: any) => s.type_uniforme_id)));
       const availableItems = typesUniforme
-        .filter((t) => t.id in map && map[t.id] > 0)
-        .map((t) => ({ type_uniforme_id: t.id, quantite: '1' }));
+        .filter((t) => uniqueIds.includes(t.id))
+        .map((t) => ({ type_uniforme_id: t.id, quantite: '1', taille: 'M' }));
       setItems(availableItems.length > 0 ? availableItems : [emptyItem()]);
     } catch (err) {
       console.error('Erreur chargement stock:', err);
@@ -126,9 +129,10 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
   const getItemStockStatus = (item: ArticleItem): StockStatus => {
     if (!item.type_uniforme_id || !annee) return null;
     if (loadingStock) return { type: 'loading' };
-    const hasEntry = item.type_uniforme_id in stockInfo;
+    const key = `${item.type_uniforme_id}:${item.taille || 'M'}`;
+    const hasEntry = key in stockInfo;
     if (!hasEntry) return { type: 'not_configured' };
-    const disponible = stockInfo[item.type_uniforme_id];
+    const disponible = stockInfo[key];
     const demande = parseInt(item.quantite) || 0;
     if (disponible === 0) return { type: 'rupture', disponible };
     if (demande > disponible) return { type: 'insuffisant', disponible, demande };
@@ -200,6 +204,7 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
           type_uniforme_id: item.type_uniforme_id,
           type_uniforme_libelle: typeUniforme?.libelle || '',
           quantite: parseInt(item.quantite),
+          taille: item.taille || 'M',
           annee_scolaire: annee,
           notes: notes || null,
           comptable_id: user?.id,
@@ -377,12 +382,15 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
                           {typesUniforme.map((type) => {
                             const alreadyUsed =
                               selectedIds.includes(type.id) && item.type_uniforme_id !== type.id;
-                            const stock =
-                              annee && type.id in stockInfo ? stockInfo[type.id] : null;
+                            const entries = annee
+                              ? Object.entries(stockInfo).filter(([k]) => k.startsWith(`${type.id}:`))
+                              : [];
+                            const configured = entries.length > 0;
+                            const stock = configured ? entries.reduce((sum, [, v]) => sum + v, 0) : null;
                             const stockLabel = annee
                               ? loadingStock
                                 ? ''
-                                : stock === null
+                                : !configured
                                 ? ' — non configuré'
                                 : stock === 0
                                 ? ' — rupture'
@@ -392,13 +400,27 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
                               <option
                                 key={type.id}
                                 value={type.id}
-                                disabled={alreadyUsed || stock === 0 || stock === null}
+                                disabled={alreadyUsed || !configured || stock === 0}
                               >
                                 {type.libelle}{stockLabel}
                                 {alreadyUsed ? ' (déjà sélectionné)' : ''}
                               </option>
                             );
                           })}
+                        </select>
+                      </div>
+
+                      {/* Taille */}
+                      <div className="w-24">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Taille
+                        </label>
+                        <select
+                          value={item.taille}
+                          onChange={(e) => updateItem(index, { taille: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+                        >
+                          {TAILLES_UNIFORME.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
 

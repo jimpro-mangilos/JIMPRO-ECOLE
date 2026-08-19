@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Archive, Plus, CreditCard as Edit2, Trash2, AlertTriangle, CheckCircle, XCircle, Search, RefreshCw, Package, TrendingUp, AlertCircle, Loader2, ClipboardList, Ban } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { TAILLES_UNIFORME } from '../lib/constants';
 
 interface TypeUniforme {
   id: string;
@@ -27,6 +28,7 @@ interface StockUniforme {
   type_uniforme_libelle: string;
   annee_scolaire: string;
   section: string;
+  taille: string;
   quantite_stock: number;
   seuil_alerte: number | null;
   notes: string | null;
@@ -40,6 +42,7 @@ interface StockForm {
   type_uniforme_id: string;
   annee_scolaire: string;
   section: string;
+  taille: string;
   quantite: string;
   seuil_alerte: string;
   notes: string;
@@ -51,6 +54,7 @@ interface DemandeStock {
   type_uniforme?: { libelle: string };
   annee_scolaire: string;
   section: string | null;
+  taille: string;
   quantite: number;
   seuil_alerte: number | null;
   notes: string | null;
@@ -79,6 +83,7 @@ function StockUniforms() {
     type_uniforme_id: '',
     annee_scolaire: '',
     section: '',
+    taille: 'M',
     quantite: '',
     seuil_alerte: '',
     notes: '',
@@ -129,7 +134,7 @@ function StockUniforms() {
   const openApprovisionner = () => {
     setEditingStock(null);
     setFormMode('approvisionner');
-    setFormData({ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '', seuil_alerte: '', notes: '' });
+    setFormData({ type_uniforme_id: '', annee_scolaire: '', section: '', taille: 'M', quantite: '', seuil_alerte: '', notes: '' });
     setFormError('');
     setFormSuccess('');
   };
@@ -137,7 +142,7 @@ function StockUniforms() {
   const openDemande = () => {
     setEditingStock(null);
     setFormMode('demande');
-    setFormData({ type_uniforme_id: '', annee_scolaire: '', section: '', quantite: '', seuil_alerte: '', notes: '' });
+    setFormData({ type_uniforme_id: '', annee_scolaire: '', section: '', taille: 'M', quantite: '', seuil_alerte: '', notes: '' });
     setFormError('');
     setFormSuccess('');
   };
@@ -149,6 +154,7 @@ function StockUniforms() {
       type_uniforme_id: stock.type_uniforme_id,
       annee_scolaire: stock.annee_scolaire,
       section: stock.section || '',
+      taille: stock.taille || 'M',
       quantite: String(stock.quantite_stock),
       seuil_alerte: stock.seuil_alerte != null ? String(stock.seuil_alerte) : '',
       notes: stock.notes || '',
@@ -191,6 +197,7 @@ function StockUniforms() {
           type_uniforme_id: formData.type_uniforme_id,
           annee_scolaire: formData.annee_scolaire,
           section: formData.section,
+          taille: formData.taille,
           quantite,
           seuil_alerte: formData.seuil_alerte ? parseInt(formData.seuil_alerte) : null,
           notes: formData.notes || null,
@@ -229,6 +236,7 @@ function StockUniforms() {
           s => s.type_uniforme_id === formData.type_uniforme_id
             && s.annee_scolaire === formData.annee_scolaire
             && (s.section || '') === formData.section
+            && (s.taille || 'M') === (formData.taille || 'M')
         );
 
         if (existingStock) {
@@ -257,6 +265,7 @@ function StockUniforms() {
               type_uniforme_libelle: typeUniforme?.libelle || '',
               annee_scolaire: formData.annee_scolaire,
               section: formData.section,
+              taille: formData.taille,
               quantite_stock: quantite,
               seuil_alerte: formData.seuil_alerte ? parseInt(formData.seuil_alerte) : null,
               notes: formData.notes || null,
@@ -314,6 +323,7 @@ function StockUniforms() {
         s => s.type_uniforme_id === demande.type_uniforme_id
           && s.annee_scolaire === demande.annee_scolaire
           && (s.section || '') === (demande.section || '')
+          && (s.taille || 'M') === (demande.taille || 'M')
       );
 
       if (existingStock) {
@@ -333,6 +343,7 @@ function StockUniforms() {
           type_uniforme_libelle: typeUniforme?.libelle || '',
           annee_scolaire: demande.annee_scolaire,
           section: demande.section || '',
+          taille: demande.taille || 'M',
           quantite_stock: demande.quantite,
           seuil_alerte: demande.seuil_alerte,
           notes: demande.notes,
@@ -611,6 +622,16 @@ function StockUniforms() {
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Taille *</label>
+                  <select
+                    value={formData.taille}
+                    onChange={(e) => setFormData({ ...formData, taille: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                  >
+                    {TAILLES_UNIFORME.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Année scolaire *</label>
                   <input
@@ -798,6 +819,7 @@ function StockUniforms() {
                   )}
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Article</th>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Section</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Taille</th>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Année Scolaire</th>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Stock</th>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Statut</th>
@@ -846,6 +868,7 @@ function StockUniforms() {
                         <span className="text-xs text-gray-400">—</span>
                       )}
                     </td>
+                    <td className="px-5 py-4 text-sm text-gray-700">{stock.taille}</td>
                     <td className="px-5 py-4 text-sm text-gray-700">{stock.annee_scolaire}</td>
                     <td className="px-5 py-4">
                       <span className={`text-xl font-bold ${
@@ -876,6 +899,7 @@ function StockUniforms() {
                                   type_uniforme_id: stock.type_uniforme_id,
                                   annee_scolaire: stock.annee_scolaire,
                                   section: stock.section || '',
+                                  taille: stock.taille || 'M',
                                   quantite: '',
                                   seuil_alerte: stock.seuil_alerte != null ? String(stock.seuil_alerte) : '',
                                   notes: '',
@@ -935,6 +959,7 @@ function StockUniforms() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Article</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Section</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Année</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Taille</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Qté</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Demandeur</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Statut</th>
@@ -947,6 +972,7 @@ function StockUniforms() {
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{d.type_uniforme?.libelle || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{d.section || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{d.annee_scolaire}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{d.taille || '—'}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-gray-900">{d.quantite}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{d.demandeur_nom || '—'}</td>
                     <td className="px-4 py-3">

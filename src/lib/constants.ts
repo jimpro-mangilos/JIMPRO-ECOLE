@@ -71,3 +71,5 @@ export const QUICK_ACCESS_COLORS: Record<string, { bg: string; hover: string; ic
 };
 
 export const DEFAULT_QUICK_ACCESS_COLOR = { bg: 'bg-gray-50', hover: 'hover:bg-gray-100 hover:border-gray-300', icon: 'text-gray-600', border: 'border-gray-100' };
+
+export const TAILLES_UNIFORME = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
