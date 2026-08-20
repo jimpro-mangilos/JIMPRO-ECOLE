@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { Plus, Search, Package, X, Loader2, Users, Trash2, RotateCcw, Calendar, QrCode, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Search, Package, X, Loader2, Users, Trash2, RotateCcw, Calendar, QrCode, AlertTriangle, CheckCircle, XCircle, Pencil } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { useAuth } from '../contexts/AuthContext';
 import UniformeFormModal from '../components/UniformeFormModal';
+import DistributionEditModal from '../components/DistributionEditModal';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 
 type Eleve = Database['public']['Tables']['eleves']['Row'];
@@ -21,6 +22,7 @@ interface DistributionUniforme {
   type_uniforme_id: string | null;
   type_uniforme_libelle: string;
   quantite: number;
+  taille: string | null;
   annee_scolaire: string | null;
   notes: string | null;
   nom_comptable: string;
@@ -44,6 +46,7 @@ export default function FournituresEleves() {
   const [showEleveSelector, setShowEleveSelector] = useState(false);
   const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
   const [showUniformeForm, setShowUniformeForm] = useState(false);
+  const [editingDistribution, setEditingDistribution] = useState<DistributionUniforme | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -131,6 +134,7 @@ export default function FournituresEleves() {
   };
 
   const isApprover = ['secretaire', 'comptable', 'coordonnateur', 'it_manager', 'admin', 'promoteur'].includes(profile?.role?.nom || '');
+  const canEditDistribution = isApprover || isGestionnaireUniforme();
   const pendingDistributions = distributions.filter((d) => d.statut === 'en_attente');
 
   const handleApprove = async (id: string) => {
@@ -491,18 +495,20 @@ export default function FournituresEleves() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Classe</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Section</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Article</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Taille</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Qté</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Année</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Notes</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Comptable</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Statut</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan={isItManager() ? 11 : 10} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
+                <tr><td colSpan={isItManager() ? 13 : 12} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={isItManager() ? 11 : 10} className="px-6 py-8 text-center text-gray-500">Aucune distribution trouvée</td></tr>
+                <tr><td colSpan={isItManager() ? 13 : 12} className="px-6 py-8 text-center text-gray-500">Aucune distribution trouvée</td></tr>
               ) : (
                 filtered.map((d) => (
                   <tr key={d.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.has(d.id) ? 'bg-red-50' : ''}`}>
@@ -531,6 +537,9 @@ export default function FournituresEleves() {
                         {d.type_uniforme_libelle}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">{d.taille || 'M'}</span>
+                    </td>
                     <td className="px-4 py-3 text-sm font-semibold text-gray-800">{d.quantite}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{d.annee_scolaire || '-'}</td>
                     <td className="px-4 py-3 text-sm text-gray-500 italic">{d.notes || '-'}</td>
@@ -539,6 +548,17 @@ export default function FournituresEleves() {
                       {d.statut === 'en_attente' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">En attente</span>}
                       {d.statut === 'refuse' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Refusée</span>}
                       {d.statut === 'valide' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Validée</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {canEditDistribution && (
+                        <button
+                          onClick={() => setEditingDistribution(d)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg hover:bg-blue-100 border border-blue-200 transition-colors"
+                          title="Modifier la taille ou la quantité"
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> Modifier
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -568,6 +588,14 @@ export default function FournituresEleves() {
           }}
           onSuccess={handleDistributionSuccess}
           eleve={selectedEleve}
+        />
+      )}
+
+      {editingDistribution && (
+        <DistributionEditModal
+          distribution={editingDistribution}
+          onClose={() => setEditingDistribution(null)}
+          onSuccess={loadDistributions}
         />
       )}
     </div>

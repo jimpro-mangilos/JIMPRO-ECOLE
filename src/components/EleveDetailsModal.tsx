@@ -28,6 +28,7 @@ interface Uniforme {
   id: string;
   type_uniforme_libelle: string;
   quantite: number;
+  taille: string | null;
   annee_scolaire: string | null;
   date_distribution: string;
   nom_comptable: string;
@@ -79,7 +80,7 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
       setLoadingUniformes(true);
       const { data, error } = await supabase
         .from('gestion_uniformes')
-        .select('id, type_uniforme_libelle, quantite, annee_scolaire, date_distribution, nom_comptable, notes')
+        .select('id, type_uniforme_libelle, quantite, taille, annee_scolaire, date_distribution, nom_comptable, notes')
         .eq('ecole_id', currentSchoolId)
         .eq('eleve_id', eleve.id)
         .order('date_distribution', { ascending: false });
@@ -309,6 +310,7 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-teal-700 uppercase">Date</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-teal-700 uppercase">Article</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-teal-700 uppercase">Taille</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-teal-700 uppercase">Qté</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-teal-700 uppercase">Année</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-teal-700 uppercase">Notes</th>
@@ -324,6 +326,9 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
                             <Package className="w-3.5 h-3.5" />
                             {uniforme.type_uniforme_libelle}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          <span className="inline-flex items-center px-2 py-0.5 bg-teal-50 text-teal-800 text-xs font-semibold rounded-full">{uniforme.taille || 'M'}</span>
                         </td>
                         <td className="px-4 py-3 text-sm font-semibold text-gray-800">{uniforme.quantite}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{uniforme.annee_scolaire || '-'}</td>
