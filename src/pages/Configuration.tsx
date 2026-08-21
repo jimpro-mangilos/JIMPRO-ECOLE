@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useLogo } from '../contexts/LogoContext';
+import { useLogo, clearLogoCache } from '../contexts/LogoContext';
 import { invalidatePrefixCache } from '../utils/matriculeGenerator';
 import { Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Upload, RotateCcw } from 'lucide-react';
 import MenuConfigTab from '../components/MenuConfigTab';
@@ -98,6 +98,7 @@ export default function Configuration() {
         .eq('ecole_id', currentSchoolId)
         .eq('key', 'logo_url');
       if (error) throw error;
+      clearLogoCache(currentSchoolId);
       await refreshLogo();
       showSuccess('Logo supprimé');
     } catch (err: any) { showError('Erreur suppression logo'); }

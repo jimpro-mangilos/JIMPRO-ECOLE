@@ -17,10 +17,24 @@ const LogoContext = createContext<LogoContextType>({
   refreshLogo: async () => {},
 });
 
+const LOGO_CACHE_PREFIX = 'jimpro_logo_';
+
+/** Supprime l'URL du logo en cache local pour une école donnée. */
+export function clearLogoCache(schoolId: string | null | undefined) {
+  if (!schoolId) return;
+  try {
+    localStorage.removeItem(`${LOGO_CACHE_PREFIX}${schoolId}`);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function LogoProvider({ children }: { children: ReactNode }) {
   const { currentSchoolId } = useAuth();
   const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO);
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
+
+  const cacheKey = currentSchoolId ? `${LOGO_CACHE_PREFIX}${currentSchoolId}` : null;
 
   const loadBase64FromUrl = useCallback(async (url: string) => {
     if (!url) return null;
@@ -38,6 +52,15 @@ export function LogoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshLogo = useCallback(async () => {
+    // Fallback : cache local (permet au logo de "rester en place" au rechargement
+    // même si la query échoue de façon transitoire).
+    let cached = '';
+    try {
+      if (cacheKey) cached = localStorage.getItem(cacheKey) || '';
+    } catch {
+      /* ignore */
+    }
+
     try {
       const { data } = await supabase
         .from('app_settings')
@@ -46,15 +69,21 @@ export function LogoProvider({ children }: { children: ReactNode }) {
         .eq('key', 'logo_url')
         .maybeSingle();
 
-      const url = data?.value || '';
+      const url = data?.value || cached;
       setLogoUrl(url);
       invalidateLogoCache();
       setLogoBase64(url ? await loadBase64FromUrl(url) : null);
+
+      try {
+        if (cacheKey && data?.value) localStorage.setItem(cacheKey, data.value);
+      } catch {
+        /* ignore */
+      }
     } catch {
-      setLogoUrl('');
+      setLogoUrl(cached);
       setLogoBase64(null);
     }
-  }, [loadBase64FromUrl, currentSchoolId]);
+  }, [loadBase64FromUrl, currentSchoolId, cacheKey]);
 
   useEffect(() => {
     refreshLogo();
