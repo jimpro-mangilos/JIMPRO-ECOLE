@@ -3,6 +3,7 @@ import { QrCode, X, Search, Loader2, CheckCircle, XCircle, Calendar, RefreshCw }
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
+import { formatDateTime } from '../utils/calculations';
 
 // Mois scolaires (conformes au calendrier des paiements : Septembre → Juillet)
 const MOIS = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'];
@@ -33,6 +34,7 @@ interface PaiementInfo {
   type_paiement: string;
   motif_libelle: string;
   statut: string;
+  created_at: string | null;
 }
 
 type Resultat =
@@ -145,6 +147,7 @@ export default function PortailRecouvrement() {
         setResultat({ type: 'en_ordre', eleve: info, paiement: {
           id: paiement.id, montant_paye: paiement.montant_paye, date_paiement: paiement.date_paiement,
           type_paiement: paiement.type_paiement, motif_libelle: paiement.motif_libelle || '', statut: paiement.statut,
+          created_at: paiement.created_at,
         }});
       } else {
         setResultat({ type: 'pas_en_ordre', eleve: info });
@@ -294,6 +297,7 @@ export default function PortailRecouvrement() {
                     <div><span className="text-white/40">Date</span><p className="text-white">{new Date(resultat.paiement.date_paiement).toLocaleDateString('fr-FR')}</p></div>
                     <div><span className="text-white/40">Type</span><p className="text-white">{resultat.paiement.type_paiement}</p></div>
                     <div><span className="text-white/40">Motif</span><p className="text-white">{resultat.paiement.motif_libelle || '—'}</p></div>
+                    <div className="col-span-2"><span className="text-white/40">Horodatage</span><p className="text-white">{(resultat.paiement.created_at || resultat.paiement.date_paiement) ? formatDateTime(resultat.paiement.created_at || resultat.paiement.date_paiement) : '-'}</p></div>
                   </div>
                 )}
 

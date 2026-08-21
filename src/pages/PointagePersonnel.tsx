@@ -5,6 +5,7 @@ import { usePointage, STATUT_POINTAGE, type PointageRecord } from '../lib/hooks/
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generatePointageReport } from '../utils/pointageReportGenerator';
+import { formatDateTime } from '../utils/calculations';
 
 function today(): string {
   const d = new Date();
@@ -135,6 +136,7 @@ export default function PointagePersonnel() {
                   <th className="px-4 py-3">Arrivée</th>
                   <th className="px-4 py-3">Départ</th>
                   <th className="px-4 py-3">Actions</th>
+                  <th className="px-4 py-3">Horodatage</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -171,6 +173,7 @@ export default function PointagePersonnel() {
                           <button onClick={() => mark(p.id, 'permission')} title="Permission" className={`p-1.5 rounded-lg ${st === 'permission' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}><UserCheck className="w-4 h-4" /></button>
                         </div>
                       </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{cur?.created_at ? formatDateTime(cur.created_at) : cur?.date_pointage ? formatDateTime(cur.date_pointage) : '—'}</td>
                     </tr>
                   );
                 })}

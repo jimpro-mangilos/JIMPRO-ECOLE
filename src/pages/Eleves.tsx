@@ -3,7 +3,7 @@ import MultiSelectFilter from '../components/MultiSelectFilter';
 import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
-import { calculateAverageAge } from '../utils/calculations';
+import { calculateAverageAge, formatDateTime } from '../utils/calculations';
 import EleveDetailsModal from '../components/EleveDetailsModal';
 import PaymentFormModal from '../components/PaymentFormModal';
 import { useEleves } from '../lib/hooks/useEleves';
@@ -312,11 +312,12 @@ export default function Eleves() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Classe</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{getCurrentMoisMinerval()}</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Horodatage</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {eleves.length === 0 && (
-                <tr><td colSpan={isItManager() ? 9 : 8} className="px-4 py-12 text-center text-gray-400">Aucun élève trouvé.</td></tr>
+                <tr><td colSpan={isItManager() ? 10 : 9} className="px-4 py-12 text-center text-gray-400">Aucun élève trouvé.</td></tr>
               )}
               {eleves.map(eleve => (
                 <tr key={eleve.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleViewDetails(eleve)}>
@@ -343,6 +344,7 @@ export default function Eleves() {
                       {isItManager() && <button onClick={(e) => { e.stopPropagation(); deleteEleve(eleve.id); }} className="p-2 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-4 h-4" /></button>}
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">{eleve.created_at ? formatDateTime(eleve.created_at) : '—'}</td>
                 </tr>
               ))}
             </tbody>

@@ -5,6 +5,7 @@ import { generateFinancesReport } from '../utils/pdfGenerator';
 import { montantEnLettres } from '../utils/numberToWords';
 import { PieChart } from '../components/PieChart';
 import { useFinances, STATUT_LABELS, STATUT_COLORS, type Transaction } from '../lib/hooks/useFinances';
+import { formatDateTime } from '../utils/calculations';
 
 // ─── Filters State ────────────────────────────────────────────────────────────
 function useFinanceFilters() {
@@ -138,7 +139,7 @@ export default function Finances() {
               </button>
               {isExpanded && <table className="w-full"><thead><tr className="border-b border-gray-200 bg-gray-50">
                 {canSupprimer() && <th className="px-2 py-1.5"><input type="checkbox" checked={filteredGroup.length > 0 && filteredGroup.every(t => selectedIds.has(t.id))} onChange={() => toggleSelectAll(filteredGroup.map(t => t.id))} className="rounded" /></th>}
-                <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Bénéficiaire</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Libellé</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Type</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Signataires</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Bénéficiaire</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Libellé</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Type</th><th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th><th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600 uppercase">Signataires</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th><th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Horodatage</th>
               </tr></thead><tbody className="divide-y divide-gray-50">
                 {filteredGroup.map(t => (
                   <tr key={t.id} className={`border-l-4 ${t.type_operation === 'recette' ? 'border-l-emerald-500' : 'border-l-red-500'} hover:bg-gray-50/50 transition-colors cursor-pointer`} onClick={() => setDetailTransaction(t)}>
@@ -158,6 +159,7 @@ export default function Finances() {
                         {canSupprimer() && <button onClick={(e) => { e.stopPropagation(); supprimer(t.id); }} disabled={actionLoading === t.id + 'delete'} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>}
                       </div>
                     </td>
+                    <td className="px-2 py-1.5 text-sm text-gray-600 whitespace-nowrap">{(t.created_at || t.date_transaction) ? formatDateTime(t.created_at || t.date_transaction) : '-'}</td>
                   </tr>
                 ))}
               </tbody></table>}

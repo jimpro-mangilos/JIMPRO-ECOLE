@@ -4,6 +4,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDateTime } from '../utils/calculations';
 import UniformeFormModal from '../components/UniformeFormModal';
 import DistributionEditModal from '../components/DistributionEditModal';
 import MultiSelectFilter from '../components/MultiSelectFilter';
@@ -513,13 +514,14 @@ export default function FournituresEleves() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Comptable</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Statut</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Horodatage</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan={isItManager() ? 13 : 12} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
+                <tr><td colSpan={isItManager() ? 14 : 13} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={isItManager() ? 13 : 12} className="px-6 py-8 text-center text-gray-500">Aucune distribution trouvée</td></tr>
+                <tr><td colSpan={isItManager() ? 14 : 13} className="px-6 py-8 text-center text-gray-500">Aucune distribution trouvée</td></tr>
               ) : (
                 filtered.map((d) => (
                   <tr key={d.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.has(d.id) ? 'bg-red-50' : ''}`}>
@@ -581,6 +583,9 @@ export default function FournituresEleves() {
                           </button>
                         )}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                      {(d.created_at || d.date_distribution) ? formatDateTime(d.created_at || d.date_distribution) : '-'}
                     </td>
                   </tr>
                 ))

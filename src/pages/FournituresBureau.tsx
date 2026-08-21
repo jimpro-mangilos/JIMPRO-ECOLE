@@ -3,6 +3,7 @@ import { Plus, Search, Briefcase, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDateTime } from '../utils/calculations';
 
 type FournitureBureau = Database['public']['Tables']['gestion_fourniture_bureau']['Row'];
 
@@ -223,13 +224,14 @@ export default function FournituresBureau() {
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Quantité</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Commentaire</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Horodatage</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan={isItManager() ? 6 : 5} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
+                <tr><td colSpan={isItManager() ? 7 : 6} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
               ) : filteredFournitures.length === 0 ? (
-                <tr><td colSpan={isItManager() ? 6 : 5} className="px-6 py-8 text-center text-gray-500">Aucune distribution trouvée</td></tr>
+                <tr><td colSpan={isItManager() ? 7 : 6} className="px-6 py-8 text-center text-gray-500">Aucune distribution trouvée</td></tr>
               ) : (
                 filteredFournitures.map((f) => (
                   <tr key={f.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.has(f.id) ? 'bg-red-50' : ''}`}>
@@ -259,6 +261,9 @@ export default function FournituresBureau() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-600">{f.commentaire || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {(f.created_at || f.date_operation) ? formatDateTime(f.created_at || f.date_operation) : '-'}
                     </td>
                   </tr>
                 ))

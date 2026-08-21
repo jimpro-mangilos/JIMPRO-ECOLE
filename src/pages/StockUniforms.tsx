@@ -3,6 +3,7 @@ import { Archive, Plus, CreditCard as Edit2, Trash2, AlertTriangle, CheckCircle,
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { TAILLES_UNIFORME } from '../lib/constants';
+import { formatDateTime } from '../utils/calculations';
 
 interface TypeUniforme {
   id: string;
@@ -33,6 +34,7 @@ interface StockUniforme {
   seuil_alerte: number | null;
   notes: string | null;
   nom_comptable: string;
+  created_at?: string | null;
   updated_at: string;
 }
 
@@ -856,6 +858,7 @@ function StockUniforms() {
                   {canWrite && (
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Actions</th>
                   )}
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Horodatage</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -961,6 +964,7 @@ function StockUniforms() {
                         </div>
                       </td>
                     )}
+                    <td className="px-5 py-4 text-sm text-gray-500 whitespace-nowrap">{stock.created_at ? formatDateTime(stock.created_at) : stock.updated_at ? formatDateTime(stock.updated_at) : '—'}</td>
                   </tr>
                 ))}
               </tbody>

@@ -7,6 +7,7 @@ import MultiSelectFilter from '../components/MultiSelectFilter';
 import { useAuth } from '../contexts/AuthContext';
 import { usePaiements, getStatut, type Paiement } from '../lib/hooks/usePaiements';
 import { useSections, useClasses } from '../lib/hooks/useReferenceData';
+import { formatDateTime } from '../utils/calculations';
 
 // ─── Motif Multi-Select (local component) ────────────────────────────────────
 function MotifMultiSelect({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (v: string[]) => void }) {
@@ -285,6 +286,7 @@ export default function Paiements() {
                       <th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Montant</th>
                       <th className="px-2 py-1.5 text-center text-xs font-semibold text-gray-600 uppercase">Statut</th>
                       <th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                      <th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 uppercase">Horodatage</th>
                     </tr></thead>
                     <tbody className="divide-y divide-gray-50">
                       {groupPaiements.map(p => (
@@ -309,6 +311,7 @@ export default function Paiements() {
                               {(canSupprimerPaiement() || isItManager()) && <button onClick={(e) => { e.stopPropagation(); supprimer(p); }} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>}
                             </div>
                           </td>
+                          <td className="px-2 py-1.5 text-sm text-gray-600 whitespace-nowrap">{(p.created_at || p.date_paiement) ? formatDateTime(p.created_at || p.date_paiement) : '-'}</td>
                         </tr>
                       ))}
                     </tbody>

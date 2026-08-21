@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X, BookOpen, Upload } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
-import { formatCurrency, formatDate } from '../utils/calculations';
+import { formatCurrency, formatDate, formatDateTime } from '../utils/calculations';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 
 interface EleveInfo {
@@ -29,6 +29,7 @@ interface PaiementInfo {
   montant_en_lettre: string;
   mode_paiement: string;
   date_paiement: string;
+  created_at: string | null;
   motif_libelle: string;
   annee_scolaire: string | null;
   type_paiement: string;
@@ -390,6 +391,7 @@ export default function PortailParent() {
                         <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Mode</th>
                         <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Montant</th>
                         <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Statut</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Horodatage</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -407,6 +409,9 @@ export default function PortailParent() {
                               {p.est_encaisse ? 'Paye' : 'En attente'}
                             </span>
                           </td>
+                          <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                            {(p.created_at || p.date_paiement) ? formatDateTime(p.created_at || p.date_paiement) : '—'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -414,6 +419,7 @@ export default function PortailParent() {
                       <tr>
                         <td colSpan={4} className="px-4 py-3 text-right text-sm font-bold text-gray-900">Total</td>
                         <td className="px-4 py-3 text-right font-bold text-green-600">{totalPaye.toLocaleString()} FC</td>
+                        <td></td>
                         <td></td>
                       </tr>
                     </tfoot>

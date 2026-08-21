@@ -15,6 +15,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateCarteService } from '../utils/carteServiceGenerator';
+import { formatDateTime } from '../utils/calculations';
 
 interface PersonnelForm {
   matricule: string;
@@ -286,6 +287,7 @@ export default function Personnel() {
                   <th className="px-4 py-3 text-right">Salaire</th>
                   <th className="px-4 py-3">Statut</th>
                   <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">Horodatage</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -313,6 +315,7 @@ export default function Personnel() {
                       <button onClick={() => openEdit(p)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Modifier"><Pencil className="w-4 h-4" /></button>
                       <button onClick={() => handleDelete(p)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Supprimer"><Trash2 className="w-4 h-4" /></button>
                     </td>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{p.created_at ? formatDateTime(p.created_at) : '—'}</td>
                   </tr>
                 ))}
               </tbody>

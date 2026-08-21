@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, TrendingDown, Users, CheckCircle, Clock, Calendar, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDateTime } from '../utils/calculations';
 
 interface Comptable {
   id: string;
@@ -33,6 +34,7 @@ interface Transaction {
   date_paiement: string;
   est_encaisse: boolean;
   date_encaissement: string | null;
+  created_at: string | null;
 }
 
 interface StatsMois {
@@ -233,7 +235,7 @@ export default function TableauBordComptable() {
     try {
       const { data: encaisses, error: errorEncaisses } = await supabase
         .from('paiements')
-        .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement')
+        .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement, created_at')
         .eq('ecole_id', currentSchoolId)
         .eq('encaisseur_id', comptableId)
         .eq('est_encaisse', true)
@@ -244,7 +246,7 @@ export default function TableauBordComptable() {
 
       const { data: nonEncaisses, error: errorNonEncaisses } = await supabase
         .from('paiements')
-        .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement')
+        .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement, created_at')
         .eq('ecole_id', currentSchoolId)
         .eq('encaisseur_id', comptableId)
         .eq('est_encaisse', false)
@@ -516,6 +518,7 @@ export default function TableauBordComptable() {
                         <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                         <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase">Montant</th>
                         <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase">Horodatage</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -529,6 +532,7 @@ export default function TableauBordComptable() {
                           <td className="px-2 py-1.5 text-sm">{getTypePaiementLabel(transaction.type_paiement)}</td>
                           <td className="px-2 py-1.5 text-sm font-semibold text-orange-600">{transaction.montant_paye.toLocaleString('fr-FR')} FC</td>
                           <td className="px-2 py-1.5 text-sm">{new Date(transaction.date_paiement).toLocaleDateString('fr-FR')}</td>
+                          <td className="px-2 py-1.5 text-sm text-gray-600 whitespace-nowrap">{(transaction.created_at || transaction.date_paiement) ? formatDateTime(transaction.created_at || transaction.date_paiement) : '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -557,6 +561,7 @@ export default function TableauBordComptable() {
                         <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase">Montant</th>
                         <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase">Mode</th>
                         <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase">Date Encais.</th>
+                        <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase">Horodatage</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -573,6 +578,7 @@ export default function TableauBordComptable() {
                           <td className="px-2 py-1.5 text-sm">
                             {transaction.date_encaissement ? new Date(transaction.date_encaissement).toLocaleDateString('fr-FR') : '-'}
                           </td>
+                          <td className="px-2 py-1.5 text-sm text-gray-600 whitespace-nowrap">{(transaction.created_at || transaction.date_paiement) ? formatDateTime(transaction.created_at || transaction.date_paiement) : '-'}</td>
                         </tr>
                       ))}
                     </tbody>

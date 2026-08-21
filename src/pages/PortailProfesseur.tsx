@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, BookOpen, FileText, Edit, Trash2, Loader2, Upload, X, Calendar, GraduationCap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDateTime } from '../utils/calculations';
 
 interface ClasseInfo { id: string; nom: string; option_nom: string; option_id: string | null; }
 interface CoursItem { id: string; titre: string; description: string; professeur_id: string; classe_id: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; classes?: { nom: string; sections?: { nom: string } } | null; }
@@ -183,7 +184,7 @@ export default function PortailProfesseur() {
                   <Upload className="w-3 h-3" /> {item.fichier_nom || 'Fichier'}
                 </a>
               )}
-              <div className="text-xs text-gray-400 mb-2">{new Date(item.created_at).toLocaleDateString('fr-FR')}</div>
+              <div className="text-xs text-gray-400 mb-2">Horodatage : {item.created_at ? formatDateTime(item.created_at) : '—'}</div>
               {isOwner(item.professeur_id) && (
                 <div className="flex gap-2 pt-3 border-t border-gray-50">
                   <button onClick={() => openEdit(item, activeTab === 'devoirs')} className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 font-medium"><Edit className="w-3.5 h-3.5" /> Modifier</button>
