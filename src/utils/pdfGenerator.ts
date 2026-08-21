@@ -596,9 +596,8 @@ export async function generateElevePaymentHistoryPDF(eleve: Eleve, paiements: Mi
   };
   drawReportHeader(doc, header);
 
-  const totalAttendu = paiements.reduce((s, p) => s + Number(p.montant_total), 0);
   const totalPaye = paiements.reduce((s, p) => s + Number(p.montant_paye), 0);
-  const solde = totalAttendu - totalPaye;
+  const nbPaiements = paiements.length;
 
   let y = contentStartY();
 
@@ -641,45 +640,36 @@ export async function generateElevePaymentHistoryPDF(eleve: Eleve, paiements: Mi
   y += blockH + 6;
 
   y = drawKpiCards(doc, y, [
-    { label: 'A payer', value: formatCurrencyPDF(totalAttendu), tone: 'info' },
-    { label: 'Paye', value: formatCurrencyPDF(totalPaye), tone: 'success' },
-    { label: 'Solde', value: formatCurrencyPDF(solde), tone: solde > 0 ? 'danger' : 'success' },
+    { label: 'Total payé', value: formatCurrencyPDF(totalPaye), tone: 'success' },
+    { label: 'Paiements', value: String(nbPaiements), tone: 'info' },
+    { label: 'Dernier', value: paiements.length ? formatDatePDF(paiements[0].date_paiement) : '-', tone: 'info' },
   ]);
 
   y = drawSectionTitle(doc, y + 2, 'Chronologie des paiements');
 
-  const rows = sanitizeRows(paiements.map((p, i) => {
-    const s = Number(p.montant_total) - Number(p.montant_paye);
-    return [
-      String(i + 1),
-      formatDatePDF(p.date_paiement),
-      formatCurrencyPDF(Number(p.montant_total)),
-      formatCurrencyPDF(Number(p.montant_paye)),
-      formatCurrencyPDF(s),
-      p.motif_libelle || '-',
-      p.numero_recu || '-',
-      p.date_encaissement ? formatDatePDF(p.date_encaissement) : '-',
-      p.nom_encaisseur || '-',
-    ];
-  }));
+  const rows = sanitizeRows(paiements.map((p, i) => [
+    String(i + 1),
+    formatDatePDF(p.date_paiement),
+    formatCurrencyPDF(Number(p.montant_paye)),
+    p.motif_libelle || '-',
+    p.numero_recu || '-',
+    p.date_encaissement ? formatDatePDF(p.date_encaissement) : '-',
+    p.nom_encaisseur || '-',
+  ]));
 
   runAutoTable(doc, {
     startY: y + 2,
-    head: [['#', 'Date', 'Total', 'Paye', 'Solde', 'Motif', 'N Recu', 'Date encais.', 'Encaisseur']],
+    head: [['#', 'Date', 'Montant', 'Motif', 'N Reçu', 'Date encais.', 'Encaisseur']],
     body: rows,
     foot: [[
-      { content: 'TOTAUX', colSpan: 2, styles: { halign: 'right' } },
-      formatCurrencyPDF(totalAttendu),
+      { content: 'TOTAL', colSpan: 2, styles: { halign: 'right' } },
       formatCurrencyPDF(totalPaye),
-      formatCurrencyPDF(solde),
       '', '', '', '',
     ]],
     headColor: PDF_THEME.colors.primary,
     columnStyles: {
       0: { cellWidth: 8, halign: 'center' },
       2: { halign: 'right' },
-      3: { halign: 'right' },
-      4: { halign: 'right' },
     },
   }, header);
 
