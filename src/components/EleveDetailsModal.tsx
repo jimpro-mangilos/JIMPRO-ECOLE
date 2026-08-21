@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { calculateAge, formatCurrency, formatDate } from '../utils/calculations';
 import { generateElevePaymentHistoryPDF } from '../utils/pdfGenerator';
+import { generateReceipt } from '../utils/receiptGenerator';
 import UniformeFormModal from './UniformeFormModal';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -14,14 +15,28 @@ interface Paiement {
   numero_recu: string;
   matricule: string;
   nom_eleve: string;
+  postnom: string;
+  prenom: string;
+  classe: string;
+  sexe: string;
+  section: string;
+  telephone: string;
+  option: string | null;
+  lieu_naissance: string | null;
+  date_naissance: string | null;
+  responsable: string | null;
   montant_paye: number;
   montant_en_lettre: string;
   mode_paiement: string;
   date_paiement: string;
+  date_encaissement: string | null;
+  nom_comptable: string;
+  nom_encaisseur: string | null;
   type_paiement: string;
   description: string | null;
   motif_libelle: string;
   annee_scolaire: string | null;
+  created_at: string;
 }
 
 interface Uniforme {
@@ -43,18 +58,29 @@ interface EleveDetailsModalProps {
 }
 
 export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOpenPaymentForm }: EleveDetailsModalProps) {
-  const { canCreatePaiement, currentSchoolId } = useAuth();
+  const { canCreatePaiement, currentSchoolId, isItManager } = useAuth();
   const [paiements, setPaiements] = useState<Paiement[]>([]);
   const [uniformes, setUniformes] = useState<Uniforme[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingUniformes, setLoadingUniformes] = useState(true);
   const [showUniformeForm, setShowUniformeForm] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
+  const [typesPaiement, setTypesPaiement] = useState<any[]>([]);
 
   useEffect(() => {
     loadPaiements();
     loadUniformes();
   }, [eleve.id]);
+
+  useEffect(() => {
+    supabase
+      .from('types_paiement')
+      .select('id, libelle, description')
+      .eq('ecole_id', currentSchoolId)
+      .eq('is_active', true)
+      .order('ordre')
+      .then(({ data }: any) => { if (data) setTypesPaiement(data); });
+  }, [currentSchoolId]);
 
   const loadPaiements = async () => {
     try {
@@ -103,8 +129,46 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
   const totalPaye = paiements.reduce((sum, p) => sum + Number(p.montant_paye), 0);
   const totalArticles = uniformes.reduce((sum, u) => sum + u.quantite, 0);
 
+  const getTypeLabel = (typePaiement: string) => {
+    const t = typesPaiement.find((tp: any) => tp.libelle === typePaiement || tp.id === typePaiement);
+    return t?.libelle || typePaiement;
+  };
+
   const handlePrintHistory = () => {
     generateElevePaymentHistoryPDF(eleve as any, paiements as any);
+  };
+
+  const handlePrintRecu = (paiement: Paiement) => {
+    try {
+      generateReceipt({
+        numero_recu: paiement.numero_recu,
+        nom_eleve: paiement.nom_eleve,
+        matricule: paiement.matricule,
+        postnom: paiement.postnom,
+        prenom: paiement.prenom,
+        classe: paiement.classe,
+        sexe: paiement.sexe,
+        section: paiement.section,
+        telephone: paiement.telephone,
+        option: paiement.option || '',
+        lieu_naissance: paiement.lieu_naissance,
+        date_naissance: paiement.date_naissance,
+        responsable: paiement.responsable,
+        montant_paye: paiement.montant_paye,
+        montant_en_lettre: paiement.montant_en_lettre,
+        mode_paiement: paiement.mode_paiement,
+        date_paiement: paiement.date_paiement,
+        date_encaissement: paiement.date_encaissement || paiement.created_at,
+        nom_comptable: paiement.nom_comptable,
+        nom_encaisseur: paiement.nom_encaisseur,
+        type_paiement: getTypeLabel(paiement.type_paiement),
+        annee_scolaire: paiement.annee_scolaire,
+        motif_paiement: paiement.motif_libelle || null,
+      }, false);
+    } catch (err) {
+      console.error('Erreur impression:', err);
+      alert('Erreur lors de la génération du reçu');
+    }
   };
 
   return (
@@ -255,6 +319,7 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Montant</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Mode</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Année</th>
+                      {isItManager() && <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Action</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -262,11 +327,22 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
                       <tr key={paiement.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm font-medium text-blue-600">{paiement.numero_recu}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{formatDate(paiement.date_paiement)}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{paiement.type_paiement}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{getTypeLabel(paiement.type_paiement)}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{paiement.motif_libelle || '-'}</td>
                         <td className="px-4 py-3 text-sm font-medium text-green-600">{formatCurrency(Number(paiement.montant_paye))}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{paiement.mode_paiement}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{paiement.annee_scolaire || '-'}</td>
+                        {isItManager() && (
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => handlePrintRecu(paiement)}
+                              className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600"
+                              title="Imprimer le reçu"
+                            >
+                              <Printer className="w-4 h-4" />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

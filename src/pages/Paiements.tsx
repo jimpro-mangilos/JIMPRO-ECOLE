@@ -111,7 +111,7 @@ export default function Paiements() {
   // ─── Print / Edit / Detail handlers ────────────────────────────────────────
   const handlePrintRecu = (paiement: Paiement) => {
     try {
-      const typeLabel = typesPaiement.find((t: any) => t.libelle === paiement.type_paiement)?.description || paiement.type_paiement;
+      const typeLabel = getTypeLabel(paiement.type_paiement);
       generateReceipt({
         numero_recu: paiement.numero_recu, nom_eleve: paiement.nom_eleve, matricule: paiement.matricule,
         postnom: paiement.postnom, prenom: paiement.prenom, classe: paiement.classe,

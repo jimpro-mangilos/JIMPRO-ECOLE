@@ -183,11 +183,18 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
 
   yPos += 4;
 
-  const typeLabel = data.type_paiement === 'minerval' ? 'Minerval' :
-                    data.type_paiement === 'fournitures_eleves' ? 'Fournitures Eleves' :
-                    data.type_paiement === 'fournitures_bureau' ? 'Fournitures Bureau' : 'Autre';
+  const rawType = (data.type_paiement || '').trim();
+  const typeLabel =
+    rawType.toLowerCase() === 'minerval' ? 'Minerval' :
+    rawType.toLowerCase() === 'fournitures_eleves' ? 'Fournitures Eleves' :
+    rawType.toLowerCase() === 'fournitures_bureau' ? 'Fournitures Bureau' :
+    rawType;
 
-  const baseMotif = data.motif_paiement || typeLabel;
+  const motif = (data.motif_paiement || '').trim();
+  let baseMotif = motif;
+  if (typeLabel && typeLabel.toLowerCase() !== motif.toLowerCase()) {
+    baseMotif = motif ? `${typeLabel} - ${motif}` : typeLabel;
+  }
   const motifLabel = data.annee_scolaire ? `${baseMotif} / ${data.annee_scolaire}` : baseMotif;
   const refPaiement = data.numero_recu.substring(0, 8);
 
