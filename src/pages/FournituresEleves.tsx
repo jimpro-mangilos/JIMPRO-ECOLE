@@ -133,6 +133,17 @@ export default function FournituresEleves() {
     setSelectedEleve(null);
   };
 
+  const handleDeleteDistribution = async (d: DistributionUniforme) => {
+    if (!confirm(`Supprimer la distribution "${d.type_uniforme_libelle}" (taille ${d.taille || 'M'}) de ${d.nom_eleve} ${d.prenom} ?\n\nL'article sera restitué au stock si la distribution était validée.`)) return;
+    try {
+      const { error } = await supabase.from('gestion_uniformes').delete().eq('id', d.id);
+      if (error) throw error;
+      loadDistributions();
+    } catch (err: any) {
+      alert('Erreur lors de la suppression : ' + (err?.message || err));
+    }
+  };
+
   const isApprover = ['secretaire', 'comptable', 'coordonnateur', 'it_manager', 'admin', 'promoteur'].includes(profile?.role?.nom || '');
   const canEditDistribution = isApprover || isGestionnaireUniforme();
   const pendingDistributions = distributions.filter((d) => d.statut === 'en_attente');
@@ -550,15 +561,26 @@ export default function FournituresEleves() {
                       {d.statut === 'valide' && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Validée</span>}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
-                      {canEditDistribution && (
-                        <button
-                          onClick={() => setEditingDistribution(d)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg hover:bg-blue-100 border border-blue-200 transition-colors"
-                          title="Modifier la taille ou la quantité"
-                        >
-                          <Pencil className="w-3.5 h-3.5" /> Modifier
-                        </button>
-                      )}
+                      <div className="flex items-center justify-end gap-1.5">
+                        {canEditDistribution && (
+                          <button
+                            onClick={() => setEditingDistribution(d)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg hover:bg-blue-100 border border-blue-200 transition-colors"
+                            title="Modifier la taille ou la quantité"
+                          >
+                            <Pencil className="w-3.5 h-3.5" /> Modifier
+                          </button>
+                        )}
+                        {isItManager() && (
+                          <button
+                            onClick={() => handleDeleteDistribution(d)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-100 border border-red-200 transition-colors"
+                            title="Supprimer la distribution (restitue au stock)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

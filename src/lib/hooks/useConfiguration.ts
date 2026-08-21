@@ -54,7 +54,7 @@ export function useConfiguration() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const upsertTypeUniforme = useCallback(async (form: { libelle: string; description: string; is_active: boolean }, id?: string) => {
+  const upsertTypeUniforme = useCallback(async (form: { libelle: string; description: string; is_active: boolean; sexe?: string | null }, id?: string) => {
     if (id) {
       const { error } = await db.from('types_uniforme').update({ ...form, ecole_id: schoolId }).eq('id', id);
       if (error) throw error;

@@ -12,6 +12,7 @@ interface TypeUniforme {
   libelle: string;
   description: string | null;
   is_active: boolean;
+  sexe?: string | null;
 }
 
 interface StockInfo {
@@ -85,7 +86,11 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
         supabase.from('annees_scolaires').select('*').eq('ecole_id', currentSchoolId).eq('is_active', true).order('annee', { ascending: false }),
         supabase.from('tailles_uniforme').select('libelle').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
       ]);
-      if (typesRes.data) setTypesUniforme(typesRes.data);
+      if (typesRes.data) {
+        // Filtre par sexe : seuls les articles unisexes ou correspondant au sexe de l'élève
+        const sexe = eleve.sexe;
+        setTypesUniforme(typesRes.data.filter((t: any) => !t.sexe || t.sexe === sexe));
+      }
       if (taillesRes.data && taillesRes.data.length) setTaillesList(taillesRes.data.map((t: any) => t.libelle));
       if (anneesRes.data) {
         setAnneeScolaires(anneesRes.data);
