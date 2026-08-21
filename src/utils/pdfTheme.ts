@@ -214,7 +214,7 @@ export function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions) {
   const logoY = (PDF_THEME.headerHeight - logoSize) / 2;
   const schoolName = options.schoolName || 'GOLDEN ACADEMY';
   if (options.logoBase64) {
-    addRoundedImage(doc, options.logoBase64, logoX, logoY, logoSize, logoSize, 2);
+    addRoundedImage(doc, options.logoBase64, logoX, logoY, logoSize, logoSize, logoSize / 2);
   } else {
     doc.setFillColor(accent[0], accent[1], accent[2]);
     doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 'F');
