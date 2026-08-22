@@ -121,14 +121,28 @@ export default function FournituresEleves() {
   const loadDistributions = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('gestion_uniformes')
-        .select('*')
-        .eq('ecole_id', currentSchoolId)
-        .order('date_distribution', { ascending: false });
+      // Charge jusqu'à 10 000 lignes par lots de 1 000 (limite PostgREST)
+      // au lieu des 1 000 par défaut.
+      const PAGE = 1000;
+      const MAX_ROWS = 10000;
+      let all: DistributionUniforme[] = [];
+      let from = 0;
+      while (all.length < MAX_ROWS) {
+        const to = from + PAGE - 1;
+        const { data, error } = await supabase
+          .from('gestion_uniformes')
+          .select('*')
+          .eq('ecole_id', currentSchoolId)
+          .order('date_distribution', { ascending: false })
+          .range(from, to);
 
-      if (error) throw error;
-      setDistributions((data as DistributionUniforme[]) || []);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all = all.concat(data as DistributionUniforme[]);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      setDistributions(all);
     } catch (error) {
       console.error('Erreur:', error);
     } finally {
