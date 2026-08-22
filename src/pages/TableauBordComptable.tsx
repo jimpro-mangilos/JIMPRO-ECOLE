@@ -50,6 +50,23 @@ interface TypePaiement {
   libelle: string;
 }
 
+/** Récupère toutes les lignes d'une requête paiements en paginant par lots de 1000 (limite PostgREST). */
+async function fetchAllPaiements(query: any): Promise<any[]> {
+  const PAGE = 1000;
+  let all: any[] = [];
+  let from = 0;
+  while (true) {
+    const to = from + PAGE - 1;
+    const { data, error } = await query.range(from, to);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
 export default function TableauBordComptable() {
   const { currentSchoolId } = useAuth();
   const [comptables, setComptables] = useState<Comptable[]>([]);
@@ -192,15 +209,14 @@ export default function TableauBordComptable() {
   const fetchStatistiquesComptable = async (comptableId: string) => {
     if (!currentSchoolId) return;
     try {
-      const { data: paiements, error } = await supabase
-        .from('paiements')
-        .select('montant_paye, est_encaisse, created_at, nom_encaisseur, statut')
-        .eq('ecole_id', currentSchoolId)
-        .eq('encaisseur_id', comptableId);
+      const paiementsData = await fetchAllPaiements(
+        supabase
+          .from('paiements')
+          .select('montant_paye, est_encaisse, created_at, nom_encaisseur, statut')
+          .eq('ecole_id', currentSchoolId)
+          .eq('encaisseur_id', comptableId)
+      );
 
-      if (error) throw error;
-
-      const paiementsData = paiements || [];
       const paiementsActifs = paiementsData.filter((p: any) => p.statut !== 'annule');
       const encaisses = paiementsActifs.filter((p: any) => p.est_encaisse);
       const nonEncaisses = paiementsActifs.filter((p: any) => !p.est_encaisse);
@@ -233,30 +249,30 @@ export default function TableauBordComptable() {
   const fetchTransactions = async (comptableId: string) => {
     if (!currentSchoolId) return;
     try {
-      const { data: encaisses, error: errorEncaisses } = await supabase
-        .from('paiements')
-        .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement, created_at')
-        .eq('ecole_id', currentSchoolId)
-        .eq('encaisseur_id', comptableId)
-        .eq('est_encaisse', true)
-        .neq('statut', 'annule')
-        .order('date_encaissement', { ascending: false });
+      const encaisses = await fetchAllPaiements(
+        supabase
+          .from('paiements')
+          .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement, created_at')
+          .eq('ecole_id', currentSchoolId)
+          .eq('encaisseur_id', comptableId)
+          .eq('est_encaisse', true)
+          .neq('statut', 'annule')
+          .order('date_encaissement', { ascending: false })
+      );
 
-      if (errorEncaisses) throw errorEncaisses;
+      const nonEncaisses = await fetchAllPaiements(
+        supabase
+          .from('paiements')
+          .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement, created_at')
+          .eq('ecole_id', currentSchoolId)
+          .eq('encaisseur_id', comptableId)
+          .eq('est_encaisse', false)
+          .neq('statut', 'annule')
+          .order('created_at', { ascending: false })
+      );
 
-      const { data: nonEncaisses, error: errorNonEncaisses } = await supabase
-        .from('paiements')
-        .select('id, numero_recu, nom_eleve, classe, type_paiement, montant_paye, mode_paiement, date_paiement, est_encaisse, date_encaissement, created_at')
-        .eq('ecole_id', currentSchoolId)
-        .eq('encaisseur_id', comptableId)
-        .eq('est_encaisse', false)
-        .neq('statut', 'annule')
-        .order('created_at', { ascending: false });
-
-      if (errorNonEncaisses) throw errorNonEncaisses;
-
-      setTransactions(encaisses || []);
-      setTransactionsNonEncaissees(nonEncaisses || []);
+      setTransactions(encaisses);
+      setTransactionsNonEncaissees(nonEncaisses);
     } catch (error) {
       console.error('Erreur fetchTransactions:', error);
     }
@@ -272,37 +288,39 @@ export default function TableauBordComptable() {
       const debutJour = new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate());
 
       const [jourRes, moisActuelRes, moisPrecedentRes] = await Promise.all([
-        supabase
-          .from('paiements')
-          .select('montant_paye')
-          .eq('ecole_id', currentSchoolId)
-          .eq('encaisseur_id', comptableId)
-          .eq('est_encaisse', true)
-          .gte('date_encaissement', debutJour.toISOString()),
-        supabase
-          .from('paiements')
-          .select('montant_paye')
-          .eq('ecole_id', currentSchoolId)
-          .eq('encaisseur_id', comptableId)
-          .eq('est_encaisse', true)
-          .gte('date_encaissement', debutMoisActuel.toISOString()),
-        supabase
-          .from('paiements')
-          .select('montant_paye')
-          .eq('ecole_id', currentSchoolId)
-          .eq('encaisseur_id', comptableId)
-          .eq('est_encaisse', true)
-          .gte('date_encaissement', debutMoisPrecedent.toISOString())
-          .lte('date_encaissement', finMoisPrecedent.toISOString()),
+        fetchAllPaiements(
+          supabase
+            .from('paiements')
+            .select('montant_paye')
+            .eq('ecole_id', currentSchoolId)
+            .eq('encaisseur_id', comptableId)
+            .eq('est_encaisse', true)
+            .gte('date_encaissement', debutJour.toISOString())
+        ),
+        fetchAllPaiements(
+          supabase
+            .from('paiements')
+            .select('montant_paye')
+            .eq('ecole_id', currentSchoolId)
+            .eq('encaisseur_id', comptableId)
+            .eq('est_encaisse', true)
+            .gte('date_encaissement', debutMoisActuel.toISOString())
+        ),
+        fetchAllPaiements(
+          supabase
+            .from('paiements')
+            .select('montant_paye')
+            .eq('ecole_id', currentSchoolId)
+            .eq('encaisseur_id', comptableId)
+            .eq('est_encaisse', true)
+            .gte('date_encaissement', debutMoisPrecedent.toISOString())
+            .lte('date_encaissement', finMoisPrecedent.toISOString())
+        ),
       ]);
 
-      if (jourRes.error) throw jourRes.error;
-      if (moisActuelRes.error) throw moisActuelRes.error;
-      if (moisPrecedentRes.error) throw moisPrecedentRes.error;
-
-      const totalJour = (jourRes.data || []).reduce((sum: number, p: any) => sum + p.montant_paye, 0);
-      const totalMoisActuel = (moisActuelRes.data || []).reduce((sum: number, p: any) => sum + p.montant_paye, 0);
-      const totalMoisPrecedent = (moisPrecedentRes.data || []).reduce((sum: number, p: any) => sum + p.montant_paye, 0);
+      const totalJour = jourRes.reduce((sum: number, p: any) => sum + p.montant_paye, 0);
+      const totalMoisActuel = moisActuelRes.reduce((sum: number, p: any) => sum + p.montant_paye, 0);
+      const totalMoisPrecedent = moisPrecedentRes.reduce((sum: number, p: any) => sum + p.montant_paye, 0);
       const difference = totalMoisActuel - totalMoisPrecedent;
       const pourcentage = totalMoisPrecedent > 0 ? (difference / totalMoisPrecedent) * 100 : (totalMoisActuel > 0 ? 100 : 0);
 
