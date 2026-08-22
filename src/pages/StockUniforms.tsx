@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Archive, Plus, CreditCard as Edit2, Trash2, AlertTriangle, CheckCircle, XCircle, Search, RefreshCw, Package, TrendingUp, AlertCircle, Loader2, ClipboardList, Ban } from 'lucide-react';
+import { Archive, Plus, CreditCard as Edit2, Trash2, AlertTriangle, CheckCircle, XCircle, Search, RefreshCw, Package, TrendingUp, AlertCircle, Loader2, ClipboardList, Ban, History } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { TAILLES_UNIFORME } from '../lib/constants';
@@ -65,6 +65,21 @@ interface DemandeStock {
   date_demande: string;
 }
 
+interface HistoriqueStock {
+  id: string;
+  ecole_id: string;
+  type_uniforme_id: string | null;
+  type_uniforme_libelle: string;
+  annee_scolaire: string | null;
+  section: string | null;
+  taille: string | null;
+  quantite: number;
+  type_operation: string;
+  nom_utilisateur: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 function StockUniforms() {
   const { user, userProfile, isAdmin, canManageConfiguration, profile, isItManager, isPromoteur, currentSchoolId } = useAuth();
   const canWrite = isAdmin() || profile?.role?.nom === 'secretaire';
@@ -101,6 +116,8 @@ function StockUniforms() {
   const [selectedDemandeIds, setSelectedDemandeIds] = useState<Set<string>>(new Set());
   const [bulkDeletingDemandes, setBulkDeletingDemandes] = useState(false);
   const [receivingDemandeId, setReceivingDemandeId] = useState<string | null>(null);
+  const [historique, setHistorique] = useState<HistoriqueStock[]>([]);
+  const [filterHistoriqueArticle, setFilterHistoriqueArticle] = useState('');
   const isApprover = isPromoteur() || isItManager() || isAdmin();
   const canReception = canWrite || isApprover || profile?.role?.nom === 'gestionnaire_uniforme';
 
@@ -113,7 +130,7 @@ function StockUniforms() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [stocksRes, typesRes, anneesRes, sectionsRes, demandesRes] = await Promise.all([
+      const [stocksRes, typesRes, anneesRes, sectionsRes, demandesRes, historiqueRes] = await Promise.all([
         supabase
           .from('stock_uniformes')
           .select('*')
@@ -125,6 +142,7 @@ function StockUniforms() {
         supabase.from('annees_scolaires').select('id, annee, is_active').eq('ecole_id', currentSchoolId).eq('is_active', true).order('annee', { ascending: false }),
         supabase.from('sections').select('id, nom, is_active').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
         supabase.from('demandes_stock').select('*, type_uniforme:types_uniforme(libelle)').eq('ecole_id', currentSchoolId).order('date_demande', { ascending: false }),
+        supabase.from('historique_stock').select('*').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false }).limit(200),
       ]);
 
       if (stocksRes.error) throw stocksRes.error;
@@ -133,10 +151,41 @@ function StockUniforms() {
       setAnneeScolaires(anneesRes.data || []);
       setSections(sectionsRes.data || []);
       setDemandes(demandesRes.data || []);
+      setHistorique(historiqueRes.data || []);
     } catch (err) {
       console.error('Erreur chargement stock:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const recordHistorique = async (params: {
+    type_uniforme_id: string | null;
+    type_uniforme_libelle: string;
+    annee_scolaire: string | null;
+    section: string | null;
+    taille: string | null;
+    quantite: number;
+    type_operation: string;
+    notes?: string | null;
+  }) => {
+    try {
+      const nomUtilisateur = `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim();
+      await supabase.from('historique_stock').insert({
+        ecole_id: currentSchoolId,
+        type_uniforme_id: params.type_uniforme_id,
+        type_uniforme_libelle: params.type_uniforme_libelle,
+        annee_scolaire: params.annee_scolaire,
+        section: params.section,
+        taille: params.taille || 'M',
+        quantite: params.quantite,
+        type_operation: params.type_operation,
+        nom_utilisateur: nomUtilisateur,
+        utilisateur_id: user?.id,
+        notes: params.notes || null,
+      });
+    } catch (e) {
+      console.error('Erreur enregistrement historique:', e);
     }
   };
 
@@ -232,6 +281,16 @@ function StockUniforms() {
           .eq('id', editingStock.id);
 
         if (error) throw error;
+        await recordHistorique({
+          type_uniforme_id: editingStock.type_uniforme_id,
+          type_uniforme_libelle: editingStock.type_uniforme_libelle,
+          annee_scolaire: editingStock.annee_scolaire,
+          section: editingStock.section || '',
+          taille: editingStock.taille || 'M',
+          quantite: quantite - editingStock.quantite_stock,
+          type_operation: 'correction',
+          notes: formData.notes || null,
+        });
         setFormSuccess('Stock corrigé avec succès.');
       } else {
         // Approvisionnement: upsert — ajoute au stock existant ou crée
@@ -264,6 +323,16 @@ function StockUniforms() {
             .eq('id', existingStock.id);
 
           if (error) throw error;
+          await recordHistorique({
+            type_uniforme_id: formData.type_uniforme_id,
+            type_uniforme_libelle: typeUniforme?.libelle || '',
+            annee_scolaire: formData.annee_scolaire,
+            section: formData.section,
+            taille: formData.taille || 'M',
+            quantite: quantite,
+            type_operation: 'approvisionnement',
+            notes: formData.notes || null,
+          });
           setFormSuccess(`Stock approvisionné pour ${formData.section} : +${quantite} article(s) ajouté(s). Nouveau total : ${existingStock.quantite_stock + quantite}`);
         } else {
           // Créer un nouvel enregistrement de stock
@@ -284,6 +353,16 @@ function StockUniforms() {
             });
 
           if (error) throw error;
+          await recordHistorique({
+            type_uniforme_id: formData.type_uniforme_id,
+            type_uniforme_libelle: typeUniforme?.libelle || '',
+            annee_scolaire: formData.annee_scolaire,
+            section: formData.section,
+            taille: formData.taille || 'M',
+            quantite: quantite,
+            type_operation: 'approvisionnement',
+            notes: formData.notes || null,
+          });
           setFormSuccess(`Stock créé avec ${quantite} article(s) pour ${formData.section} — ${formData.annee_scolaire}.`);
         }
       }
@@ -302,6 +381,16 @@ function StockUniforms() {
     try {
       const { error } = await supabase.from('stock_uniformes').delete().eq('id', stock.id);
       if (error) throw error;
+      await recordHistorique({
+        type_uniforme_id: stock.type_uniforme_id,
+        type_uniforme_libelle: stock.type_uniforme_libelle,
+        annee_scolaire: stock.annee_scolaire,
+        section: stock.section || '',
+        taille: stock.taille || 'M',
+        quantite: -stock.quantite_stock,
+        type_operation: 'suppression',
+        notes: stock.notes || null,
+      });
       await loadAll();
     } catch (err: any) {
       alert('Erreur lors de la suppression: ' + err.message);
@@ -372,6 +461,17 @@ function StockUniforms() {
         date_decision: new Date().toISOString(),
       }).eq('id', demande.id);
       if (error) throw error;
+
+      await recordHistorique({
+        type_uniforme_id: demande.type_uniforme_id,
+        type_uniforme_libelle: typeUniforme?.libelle || demande.type_uniforme?.libelle || '',
+        annee_scolaire: demande.annee_scolaire,
+        section: demande.section || '',
+        taille: demande.taille || 'M',
+        quantite: demande.quantite,
+        type_operation: 'reception',
+        notes: demande.notes || null,
+      });
 
       await loadAll();
     } catch (err: any) {
@@ -472,12 +572,25 @@ function StockUniforms() {
 
     setBulkDeleting(true);
     try {
+      const toDelete = stocks.filter(s => selectedIds.has(s.id));
       const { error } = await supabase
         .from('stock_uniformes')
         .delete()
         .in('id', ids);
 
       if (error) throw error;
+      for (const s of toDelete) {
+        await recordHistorique({
+          type_uniforme_id: s.type_uniforme_id,
+          type_uniforme_libelle: s.type_uniforme_libelle,
+          annee_scolaire: s.annee_scolaire,
+          section: s.section || '',
+          taille: s.taille || 'M',
+          quantite: -s.quantite_stock,
+          type_operation: 'suppression',
+          notes: s.notes || null,
+        });
+      }
       setSelectedIds(new Set());
       await loadAll();
     } catch (error: any) {
@@ -535,6 +648,20 @@ function StockUniforms() {
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const filteredHistorique = filterHistoriqueArticle
+    ? historique.filter(h => h.type_uniforme_id === filterHistoriqueArticle)
+    : historique;
+
+  const getOperationLabel = (op: string) => {
+    switch (op) {
+      case 'approvisionnement': return 'Approvisionnement';
+      case 'reception': return 'Réception';
+      case 'correction': return 'Correction';
+      case 'suppression': return 'Suppression';
+      default: return op;
+    }
   };
 
   // Unique années from existing stocks + active ones for the filter
@@ -1131,6 +1258,68 @@ function StockUniforms() {
             </table>
             </div>
           </>
+        )}
+      </div>
+
+      {/* Historique d'approvisionnement */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
+        <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <History className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-bold text-gray-800">Historique d'approvisionnement</h2>
+            <span className="text-sm text-gray-500">({filteredHistorique.length})</span>
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <label className="text-sm text-gray-600 font-medium">Catégorie :</label>
+            <select
+              value={filterHistoriqueArticle}
+              onChange={(e) => setFilterHistoriqueArticle(e.target.value)}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+            >
+              <option value="">Toutes les catégories</option>
+              {typesUniforme.map(t => (
+                <option key={t.id} value={t.id}>{t.libelle}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {filteredHistorique.length === 0 ? (
+          <div className="py-10 text-center text-gray-500 text-sm">Aucun mouvement de stock enregistré.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Article</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Section</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Taille</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Année</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Qté</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Opération</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Par</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredHistorique.map(h => (
+                  <tr key={h.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{formatDateTime(h.created_at)}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{h.type_uniforme_libelle || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{h.section || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{h.taille || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{h.annee_scolaire || '—'}</td>
+                    <td className="px-4 py-3 text-sm font-semibold">
+                      <span className={h.quantite > 0 ? 'text-green-600' : h.quantite < 0 ? 'text-red-600' : 'text-gray-500'}>
+                        {h.quantite > 0 ? `+${h.quantite}` : h.quantite}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{getOperationLabel(h.type_operation)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{h.nom_utilisateur || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
