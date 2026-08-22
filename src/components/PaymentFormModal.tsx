@@ -182,14 +182,26 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
 
   const fetchEleves = async () => {
     try {
-      const { data, error } = await supabase
-        .from('eleves')
-        .select('*')
-        .eq('ecole_id', currentSchoolId)
-        .order('nom');
+      // Pagination sans plafond (limite PostgREST de 1000 lignes par requête)
+      const PAGE = 1000;
+      let all: any[] = [];
+      let from = 0;
+      while (true) {
+        const to = from + PAGE - 1;
+        const { data, error } = await supabase
+          .from('eleves')
+          .select('*')
+          .eq('ecole_id', currentSchoolId)
+          .order('nom')
+          .range(from, to);
 
-      if (error) throw error;
-      setEleves(data || []);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      setEleves(all);
     } catch (error) {
       console.error('Erreur:', error);
     }

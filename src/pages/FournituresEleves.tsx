@@ -700,13 +700,25 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
   useEffect(() => {
     (async () => {
       try {
-        const { data, error } = await supabase
-          .from('eleves')
-          .select('*')
-          .eq('ecole_id', currentSchoolId)
-          .order('nom', { ascending: true });
-        if (error) throw error;
-        setEleves(data || []);
+        // Pagination sans plafond (limite PostgREST de 1000 lignes par requête)
+        const PAGE = 1000;
+        let all: Eleve[] = [];
+        let from = 0;
+        while (true) {
+          const to = from + PAGE - 1;
+          const { data, error } = await supabase
+            .from('eleves')
+            .select('*')
+            .eq('ecole_id', currentSchoolId)
+            .order('nom', { ascending: true })
+            .range(from, to);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          all = all.concat(data as Eleve[]);
+          if (data.length < PAGE) break;
+          from += PAGE;
+        }
+        setEleves(all);
       } catch (err) {
         console.error('Erreur chargement élèves:', err);
       } finally {
