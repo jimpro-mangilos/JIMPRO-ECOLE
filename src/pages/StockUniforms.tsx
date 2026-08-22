@@ -98,6 +98,9 @@ function StockUniforms() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [demandes, setDemandes] = useState<DemandeStock[]>([]);
+  const [selectedDemandeIds, setSelectedDemandeIds] = useState<Set<string>>(new Set());
+  const [bulkDeletingDemandes, setBulkDeletingDemandes] = useState(false);
+  const [receivingDemandeId, setReceivingDemandeId] = useState<string | null>(null);
   const isApprover = isPromoteur() || isItManager() || isAdmin();
   const canReception = canWrite || isApprover || profile?.role?.nom === 'gestionnaire_uniforme';
 
@@ -322,7 +325,9 @@ function StockUniforms() {
   };
 
   const handleReceptionDemande = async (demande: DemandeStock) => {
+    if (receivingDemandeId) return; // réception déjà en cours — évite le double-clic
     const nomRecepteur = `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim();
+    setReceivingDemandeId(demande.id);
     try {
       const typeUniforme = typesUniforme.find(t => t.id === demande.type_uniforme_id);
       const existingStock = stocks.find(
@@ -371,6 +376,8 @@ function StockUniforms() {
       await loadAll();
     } catch (err: any) {
       alert('Erreur lors de la réception: ' + err.message);
+    } finally {
+      setReceivingDemandeId(null);
     }
   };
 
@@ -399,6 +406,41 @@ function StockUniforms() {
       await loadAll();
     } catch (err: any) {
       alert('Erreur lors de la suppression: ' + err.message);
+    }
+  };
+
+  const toggleSelectDemande = (id: string) => {
+    setSelectedDemandeIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllDemandes = () => {
+    if (selectedDemandeIds.size === demandes.length && demandes.length > 0) {
+      setSelectedDemandeIds(new Set());
+    } else {
+      setSelectedDemandeIds(new Set(demandes.map(d => d.id)));
+    }
+  };
+
+  const handleBulkDeleteDemandes = async () => {
+    if (!isItManager()) return;
+    if (selectedDemandeIds.size === 0) return;
+    const ids = Array.from(selectedDemandeIds);
+    if (!confirm(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} demande(s) d'entrée en stock.\n\nCette action est irréversible. Continuer ?`)) return;
+    setBulkDeletingDemandes(true);
+    try {
+      const { error } = await supabase.from('demandes_stock').delete().in('id', ids);
+      if (error) throw error;
+      setSelectedDemandeIds(new Set());
+      await loadAll();
+    } catch (err: any) {
+      alert('Erreur lors de la suppression multiple: ' + err.message);
+    } finally {
+      setBulkDeletingDemandes(false);
     }
   };
 
@@ -983,11 +1025,38 @@ function StockUniforms() {
         {demandes.length === 0 ? (
           <div className="py-10 text-center text-gray-500 text-sm">Aucune demande d'entrée en stock.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-amber-50 border-b border-amber-100">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Article</th>
+          <>
+            {isItManager() && selectedDemandeIds.size > 0 && (
+              <div className="px-5 py-3 bg-red-50 border-b border-red-200 flex items-center justify-between">
+                <span className="text-sm font-medium text-red-700">
+                  {selectedDemandeIds.size} demande(s) sélectionnée(s)
+                </span>
+                <button
+                  onClick={handleBulkDeleteDemandes}
+                  disabled={bulkDeletingDemandes}
+                  className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 text-sm font-medium"
+                >
+                  {bulkDeletingDemandes ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  {bulkDeletingDemandes ? 'Suppression...' : `Supprimer (${selectedDemandeIds.size})`}
+                </button>
+              </div>
+            )}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-amber-50 border-b border-amber-100">
+                  <tr>
+                    {isItManager() && (
+                      <th className="px-3 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          checked={demandes.length > 0 && selectedDemandeIds.size === demandes.length}
+                          onChange={toggleSelectAllDemandes}
+                          className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                          title="Tout sélectionner"
+                        />
+                      </th>
+                    )}
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Article</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Section</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Année</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Taille</th>
@@ -999,7 +1068,17 @@ function StockUniforms() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {demandes.map(d => (
-                  <tr key={d.id} className="hover:bg-gray-50">
+                  <tr key={d.id} className={`hover:bg-gray-50 ${selectedDemandeIds.has(d.id) ? 'bg-red-50' : ''}`}>
+                    {isItManager() && (
+                      <td className="px-3 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedDemandeIds.has(d.id)}
+                          onChange={() => toggleSelectDemande(d.id)}
+                          className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{d.type_uniforme?.libelle || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{d.section || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{d.annee_scolaire}</td>
@@ -1026,8 +1105,13 @@ function StockUniforms() {
                             </>
                           )}
                           {d.statut === 'approuvee' && (
-                            <button onClick={() => handleReceptionDemande(d)} className="flex items-center gap-1 px-3 py-1.5 bg-teal-600 text-white text-xs font-semibold rounded-lg hover:bg-teal-700">
-                              <Package className="w-3.5 h-3.5" /> Réceptionner
+                            <button
+                              onClick={() => handleReceptionDemande(d)}
+                              disabled={receivingDemandeId === d.id}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-teal-600 text-white text-xs font-semibold rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {receivingDemandeId === d.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+                              {receivingDemandeId === d.id ? 'Réception...' : 'Réceptionner'}
                             </button>
                           )}
                           {d.statut !== 'en_attente' && d.statut !== 'approuvee' && (
@@ -1045,7 +1129,8 @@ function StockUniforms() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </div>
     </div>
