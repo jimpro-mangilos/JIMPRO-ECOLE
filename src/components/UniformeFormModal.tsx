@@ -13,6 +13,7 @@ interface TypeUniforme {
   description: string | null;
   is_active: boolean;
   sexe?: string | null;
+  section?: string | null;
 }
 
 interface StockInfo {
@@ -87,9 +88,17 @@ export default function UniformeFormModal({ isOpen, onClose, onSuccess, eleve }:
         supabase.from('tailles_uniforme').select('libelle').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
       ]);
       if (typesRes.data) {
-        // Filtre par sexe : seuls les articles unisexes ou correspondant au sexe de l'élève
+        // Filtre par sexe ET par section : seuls les articles unisexes ou
+        // correspondant au sexe de l'élève, et à sa section (Primaire/Secondaire),
+        // sont proposés. Ex: Pantalon = garçons du secondaire, Culotte = garçons
+        // du primaire, Jupe = filles (toutes sections).
         const sexe = eleve.sexe;
-        setTypesUniforme(typesRes.data.filter((t: any) => !t.sexe || t.sexe === sexe));
+        const section = (eleve.section || '').trim().toUpperCase();
+        setTypesUniforme(typesRes.data.filter((t: any) => {
+          const matchesSexe = !t.sexe || t.sexe === sexe;
+          const matchesSection = !t.section || String(t.section || '').trim().toUpperCase() === section;
+          return matchesSexe && matchesSection;
+        }));
       }
       if (taillesRes.data && taillesRes.data.length) setTaillesList(taillesRes.data.map((t: any) => t.libelle));
       if (anneesRes.data) {

@@ -11,6 +11,12 @@ import MultiSelectFilter from '../components/MultiSelectFilter';
 
 type Eleve = Database['public']['Tables']['eleves']['Row'];
 
+const STATUT_LABELS: Record<string, string> = {
+  en_attente: 'En attente',
+  valide: 'Validée',
+  refuse: 'Refusée',
+};
+
 interface DistributionUniforme {
   id: string;
   eleve_id: string;
@@ -41,6 +47,8 @@ export default function FournituresEleves() {
   const [filterAnnees, setFilterAnnees] = useState<string[]>([]);
   const [filterSections, setFilterSections] = useState<string[]>([]);
   const [filterClasses, setFilterClasses] = useState<string[]>([]);
+  const [filterTailles, setFilterTailles] = useState<string[]>([]);
+  const [filterStatuts, setFilterStatuts] = useState<string[]>([]);
   const [filterDateDebut, setFilterDateDebut] = useState('');
   const [filterDateFin, setFilterDateFin] = useState('');
 
@@ -195,6 +203,18 @@ export default function FournituresEleves() {
     return Array.from(set).sort();
   }, [distributions]);
 
+  const tailles = useMemo(() => {
+    const set = new Set<string>();
+    distributions.forEach(d => { if (d.taille) set.add(d.taille); });
+    return Array.from(set).sort();
+  }, [distributions]);
+
+  const statuts = useMemo(() => {
+    const set = new Set<string>();
+    distributions.forEach(d => { if (d.statut) set.add(d.statut); });
+    return Array.from(set).sort();
+  }, [distributions]);
+
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return distributions.filter(d => {
@@ -202,6 +222,8 @@ export default function FournituresEleves() {
       if (filterAnnees.length > 0 && (!d.annee_scolaire || !filterAnnees.includes(d.annee_scolaire))) return false;
       if (filterSections.length > 0 && !filterSections.includes(d.section)) return false;
       if (filterClasses.length > 0 && !filterClasses.includes(d.classe)) return false;
+      if (filterTailles.length > 0 && (!d.taille || !filterTailles.includes(d.taille))) return false;
+      if (filterStatuts.length > 0 && (!d.statut || !filterStatuts.includes(d.statut))) return false;
       if (filterDateDebut) {
         const created = new Date(d.created_at).toLocaleDateString('fr-CA');
         if (created < filterDateDebut) return false;
@@ -216,7 +238,7 @@ export default function FournituresEleves() {
       }
       return true;
     });
-  }, [distributions, searchTerm, filterTypes, filterAnnees, filterSections, filterClasses, filterDateDebut, filterDateFin]);
+  }, [distributions, searchTerm, filterTypes, filterAnnees, filterSections, filterClasses, filterTailles, filterStatuts, filterDateDebut, filterDateFin]);
 
   const totalDistributions = filtered.length;
   const totalArticles = filtered.reduce((sum, d) => sum + d.quantite, 0);
@@ -358,7 +380,7 @@ export default function FournituresEleves() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <MultiSelectFilter
               label="Articles"
               placeholder="Tous articles"
@@ -386,6 +408,21 @@ export default function FournituresEleves() {
               options={annees}
               selected={filterAnnees}
               onChange={setFilterAnnees}
+            />
+            <MultiSelectFilter
+              label="Tailles"
+              placeholder="Toutes tailles"
+              options={tailles}
+              selected={filterTailles}
+              onChange={setFilterTailles}
+            />
+            <MultiSelectFilter
+              label="Statuts"
+              placeholder="Tous statuts"
+              options={statuts}
+              selected={filterStatuts}
+              onChange={setFilterStatuts}
+              optionLabels={STATUT_LABELS}
             />
           </div>
 
@@ -420,10 +457,12 @@ export default function FournituresEleves() {
                 setFilterAnnees([]);
                 setFilterSections([]);
                 setFilterClasses([]);
+                setFilterTailles([]);
+                setFilterStatuts([]);
                 setFilterDateDebut('');
                 setFilterDateFin('');
               }}
-              disabled={!searchTerm && filterTypes.length === 0 && filterAnnees.length === 0 && filterSections.length === 0 && filterClasses.length === 0 && !filterDateDebut && !filterDateFin}
+              disabled={!searchTerm && filterTypes.length === 0 && filterAnnees.length === 0 && filterSections.length === 0 && filterClasses.length === 0 && filterTailles.length === 0 && filterStatuts.length === 0 && !filterDateDebut && !filterDateFin}
               className="flex items-center gap-2 px-4 py-2 text-sm text-teal-600 hover:text-teal-700 font-medium border border-teal-200 rounded-lg hover:bg-teal-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <RotateCcw className="w-4 h-4" />

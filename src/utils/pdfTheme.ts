@@ -95,20 +95,16 @@ let _logoCacheEcoleId: string | null = null;
  * sinon claim JWT (app_metadata.ecole_id).
  */
 async function getCurrentEcoleId(): Promise<string | null> {
-  // 1. Override localStorage (admin qui a basculé d'école)
+  // 1. Override localStorage (admin/promoteur qui a basculé d'école)
   try {
     const stored = localStorage.getItem('jimpro_active_school_id');
     if (stored && stored !== 'null') return stored;
   } catch { /* localStorage indisponible */ }
 
-  // 2. Claim JWT app_metadata.ecole_id (peut être absent/stale)
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    const ecoleId = session?.user?.app_metadata?.ecole_id as string | undefined;
-    if (ecoleId) return ecoleId;
-  } catch { /* ignore */ }
-
-  // 3. Table profiles (source de vérité — même logique que AuthContext)
+  // 2. Table profiles (source de vérité — même priorité que AuthContext).
+  //    Prioritaire sur le claim JWT app_metadata.ecole_id qui peut être
+  //    obsolète après un changement d'école (le token n'est rafraîchi qu'à
+  //    expiration) et faisait pointer le reçu vers la mauvaise école.
   try {
     const { data: { session } } = await supabase.auth.getSession();
     const userId = session?.user?.id;
@@ -120,6 +116,13 @@ async function getCurrentEcoleId(): Promise<string | null> {
         .maybeSingle();
       if (profile?.ecole_id) return profile.ecole_id;
     }
+  } catch { /* ignore */ }
+
+  // 3. Claim JWT app_metadata.ecole_id (fallback)
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const ecoleId = session?.user?.app_metadata?.ecole_id as string | undefined;
+    if (ecoleId) return ecoleId;
   } catch { /* ignore */ }
 
   return null;
@@ -143,6 +146,7 @@ export async function loadLogoBase64(): Promise<string> {
     const url = (data as any)?.value;
     if (!url) return '';
     const resp = await fetch(url);
+    if (!resp.ok) return '';
     const blob = await resp.blob();
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -186,6 +190,19 @@ function drawRect(doc: jsPDF, x: number, y: number, w: number, h: number, color:
   doc.rect(x, y, w, h, 'F');
 }
 
+/**
+ * jsPDF ne gère pas l'auto-détection si on lui passe un mauvais format.
+ * Les logos peuvent être du PNG, JPEG ou WEBP selon ce qui a été uploadé ;
+ * on détecte le type réel à partir du data URL pour éviter qu'un JPEG
+ * (uploadé par erreur) fasse échouer addImage avec le format 'PNG'.
+ */
+function detectImageFormat(img: string, fallback = 'PNG'): string {
+  if (/^data:image\/(jpe?g)/i.test(img)) return 'JPEG';
+  if (/^data:image\/png/i.test(img)) return 'PNG';
+  if (/^data:image\/webp/i.test(img)) return 'WEBP';
+  return fallback;
+}
+
 export function addRoundedImage(
   doc: jsPDF,
   img: string,
@@ -199,7 +216,7 @@ export function addRoundedImage(
   doc.saveGraphicsState();
   doc.roundedRect(x, y, w, h, radius, radius, null);
   doc.clip();
-  doc.addImage(img, format, x, y, w, h);
+  doc.addImage(img, detectImageFormat(img, format), x, y, w, h);
   doc.restoreGraphicsState();
 }
 
