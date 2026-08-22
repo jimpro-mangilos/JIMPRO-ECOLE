@@ -121,13 +121,12 @@ export default function FournituresEleves() {
   const loadDistributions = async () => {
     try {
       setLoading(true);
-      // Charge jusqu'à 10 000 lignes par lots de 1 000 (limite PostgREST)
-      // au lieu des 1 000 par défaut.
+      // Charge toutes les lignes par lots de 1 000 (limite PostgREST)
+      // sans plafond, au lieu des 1 000 par défaut.
       const PAGE = 1000;
-      const MAX_ROWS = 10000;
       let all: DistributionUniforme[] = [];
       let from = 0;
-      while (all.length < MAX_ROWS) {
+      while (true) {
         const to = from + PAGE - 1;
         const { data, error } = await supabase
           .from('gestion_uniformes')
