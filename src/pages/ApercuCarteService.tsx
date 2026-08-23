@@ -73,8 +73,8 @@ export default function ApercuCarteService() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Aperçu — Carte de service du PERSONNEL (nouveau template)</h1>
-      <p className="text-gray-500 mb-8">Carte d'identité professionnelle verticale · 54 × 86 mm · fond blanc, formes courbes vert/rose/orange pastel.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">Aperçu — Carte de service du PERSONNEL (template actuel)</h1>
+      <p className="text-gray-500 mb-8">Carte d'identité professionnelle verticale · 54 × 86 mm · design « Prestige ».</p>
 
       <div className="flex flex-col items-center gap-10">
         {SAMPLES.map((p, i) => (

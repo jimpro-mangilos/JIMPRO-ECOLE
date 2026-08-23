@@ -166,7 +166,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       <div style={{ position: 'absolute', top: 31, left: 86, right: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Diamond size={4} color={GOLD_LIGHT} />
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: '#ffffff', textTransform: 'uppercase', marginLeft: 7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: '#ffffff', textTransform: 'uppercase', marginLeft: 7, whiteSpace: 'nowrap' }}>{schoolName}</span>
         </div>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 3, color: GOLD_LIGHT, marginTop: 5, textTransform: 'uppercase' }}>Carte de service</div>
       </div>
@@ -188,13 +188,13 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
 
       {/* ═══ Identité — NOM + prénom (police agrandie), fonction agrandie ═══ */}
       <div style={{ position: 'absolute', top: 218, left: 0, right: 0, textAlign: 'center' }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: NAVY, letterSpacing: 0.4, lineHeight: 1.15, padding: '0 12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: NAVY, letterSpacing: 0.4, lineHeight: 1.15, padding: '0 12px' }}>
           {personnel.nom.toUpperCase()} <span style={{ fontWeight: 800, color: NAVY }}>{personnel.prenom}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
           <span style={{ width: 22, height: 1, background: 'linear-gradient(90deg, transparent, #c9a227)' }} />
           <Diamond size={5} />
-          <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1.5, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{personnel.fonction}</span>
+          <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1.5, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 9px' }}>{personnel.fonction}</span>
           <Diamond size={5} />
           <span style={{ width: 22, height: 1, background: 'linear-gradient(270deg, transparent, #c9a227)' }} />
         </div>

@@ -63,7 +63,8 @@ async function renderCarteServiceToCanvas(
  * Rendu via le composant React + html2canvas — identique à l'aperçu.
  */
 /**
- * Génère la carte de service d'un membre du personnel (PDF, 54 × 86 mm portrait).
+ * Génère la carte de service d'un membre du personnel en JPG haute résolution
+ * (972 × 1548 px ≈ 54 × 86 mm à 300 dpi) — pièce unique à imprimer.
  * Rendu via le composant React + html2canvas — identique à l'aperçu.
  */
 export async function generateCarteService(p: CarteService): Promise<void> {
@@ -73,9 +74,13 @@ export async function generateCarteService(p: CarteService): Promise<void> {
 
   const canvas = await renderCarteServiceToCanvas(p, schoolName, logo || null, qrDataUrl);
 
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [CARD_W, CARD_H] });
-  doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, CARD_W, CARD_H);
-  doc.save(`Carte-service-${(p.matricule || p.nom || 'personnel').replace(/\s+/g, '-')}.pdf`);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = `Carte-service-${(p.matricule || p.nom || 'personnel').replace(/\s+/g, '-')}.jpg`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 /**
