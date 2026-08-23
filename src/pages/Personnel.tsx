@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Plus, Search, Users, UserCog, Pencil, Trash2, X, Phone, Mail, Loader2, CalendarDays, Banknote, Wand2, CreditCard,
+  Plus, Search, Users, UserCog, Pencil, Trash2, X, Phone, Mail, Loader2, CalendarDays, Banknote, Wand2, CreditCard, Eye, Printer,
 } from 'lucide-react';
 import {
   usePersonnel,
@@ -14,7 +15,7 @@ import {
 } from '../lib/hooks/usePersonnel';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { generateCarteService } from '../utils/carteServiceGenerator';
+import { generateCarteService, generateCartesService } from '../utils/carteServiceGenerator';
 import { formatDateTime } from '../utils/calculations';
 
 interface PersonnelForm {
@@ -68,6 +69,8 @@ export default function Personnel() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<PersonnelRecord | null>(null);
   const [saving, setSaving] = useState(false);
+  const [printingAll, setPrintingAll] = useState(false);
+  const navigate = useNavigate();
   const [form, setForm] = useState<PersonnelForm>(EMPTY_FORM);
   const { currentSchoolId } = useAuth();
   const [niveaux, setNiveaux] = useState<{ id: string; libelle: string }[]>([]);
@@ -110,6 +113,19 @@ export default function Personnel() {
       await generateCarteService(p);
     } catch {
       alert('Erreur lors de la génération de la carte de service.');
+    }
+  }
+
+  async function printAllCartes() {
+    if (!filtered.length) return;
+    if (!confirm(`Générer ${filtered.length} carte(s) de service (une par page) ?`)) return;
+    setPrintingAll(true);
+    try {
+      await generateCartesService(filtered);
+    } catch {
+      alert('Erreur lors de la génération des cartes en cascade.');
+    } finally {
+      setPrintingAll(false);
     }
   }
 
@@ -262,6 +278,15 @@ export default function Personnel() {
           <option value="">Tous les statuts</option>
           {Object.entries(STATUT_PERSONNEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
+        <button
+          onClick={printAllCartes}
+          disabled={printingAll || filtered.length === 0}
+          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 font-semibold disabled:opacity-50 whitespace-nowrap transition-colors"
+          title="Imprimer les cartes de service des membres affichés (en cascade)"
+        >
+          {printingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+          Imprimer les cartes ({filtered.length})
+        </button>
       </div>
 
       {/* Tableau */}
@@ -311,6 +336,7 @@ export default function Personnel() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button onClick={() => navigate(`/personnel/${p.id}`)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg" title="Fiche du membre"><Eye className="w-4 h-4" /></button>
                       <button onClick={() => printCarte(p)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Carte de service"><CreditCard className="w-4 h-4" /></button>
                       <button onClick={() => openEdit(p)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Modifier"><Pencil className="w-4 h-4" /></button>
                       <button onClick={() => handleDelete(p)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Supprimer"><Trash2 className="w-4 h-4" /></button>

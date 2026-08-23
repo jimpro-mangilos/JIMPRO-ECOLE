@@ -42,7 +42,9 @@ const PortailRecouvrement = lazy(() => import('./pages/PortailRecouvrement'));
 const PortailPointage = lazy(() => import('./pages/PortailPointage'));
 const CarteEtudiant = lazy(() => import('./pages/CarteEtudiant'));
 const ApercuCartes = lazy(() => import('./pages/ApercuCartes'));
+const ApercuCarteService = lazy(() => import('./pages/ApercuCarteService'));
 const Personnel = lazy(() => import('./pages/Personnel'));
+const PersonnelDetail = lazy(() => import('./pages/PersonnelDetail'));
 const PointagePersonnel = lazy(() => import('./pages/PointagePersonnel'));
 
 function LoadingFallback() {
@@ -98,6 +100,16 @@ function App() {
                 <ErrorBoundary>
                   <Suspense fallback={<LoadingFallback />}>
                     <ApercuCartes />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/apercu-carte-service"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <ApercuCarteService />
                   </Suspense>
                 </ErrorBoundary>
               }
@@ -178,6 +190,17 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <LazyPage><Personnel /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/personnel/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><PersonnelDetail /></LazyPage>
                   </Layout>
                 </ProtectedRoute>
               }

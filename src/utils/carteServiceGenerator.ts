@@ -6,8 +6,8 @@ import html2canvas from 'html2canvas';
 import { CarteServiceCard, type CarteService } from '../components/CarteServiceCard';
 import { loadLogoBase64, loadSchoolName } from './pdfTheme';
 
-const CARD_W = 85; // mm
-const CARD_H = 54; // mm
+const CARD_W = 54; // mm (largeur — carte verticale)
+const CARD_H = 86; // mm (hauteur)
 
 async function waitForImages(container: HTMLElement): Promise<void> {
   const imgs = Array.from(container.querySelectorAll('img'));
@@ -51,7 +51,7 @@ async function renderCarteServiceToCanvas(
     const cardEl = container.firstElementChild as HTMLElement;
     if (!cardEl) throw new Error('Carte non rendue');
 
-    return await html2canvas(cardEl, { scale, useCORS: true, allowTaint: true, backgroundColor: '#fcfbf8' });
+    return await html2canvas(cardEl, { scale, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
   } finally {
     if (root) root.unmount();
     container.remove();
@@ -59,20 +59,48 @@ async function renderCarteServiceToCanvas(
 }
 
 /**
- * Génère la carte de service d'un membre du personnel (PDF, 85 × 54 mm).
+ * Génère la carte de service d'un membre du personnel (PDF, 54 × 86 mm portrait).
+ * Rendu via le composant React + html2canvas — identique à l'aperçu.
+ */
+/**
+ * Génère la carte de service d'un membre du personnel (PDF, 54 × 86 mm portrait).
  * Rendu via le composant React + html2canvas — identique à l'aperçu.
  */
 export async function generateCarteService(p: CarteService): Promise<void> {
   const schoolName = (await loadSchoolName()) || 'ÉTABLISSEMENT';
   const logo = await loadLogoBase64();
-  const qrDataUrl = await QRCode.toDataURL(
-    `MATRICULE:${p.matricule || ''}|NOM:${p.nom} ${p.postnom ? p.postnom + ' ' : ''}${p.prenom}|FONCTION:${p.fonction}`,
-    { width: 800, margin: 2, errorCorrectionLevel: 'H' }
-  );
+  const qrDataUrl = await buildQrDataUrl(p);
 
   const canvas = await renderCarteServiceToCanvas(p, schoolName, logo || null, qrDataUrl);
 
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [CARD_H, CARD_W] });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [CARD_W, CARD_H] });
   doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, CARD_W, CARD_H);
   doc.save(`Carte-service-${(p.matricule || p.nom || 'personnel').replace(/\s+/g, '-')}.pdf`);
+}
+
+/**
+ * Génère les cartes de service de plusieurs membres en cascade (un PDF,
+ * une carte par page — 54 × 86 mm). Utilisé par l'impression en lot.
+ */
+export async function generateCartesService(list: CarteService[]): Promise<void> {
+  if (!list.length) return;
+  const schoolName = (await loadSchoolName()) || 'ÉTABLISSEMENT';
+  const logo = await loadLogoBase64();
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [CARD_W, CARD_H] });
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i];
+    const qrDataUrl = await buildQrDataUrl(p);
+    const canvas = await renderCarteServiceToCanvas(p, schoolName, logo || null, qrDataUrl);
+    if (i > 0) doc.addPage([CARD_W, CARD_H], 'portrait');
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, CARD_W, CARD_H);
+  }
+  doc.save(`Cartes-service-${list.length}-membres.pdf`);
+}
+
+async function buildQrDataUrl(p: CarteService): Promise<string> {
+  return QRCode.toDataURL(
+    `MATRICULE:${p.matricule || ''}|NOM:${p.nom} ${p.postnom ? p.postnom + ' ' : ''}${p.prenom}|FONCTION:${p.fonction}`,
+    { width: 800, margin: 2, errorCorrectionLevel: 'H' }
+  );
 }
