@@ -24,7 +24,7 @@ BEGIN
     'prenom', p.prenom,
     'classe', p.classe,
     'montant_paye', p.montant_paye,
-    'type_paiement', p.type_paiement,
+    'type_paiement', tp.libelle,
     'statut', p.statut,
     'est_encaisse', p.est_encaisse,
     'date_encaissement', p.date_encaissement,
@@ -34,7 +34,8 @@ BEGIN
   ) INTO result
   FROM paiements p
   LEFT JOIN ecoles e ON e.id = p.ecole_id
-  WHERE p.numero_recu = p_numero
+  LEFT JOIN types_paiement tp ON tp.id = p.type_paiement
+  WHERE UPPER(TRIM(p.numero_recu)) = UPPER(TRIM(p_numero))
   LIMIT 1;
 
   IF result IS NULL THEN

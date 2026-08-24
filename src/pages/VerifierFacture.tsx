@@ -40,12 +40,13 @@ export default function VerifierFacture() {
 
   useEffect(() => {
     if (!numero) { setState('error'); return; }
+    const numeroClean = numero.trim().toUpperCase();
     let cancelled = false;
     (async () => {
       try {
         // 1) RPC public (fonction SECURITY DEFINER) si dispo
         let data: FactureInfo | null = null;
-        const { data: rpcData, error: rpcError } = await (supabase as any).rpc('verifier_facture', { p_numero: numero });
+        const { data: rpcData, error: rpcError } = await (supabase as any).rpc('verifier_facture', { p_numero: numeroClean });
         if (!rpcError && rpcData) {
           data = rpcData as FactureInfo;
         } else {
@@ -53,7 +54,7 @@ export default function VerifierFacture() {
           const { data: direct } = await (supabase as any)
             .from('paiements')
             .select('numero_recu, nom_eleve, matricule, postnom, prenom, classe, montant_paye, type_paiement, statut, est_encaisse, date_encaissement, annee_scolaire, nom_comptable')
-            .ilike('numero_recu', numero)
+            .ilike('numero_recu', numeroClean)
             .maybeSingle();
           if (direct) {
             const { data: ecole } = await (supabase as any).from('ecoles').select('nom').eq('id', direct.ecole_id).maybeSingle();
