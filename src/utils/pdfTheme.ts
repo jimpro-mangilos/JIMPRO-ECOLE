@@ -90,6 +90,14 @@ export interface ReportHeaderOptions {
 let _logoCache: string | null = null;
 let _logoCacheEcoleId: string | null = null;
 
+// Logo déjà chargé par LogoContext (UI) — source fiable de la BONNE école.
+let _uiLogoBase64: string | null = null;
+
+/** Permet à LogoContext de partager le logo chargé avec les générateurs PDF. */
+export function setUiLogoBase64(b64: string | null) {
+  _uiLogoBase64 = b64;
+}
+
 /**
  * Détermine l'école active hors-React : priorité override localStorage (admin),
  * sinon claim JWT (app_metadata.ecole_id).
@@ -129,22 +137,47 @@ async function getCurrentEcoleId(): Promise<string | null> {
 }
 
 export async function loadLogoBase64(): Promise<string> {
+  // 0. Logo déjà chargé par l'UI (LogoContext) — toujours la bonne école
+  if (_uiLogoBase64) return _uiLogoBase64;
+
   const ecoleId = await getCurrentEcoleId();
   if (_logoCache && _logoCacheEcoleId === ecoleId) return _logoCache;
 
+  // 1. Cache localStorage du base64 (écrit par LogoContext)
+  if (ecoleId) {
+    try {
+      const cachedB64 = localStorage.getItem(`jimpro_logo_b64_${ecoleId}`);
+      if (cachedB64) {
+        _logoCache = cachedB64;
+        _logoCacheEcoleId = ecoleId;
+        return cachedB64;
+      }
+    } catch { /* localStorage indisponible */ }
+  }
+
+  // 2. URL depuis app_settings — filtrée par école UNIQUEMENT
+  //    (si l'école est inconnue, on n'interroge pas sans filtre : le logo
+  //    d'une autre école serait pire qu'aucun logo)
+  let url = '';
   try {
-    // app_settings not yet in generated Database types
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const query = (supabase as any)
+    if (!ecoleId) return '';
+    const { data } = await (supabase as any)
       .from('app_settings')
       .select('value')
-      .eq('key', 'logo_url');
-    if (ecoleId) query.eq('ecole_id', ecoleId);
+      .eq('key', 'logo_url')
+      .eq('ecole_id', ecoleId)
+      .maybeSingle();
+    url = (data as any)?.value || '';
+  } catch { url = ''; }
 
-    const { data } = await query.maybeSingle();
+  // 3. Fallback : URL du logo mémorisée par LogoContext
+  if (!url && ecoleId) {
+    try { url = localStorage.getItem(`jimpro_logo_${ecoleId}`) || ''; } catch { /* ignore */ }
+  }
+  if (!url) return '';
 
-    const url = (data as any)?.value;
-    if (!url) return '';
+  // 4. Récupération de l'image → data URL
+  try {
     const resp = await fetch(url);
     if (!resp.ok) return '';
     const blob = await resp.blob();
@@ -153,6 +186,9 @@ export async function loadLogoBase64(): Promise<string> {
       reader.onloadend = () => {
         _logoCache = reader.result as string;
         _logoCacheEcoleId = ecoleId;
+        if (ecoleId) {
+          try { localStorage.setItem(`jimpro_logo_b64_${ecoleId}`, _logoCache!); } catch { /* ignore */ }
+        }
         resolve(_logoCache!);
       };
       reader.readAsDataURL(blob);
@@ -522,4 +558,3 @@ export function drawVerticalBarChart(
   doc.setTextColor(0, 0, 0);
   return baselineY + labelHeight + 4;
 }
-

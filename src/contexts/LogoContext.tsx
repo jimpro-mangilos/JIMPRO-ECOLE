@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
-import { invalidateLogoCache } from '../utils/pdfTheme';
+import { invalidateLogoCache, setUiLogoBase64 } from '../utils/pdfTheme';
 
 interface LogoContextType {
   logoUrl: string;
@@ -72,10 +72,15 @@ export function LogoProvider({ children }: { children: ReactNode }) {
       const url = data?.value || cached;
       setLogoUrl(url);
       invalidateLogoCache();
-      setLogoBase64(url ? await loadBase64FromUrl(url) : null);
+      const b64 = url ? await loadBase64FromUrl(url) : null;
+      setLogoBase64(b64);
+      setUiLogoBase64(b64);
 
       try {
         if (cacheKey && data?.value) localStorage.setItem(cacheKey, data.value);
+        // Cache du base64 — réutilisé par les générateurs PDF (reçu, rapports…)
+        if (cacheKey && b64) localStorage.setItem(`jimpro_logo_b64_${currentSchoolId}`, b64);
+        if (cacheKey && !b64) localStorage.removeItem(`jimpro_logo_b64_${currentSchoolId}`);
       } catch {
         /* ignore */
       }
