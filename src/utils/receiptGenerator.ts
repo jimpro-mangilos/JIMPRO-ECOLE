@@ -291,9 +291,12 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   doc.setLineWidth(0.2);
   doc.line(margin, yPos - 4, pageWidth - margin, yPos - 4);
 
+  // Lien de vérification du reçu (fonctionne aussi sans logo)
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
   doc.setFontSize(8);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(muted[0], muted[1], muted[2]);
+  doc.text(S(`Verifier ce recu : ${origin}/verifier-facture/${data.numero_recu}`), pageWidth / 2, yPos - 4, { align: 'center' });
   doc.text(S('Systeme developpe par la start-up JIM-MARKET'), pageWidth / 2, yPos, { align: 'center' });
   doc.text(S('Tel : +243 813 100 008  |  +243 998 608 276'), pageWidth / 2, yPos + 4, { align: 'center' });
 

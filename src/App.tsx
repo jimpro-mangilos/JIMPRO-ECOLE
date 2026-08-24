@@ -43,6 +43,7 @@ const PortailPointage = lazy(() => import('./pages/PortailPointage'));
 const CarteEtudiant = lazy(() => import('./pages/CarteEtudiant'));
 const ApercuCartes = lazy(() => import('./pages/ApercuCartes'));
 const ApercuCarteService = lazy(() => import('./pages/ApercuCarteService'));
+const VerifierFacture = lazy(() => import('./pages/VerifierFacture'));
 const Personnel = lazy(() => import('./pages/Personnel'));
 const PersonnelDetail = lazy(() => import('./pages/PersonnelDetail'));
 const PointagePersonnel = lazy(() => import('./pages/PointagePersonnel'));
@@ -100,6 +101,16 @@ function App() {
                 <ErrorBoundary>
                   <Suspense fallback={<LoadingFallback />}>
                     <ApercuCartes />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/verifier-facture/:numero"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <VerifierFacture />
                   </Suspense>
                 </ErrorBoundary>
               }
