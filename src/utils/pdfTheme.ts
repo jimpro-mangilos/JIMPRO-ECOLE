@@ -242,7 +242,32 @@ function detectImageFormat(img: string, fallback = 'PNG'): string {
   return fallback;
 }
 
-export function addRoundedImage(
+/**
+ * Recompose une image (avec transparence) sur une couleur de fond donnée,
+ * et la convertit en JPEG sans alpha.
+ * → Corrige jsPDF qui rend la transparence des PNG en blanc opaque.
+ */
+export function compositeOnColor(img: string, r: number, g: number, b: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.95));
+      } catch (e) { reject(e); }
+    };
+    image.onerror = reject;
+    image.src = img;
+  });
+}
+
+export async function addRoundedImage(
   doc: jsPDF,
   img: string,
   x: number,
@@ -250,16 +275,26 @@ export function addRoundedImage(
   w: number,
   h: number,
   radius = 3,
+  bgColor?: [number, number, number],
   format = 'PNG',
 ) {
+  let imgToAdd = img;
+  let fmt = detectImageFormat(img, format);
+  // Recompose sur la couleur de fond si fournie (évite le fond blanc de jsPDF)
+  if (bgColor) {
+    try {
+      imgToAdd = await compositeOnColor(img, bgColor[0], bgColor[1], bgColor[2]);
+      fmt = 'JPEG';
+    } catch { /* image d'origine */ }
+  }
   doc.saveGraphicsState();
   doc.roundedRect(x, y, w, h, radius, radius, null);
   doc.clip();
-  doc.addImage(img, detectImageFormat(img, format), x, y, w, h);
+  doc.addImage(imgToAdd, fmt, x, y, w, h);
   doc.restoreGraphicsState();
 }
 
-export function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions) {
+export async function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const { primary, white, accent, slate, muted } = PDF_THEME.colors;
 
@@ -270,7 +305,7 @@ export function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions) {
   const logoY = (PDF_THEME.headerHeight - logoSize) / 2;
   const schoolName = options.schoolName || 'GOLDEN ACADEMY';
   if (options.logoBase64) {
-    addRoundedImage(doc, options.logoBase64, logoX, logoY, logoSize, logoSize, logoSize / 2);
+    await addRoundedImage(doc, options.logoBase64, logoX, logoY, logoSize, logoSize, logoSize / 2, PDF_THEME.colors.primary);
   } else {
     doc.setFillColor(accent[0], accent[1], accent[2]);
     doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 'F');

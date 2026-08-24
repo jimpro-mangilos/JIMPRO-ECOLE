@@ -104,10 +104,10 @@ function runAutoTable(doc: jsPDF, config: any, header: ReportHeaderOptions) {
   (doc as any).autoTable({
     ...defaultTableStyles(config.headColor),
     ...config,
-    didDrawPage: () => {
+    didDrawPage: async () => {
       const currentPage = doc.getNumberOfPages();
       if (currentPage === firstPageNum) {
-        drawReportHeader(doc, header);
+        await drawReportHeader(doc, header);
       }
     },
     margin: {
@@ -129,7 +129,7 @@ export async function generateElevesReport(eleves: Eleve[]) {
     subtitle: 'Liste nominative par section',
     period: `Effectif total : ${eleves.length}`,
   };
-  drawReportHeader(doc, header);
+  await drawReportHeader(doc, header);
 
   const totalEleves = eleves.length;
   const garcons = eleves.filter(e => (e.sexe || '').toUpperCase() === 'M').length;
@@ -202,7 +202,7 @@ export async function generateMinervalReport(minerval: MinervalRecord[], startDa
     subtitle: 'Suivi des paiements de scolarite',
     period,
   };
-  drawReportHeader(doc, header);
+  await drawReportHeader(doc, header);
 
   const totalAttendu = minerval.reduce((sum, m) => sum + Number(m.montant_total), 0);
   const totalPercu = minerval.reduce((sum, m) => sum + Number(m.montant_paye), 0);
@@ -276,7 +276,7 @@ export async function generateFinancesReport(finances: FinanceRecord[], filterIn
     subtitle: filterInfo || 'Recettes et depenses consolidees',
     period,
   };
-  drawReportHeader(doc, header);
+  await drawReportHeader(doc, header);
 
   const recettes = finances.filter(f => f.type_operation === 'recette');
   const depenses = finances.filter(f => f.type_operation === 'dépense');
@@ -437,7 +437,7 @@ export async function generateFournituresElevesReport(
     title: 'Rapport Fournitures Eleves',
     subtitle,
   };
-  drawReportHeader(doc, header);
+  await drawReportHeader(doc, header);
 
   const totalDistributions = fournitures.length;
   const totalQuantite = fournitures.reduce((sum, f) => sum + (Number(f.quantite) || 0), 0);
@@ -536,7 +536,7 @@ export async function generateFournituresBureauReport(fournitures: FournitureBur
     title: 'Rapport Fournitures Bureau',
     subtitle: 'Historique des distributions internes',
   };
-  drawReportHeader(doc, header);
+  await drawReportHeader(doc, header);
 
   const totalDistributions = fournitures.length;
   const totalQuantite = fournitures.reduce((sum, f) => sum + f.quantite, 0);
@@ -594,7 +594,7 @@ export async function generateElevePaymentHistoryPDF(eleve: Eleve, paiements: Mi
     subtitle: nomComplet,
     period: `Matricule : ${eleve.matricule}`,
   };
-  drawReportHeader(doc, header);
+  await drawReportHeader(doc, header);
 
   const totalPaye = paiements.reduce((s, p) => s + Number(p.montant_paye), 0);
   const nbPaiements = paiements.length;
@@ -756,7 +756,7 @@ export async function generateRapportComptable(
     subtitle: `Encaissements realises par ${nomComplet}`,
     period,
   };
-  drawReportHeader(doc, header);
+  await drawReportHeader(doc, header);
 
   const encaisses = paiements.filter(p => p.est_encaisse);
   const totalTransactions = paiements.length;
@@ -888,7 +888,7 @@ export async function generateRapportComparatifComptables(
     subtitle: 'Analyse de performance des encaisseurs',
     period,
   };
-  drawReportHeader(doc, header);
+  await drawReportHeader(doc, header);
 
   const totalGlobal = comptables.reduce((s, c) => s + c.stats.montant_encaisse, 0);
   const totalTransactions = comptables.reduce((s, c) => s + c.stats.nombre_transactions, 0);
@@ -1050,7 +1050,7 @@ export async function generatePaiementsReport(paiements: PaiementReportRecord[],
     subtitle: 'Liste detaillee des paiements',
     period,
   };
-  drawReportHeader(doc, header);
+  await drawReportHeader(doc, header);
 
   const getStatut = (p: PaiementReportRecord) => {
     if (p.statut) return p.statut;
