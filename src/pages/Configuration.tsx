@@ -83,7 +83,10 @@ export default function Configuration() {
 
       await refreshLogo();
       showSuccess('Logo mis à jour');
-    } catch (err: any) { showError('Erreur upload logo'); }
+    } catch (err: any) {
+      // Message détaillé : permet de diagnostiquer la perte du logo
+      showError(`Erreur upload logo : ${err?.message || err}`);
+    }
     finally { setLogoUploading(false); }
   };
 
@@ -101,7 +104,7 @@ export default function Configuration() {
       clearLogoCache(currentSchoolId);
       await refreshLogo();
       showSuccess('Logo supprimé');
-    } catch (err: any) { showError('Erreur suppression logo'); }
+    } catch (err: any) { showError(`Erreur suppression logo : ${err?.message || err}`); }
     finally { setLogoUploading(false); }
   };
 

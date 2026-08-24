@@ -143,40 +143,42 @@ export async function loadLogoBase64(): Promise<string> {
   const ecoleId = await getCurrentEcoleId();
   if (_logoCache && _logoCacheEcoleId === ecoleId) return _logoCache;
 
-  // 1. Cache localStorage du base64 (écrit par LogoContext)
-  if (ecoleId) {
+  // 1. Cache localStorage du base64 (spécifique école, puis universel)
+  const tryCache = (key: string): string | null => {
     try {
-      const cachedB64 = localStorage.getItem(`jimpro_logo_b64_${ecoleId}`);
-      if (cachedB64) {
-        _logoCache = cachedB64;
-        _logoCacheEcoleId = ecoleId;
-        return cachedB64;
-      }
-    } catch { /* localStorage indisponible */ }
-  }
+      const v = localStorage.getItem(key);
+      if (v) { _logoCache = v; _logoCacheEcoleId = ecoleId; return v; }
+    } catch { /* ignore */ }
+    return null;
+  };
+  if (ecoleId) { const c = tryCache(`jimpro_logo_b64_${ecoleId}`); if (c) return c; }
+  { const c = tryCache('jimpro_logo_b64_current'); if (c) return c; }
 
-  // 2. URL depuis app_settings — filtrée par école UNIQUEMENT
-  //    (si l'école est inconnue, on n'interroge pas sans filtre : le logo
-  //    d'une autre école serait pire qu'aucun logo)
+  // 2. URL depuis app_settings — filtrée par école (jamais sans filtre :
+  //    le logo d'une autre école serait pire qu'aucun logo)
   let url = '';
   try {
-    if (!ecoleId) return '';
-    const { data } = await (supabase as any)
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'logo_url')
-      .eq('ecole_id', ecoleId)
-      .maybeSingle();
-    url = (data as any)?.value || '';
+    if (ecoleId) {
+      const { data } = await (supabase as any)
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'logo_url')
+        .eq('ecole_id', ecoleId)
+        .maybeSingle();
+      url = (data as any)?.value || '';
+    }
   } catch { url = ''; }
 
-  // 3. Fallback : URL du logo mémorisée par LogoContext
+  // 3. Fallback : URL en cache localStorage (par école, puis universelle)
   if (!url && ecoleId) {
     try { url = localStorage.getItem(`jimpro_logo_${ecoleId}`) || ''; } catch { /* ignore */ }
   }
+  if (!url) {
+    try { url = localStorage.getItem('jimpro_logo_current') || ''; } catch { /* ignore */ }
+  }
   if (!url) return '';
 
-  // 4. Récupération de l'image → data URL
+  // 4. Récupération de l'image → data URL (avec vérification de la réponse)
   try {
     const resp = await fetch(url);
     if (!resp.ok) return '';
@@ -186,9 +188,10 @@ export async function loadLogoBase64(): Promise<string> {
       reader.onloadend = () => {
         _logoCache = reader.result as string;
         _logoCacheEcoleId = ecoleId;
-        if (ecoleId) {
-          try { localStorage.setItem(`jimpro_logo_b64_${ecoleId}`, _logoCache!); } catch { /* ignore */ }
-        }
+        try {
+          if (ecoleId) localStorage.setItem(`jimpro_logo_b64_${ecoleId}`, _logoCache!);
+          localStorage.setItem('jimpro_logo_b64_current', _logoCache!);
+        } catch { /* ignore */ }
         resolve(_logoCache!);
       };
       reader.readAsDataURL(blob);

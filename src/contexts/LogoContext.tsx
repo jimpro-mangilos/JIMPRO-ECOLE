@@ -40,6 +40,7 @@ export function LogoProvider({ children }: { children: ReactNode }) {
     if (!url) return null;
     try {
       const resp = await fetch(url);
+      if (!resp.ok) return null;
       const blob = await resp.blob();
       return new Promise<string>((resolve) => {
         const reader = new FileReader();
@@ -78,9 +79,12 @@ export function LogoProvider({ children }: { children: ReactNode }) {
 
       try {
         if (cacheKey && data?.value) localStorage.setItem(cacheKey, data.value);
+        if (data?.value) localStorage.setItem('jimpro_logo_current', data.value);
         // Cache du base64 — réutilisé par les générateurs PDF (reçu, rapports…)
         if (cacheKey && b64) localStorage.setItem(`jimpro_logo_b64_${currentSchoolId}`, b64);
+        if (b64) localStorage.setItem('jimpro_logo_b64_current', b64);
         if (cacheKey && !b64) localStorage.removeItem(`jimpro_logo_b64_${currentSchoolId}`);
+        if (!b64) localStorage.removeItem('jimpro_logo_b64_current');
       } catch {
         /* ignore */
       }
