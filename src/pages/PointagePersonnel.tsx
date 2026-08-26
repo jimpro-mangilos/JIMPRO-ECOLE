@@ -5,6 +5,7 @@ import { STATUT_POINTAGE, type PointageRecord, type PointageConfig, loadPointage
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generatePointageReport } from '../utils/pointageReportGenerator';
+import { generatePointageSalaireReport } from '../utils/pointageSalaireReportGenerator';
 
 function todayStr(): string {
   const d = new Date();
@@ -161,6 +162,17 @@ export default function PointagePersonnel() {
     if (!error) reload();
   }
 
+  async function exportSalaires() {
+    await generatePointageSalaireReport({
+      month: m, year,
+      tauxChange: config.tauxChange,
+      rows: salaires.map(({ p, joursPresent, salaireMensuel, salaireJournalier, salaireMois }) => ({
+        nom: p.nom, postnom: p.postnom, prenom: p.prenom, fonction: p.fonction, matricule: p.matricule,
+        joursPresent, salaireMensuel, salaireJournalier, salaireMois,
+      })),
+    });
+  }
+
   async function exportMonthly() {
     if (!currentSchoolId) return;
     const [y, mo] = month.split('-').map(Number);
@@ -245,6 +257,9 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
         <div className="flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-gray-400" />
           <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
+          <button onClick={exportSalaires} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700" title="Exporter le tableau des salaires du mois (PDF)">
+            <FileDown className="w-4 h-4" /> Salaires (PDF)
+          </button>
           <button onClick={exportMonthly} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
             <FileDown className="w-4 h-4" /> Rapport mensuel
           </button>

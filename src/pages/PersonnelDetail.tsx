@@ -4,6 +4,8 @@ import {
   ArrowLeft, CreditCard, Loader2, Phone, Mail, MapPin, CalendarDays, UserCog, Users, GraduationCap, Banknote, Baby, Heart, Flag, BadgeCheck, Briefcase, ClipboardList,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { loadPointageConfig } from '../lib/hooks/usePointage';
 import { generateCarteService } from '../utils/carteServiceGenerator';
 import { formatDate, calculerAnciennete } from '../utils/calculations';
 import type { PersonnelRecord } from '../lib/hooks/usePersonnel';
@@ -32,6 +34,8 @@ export default function PersonnelDetail() {
   const [printing, setPrinting] = useState(false);
   const [pointages, setPointages] = useState<PointageRecord[]>([]);
   const [pointagesLoading, setPointagesLoading] = useState(false);
+  const { currentSchoolId } = useAuth();
+  const [tauxChange, setTauxChange] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -68,6 +72,12 @@ export default function PersonnelDetail() {
       setPrinting(false);
     }
   }
+
+  // ─── Taux de change (pour l'affichage du salaire en dollars) ──────────
+  useEffect(() => {
+    if (!currentSchoolId) return;
+    loadPointageConfig(currentSchoolId).then(cfg => setTauxChange(cfg.tauxChange)).catch(() => {});
+  }, [currentSchoolId]);
 
   // ─── Pointage / liste de présence du membre ───────────────────────────
   useEffect(() => {
@@ -182,7 +192,7 @@ export default function PersonnelDetail() {
         <Info icon={Heart} label="État civil" value={member.etat_civil || '—'} />
         <Info icon={Baby} label="Enfants" value={member.nombre_enfants != null ? String(member.nombre_enfants) : '—'} />
         <Info icon={GraduationCap} label="Niveau d'étude" value={member.niveau_etude_id ? (niveaux[member.niveau_etude_id] || '—') : '—'} />
-        <Info icon={Banknote} label="Salaire" value={member.salaire != null ? `${Number(member.salaire).toLocaleString('fr-FR')} FC` : '—'} />
+        <Info icon={Banknote} label="Salaire" value={member.salaire != null ? `${Number(member.salaire).toLocaleString('fr-FR')} FC${tauxChange ? ` · ≈ $${(member.salaire! / tauxChange).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}` : '—'} />
         <Info icon={Briefcase} label="Domaine" value={member.domaine || '—'} />
         <Info icon={CalendarDays} label="Ancienneté" value={member.date_embauche ? calculerAnciennete(member.date_embauche) : '—'} />
       </div>
