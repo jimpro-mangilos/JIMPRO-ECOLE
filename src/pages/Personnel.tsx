@@ -16,7 +16,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateCarteService, generateCartesService } from '../utils/carteServiceGenerator';
-import { formatDateTime } from '../utils/calculations';
+import { formatDateTime, calculerAnciennete } from '../utils/calculations';
 
 interface PersonnelForm {
   matricule: string;
@@ -39,6 +39,7 @@ interface PersonnelForm {
   date_embauche: string;
   salaire: string;
   adresse: string;
+  domaine: string;
   statut: string;
 }
 
@@ -46,7 +47,7 @@ const EMPTY_FORM: PersonnelForm = {
   matricule: '', nom: '', postnom: '', prenom: '', sexe: 'M', fonction: '',
   etat_civil: '', nombre_enfants: '', niveau_etude_id: '', piece_etude: '', photo_url: '',
   nationalite: '', date_naissance: '', intitule_compte: '', num_compte: '',
-  telephone: '', email: '', date_embauche: '', salaire: '', adresse: '', statut: 'actif',
+  telephone: '', email: '', date_embauche: '', salaire: '', adresse: '', domaine: '', statut: 'actif',
 };
 
 function formatDate(d?: string | null): string {
@@ -60,6 +61,8 @@ function formatSalaire(n?: number | null): string {
   if (n == null) return '—';
   return `${Number(n).toLocaleString('fr-FR')} FC`;
 }
+
+
 
 export default function Personnel() {
   const { personnel, loading, create, update, remove } = usePersonnel();
@@ -171,7 +174,7 @@ export default function Personnel() {
       intitule_compte: p.intitule_compte || '', num_compte: p.num_compte || '',
       telephone: p.telephone || '', email: p.email || '',
       date_embauche: p.date_embauche || '', salaire: p.salaire != null ? String(p.salaire) : '',
-      adresse: p.adresse || '', statut: p.statut || 'actif',
+      adresse: p.adresse || '', domaine: p.domaine || '', statut: p.statut || 'actif',
     });
     setShowModal(true);
   }
@@ -208,6 +211,7 @@ export default function Personnel() {
       date_embauche: form.date_embauche || null,
       salaire: form.salaire ? Number(form.salaire) : null,
       adresse: form.adresse.trim() || null,
+      domaine: form.domaine.trim() || null,
       statut: form.statut || 'actif',
     };
     const ok = editing ? await update(editing.id, payload) : await create(payload);
@@ -376,6 +380,13 @@ export default function Personnel() {
                 </datalist>
               </div>
               <div>
+                <label className={labelClass}>Domaine</label>
+                <input className={inputClass} value={form.domaine} onChange={e => set('domaine', e.target.value)} list="domaines-list" placeholder="Ex : Enseignement" />
+                <datalist id="domaines-list">
+                  {['Enseignement', 'Administration', 'Comptabilité', 'Technique / Maintenance', 'Santé', 'Sécurité', 'Transport', 'Cuisine', 'Bibliothèque', 'Autre'].map(d => <option key={d} value={d} />)}
+                </datalist>
+              </div>
+              <div>
                 <label className={labelClass}>État-civil</label>
                 <select className={inputClass} value={form.etat_civil} onChange={e => set('etat_civil', e.target.value)}>
                   <option value="">—</option>
@@ -453,6 +464,10 @@ export default function Personnel() {
               <div>
                 <label className={labelClass}>Date d'embauche</label>
                 <input type="date" className={inputClass} value={form.date_embauche} onChange={e => set('date_embauche', e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Ancienneté</label>
+                <input className={inputClass} value={calculerAnciennete(form.date_embauche)} readOnly disabled title="Calculée automatiquement depuis la date d'embauche" />
               </div>
               <div>
                 <label className={labelClass}>Salaire (FC)</label>

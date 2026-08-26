@@ -75,3 +75,28 @@ export function getPaymentStatusBgColor(status: 'payé' | 'partiel' | 'impayé')
       return 'bg-gray-100';
   }
 }
+/**
+ * Calcule l'ancienneté exacte (ans, mois, jours) depuis une date d'embauche.
+ */
+export function calculerAnciennete(dateEmbauche: string): string {
+  if (!dateEmbauche) return '—';
+  const d = new Date(dateEmbauche + 'T00:00:00');
+  const now = new Date();
+  if (isNaN(d.getTime()) || d > now) return '—';
+  let ans = now.getFullYear() - d.getFullYear();
+  let mois = now.getMonth() - d.getMonth();
+  let jours = now.getDate() - d.getDate();
+  if (jours < 0) {
+    mois -= 1;
+    jours += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  }
+  if (mois < 0) {
+    ans -= 1;
+    mois += 12;
+  }
+  const parts: string[] = [];
+  if (ans > 0) parts.push(`${ans} an${ans > 1 ? 's' : ''}`);
+  if (mois > 0) parts.push(`${mois} mois`);
+  parts.push(`${jours} jour${jours > 1 ? 's' : ''}`);
+  return parts.join(', ');
+}

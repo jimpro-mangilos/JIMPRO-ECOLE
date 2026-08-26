@@ -27,6 +27,7 @@ export interface PersonnelRecord {
   date_embauche: string | null;
   salaire: number | null;
   adresse: string | null;
+  domaine: string | null;
   statut: string;
   created_at: string;
   updated_at: string;

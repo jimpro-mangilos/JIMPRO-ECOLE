@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, CreditCard, Loader2, Phone, Mail, MapPin, CalendarDays, UserCog, Users, GraduationCap, Banknote, Baby, Heart, Flag, BadgeCheck,
+  ArrowLeft, CreditCard, Loader2, Phone, Mail, MapPin, CalendarDays, UserCog, Users, GraduationCap, Banknote, Baby, Heart, Flag, BadgeCheck, Briefcase, ClipboardList,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { generateCarteService } from '../utils/carteServiceGenerator';
-import { formatDate } from '../utils/calculations';
+import { formatDate, calculerAnciennete } from '../utils/calculations';
 import type { PersonnelRecord } from '../lib/hooks/usePersonnel';
 import { STATUT_PERSONNEL_LABELS, STATUT_PERSONNEL_COLORS } from '../lib/hooks/usePersonnel';
+import { STATUT_POINTAGE, type PointageRecord } from '../lib/hooks/usePointage';
 
 function Info({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: React.ReactNode }) {
   return (
@@ -29,6 +30,8 @@ export default function PersonnelDetail() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [pointages, setPointages] = useState<PointageRecord[]>([]);
+  const [pointagesLoading, setPointagesLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -65,6 +68,35 @@ export default function PersonnelDetail() {
       setPrinting(false);
     }
   }
+
+  // ─── Pointage / liste de présence du membre ───────────────────────────
+  useEffect(() => {
+    if (!member?.id) return;
+    let cancelled = false;
+    (async () => {
+      setPointagesLoading(true);
+      const { data } = await (supabase as any)
+        .from('pointages_personnel')
+        .select('*')
+        .eq('personnel_id', member.id)
+        .order('date_pointage', { ascending: false })
+        .limit(60);
+      if (!cancelled) setPointages((data as PointageRecord[]) || []);
+      if (!cancelled) setPointagesLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [member?.id]);
+
+  const pointageStats = useMemo(() => {
+    const stats = { total: pointages.length, present: 0, retard: 0, absent: 0, permission: 0 };
+    pointages.forEach(p => {
+      if (p.statut === 'present') stats.present++;
+      else if (p.statut === 'retard') stats.retard++;
+      else if (p.statut === 'absent') stats.absent++;
+      else if (p.statut === 'permission') stats.permission++;
+    });
+    return stats;
+  }, [pointages]);
 
   if (loading) {
     return (
@@ -151,6 +183,81 @@ export default function PersonnelDetail() {
         <Info icon={Baby} label="Enfants" value={member.nombre_enfants != null ? String(member.nombre_enfants) : '—'} />
         <Info icon={GraduationCap} label="Niveau d'étude" value={member.niveau_etude_id ? (niveaux[member.niveau_etude_id] || '—') : '—'} />
         <Info icon={Banknote} label="Salaire" value={member.salaire != null ? `${Number(member.salaire).toLocaleString('fr-FR')} FC` : '—'} />
+        <Info icon={Briefcase} label="Domaine" value={member.domaine || '—'} />
+        <Info icon={CalendarDays} label="Ancienneté" value={member.date_embauche ? calculerAnciennete(member.date_embauche) : '—'} />
+      </div>
+
+      {/* ═══ Présence / Pointage — référence à la liste de présence ═══ */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mt-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-blue-600" /> Présence / Pointage
+          </h2>
+          <button
+            onClick={() => navigate('/pointage')}
+            className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-100 transition-colors"
+          >
+            Voir le pointage complet <ArrowLeft className="w-4 h-4 rotate-180" />
+          </button>
+        </div>
+
+        {/* Statistiques */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+          {[
+            { label: 'Jours pointés', value: pointageStats.total, color: 'text-slate-700', bg: 'bg-slate-100' },
+            { label: 'Présents', value: pointageStats.present, color: 'text-green-700', bg: 'bg-green-50' },
+            { label: 'Retards', value: pointageStats.retard, color: 'text-amber-700', bg: 'bg-amber-50' },
+            { label: 'Absents', value: pointageStats.absent, color: 'text-red-700', bg: 'bg-red-50' },
+            { label: 'Permissions', value: pointageStats.permission, color: 'text-blue-700', bg: 'bg-blue-50' },
+          ].map(st => (
+            <div key={st.label} className={`${st.bg} rounded-xl p-3 text-center border border-slate-100`}>
+              <div className={`text-xl font-bold ${st.color}`}>{st.value}</div>
+              <div className="text-[11px] font-medium text-gray-500 mt-0.5">{st.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Historique récent */}
+        {pointagesLoading ? (
+          <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+            <Loader2 className="w-4 h-4 animate-spin mr-2" /> Chargement du pointage...
+          </div>
+        ) : pointages.length === 0 ? (
+          <div className="text-center py-8 text-gray-400 text-sm border border-dashed border-slate-200 rounded-xl">
+            Aucun pointage enregistré pour ce membre.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase">
+                <tr>
+                  <th className="px-3 py-2">Date</th>
+                  <th className="px-3 py-2">Statut</th>
+                  <th className="px-3 py-2">Arrivée</th>
+                  <th className="px-3 py-2">Départ</th>
+                  <th className="px-3 py-2">Note</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {pointages.slice(0, 15).map(p => {
+                  const st = STATUT_POINTAGE[p.statut] || { label: p.statut, color: 'bg-gray-100 text-gray-600' };
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50">
+                      <td className="px-3 py-2 whitespace-nowrap text-gray-700">{formatDate(p.date_pointage)}</td>
+                      <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${st.color}`}>{st.label}</span></td>
+                      <td className="px-3 py-2 text-gray-600">{p.heure_arrivee || '—'}</td>
+                      <td className="px-3 py-2 text-gray-600">{p.heure_depart || '—'}</td>
+                      <td className="px-3 py-2 text-gray-500 max-w-[200px] truncate">{p.note || '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {pointages.length > 15 && (
+              <p className="text-xs text-gray-400 text-center mt-3">… et {pointages.length - 15} autres jours (voir le pointage complet).</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
