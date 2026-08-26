@@ -5,8 +5,10 @@ import { STATUT_POINTAGE, type PointageRecord, type PointageConfig, loadPointage
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generatePointageReport } from '../utils/pointageReportGenerator';
+import { formatDateTime } from '../utils/calculations';
 import { generatePointageSalaireReport } from '../utils/pointageSalaireReportGenerator';
 import { generateBulletinPaie } from '../utils/bulletinPaieGenerator';
+import { generateFichePresence } from '../utils/presenceReportGenerator';
 
 function todayStr(): string {
   const d = new Date();
@@ -42,6 +44,7 @@ export default function PointagePersonnel() {
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [permBusy, setPermBusy] = useState<string | null>(null);
+  const [paiementsSalaires, setPaiementsSalaires] = useState<Record<string, { montant_fc: number; montant_usd: number; paye_le: string }>>({});
 
   const today = todayStr();
   const [year, m] = month.split('-').map(Number);
@@ -54,14 +57,18 @@ export default function PointagePersonnel() {
     const start = `${y}-${String(mo).padStart(2, '0')}-01`;
     const lastDay = new Date(y, mo, 0).getDate();
     const end = `${y}-${String(mo).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    const [cfg, r, p] = await Promise.all([
+    const [cfg, r, p, ps] = await Promise.all([
       loadPointageConfig(currentSchoolId),
       supabase.from('pointages_personnel').select('*').eq('ecole_id', currentSchoolId).gte('date_pointage', start).lte('date_pointage', end),
       supabase.from('permissions_personnel').select('*').eq('ecole_id', currentSchoolId),
+      supabase.from('paiements_salaires').select('*').eq('ecole_id', currentSchoolId).eq('mois', month),
     ]);
     setConfig(cfg);
     setRecords((r.data as PointageRecord[]) || []);
     setPermissions((p.data as Permission[]) || []);
+    const psMap: Record<string, { montant_fc: number; montant_usd: number; paye_le: string }> = {};
+    for (const row of (ps.data || []) as any[]) psMap[row.personnel_id] = { montant_fc: Number(row.montant_fc), montant_usd: Number(row.montant_usd), paye_le: row.paye_le };
+    setPaiementsSalaires(psMap);
     setLoading(false);
   }, [currentSchoolId, month]);
 
@@ -176,6 +183,38 @@ export default function PointagePersonnel() {
     if (!error) reload();
   }
 
+  async function marquerPaye(ligne: typeof salaires[number]) {
+    if (!user || !currentSchoolId) return;
+    if (!ligne.salaireMois) { alert('Aucun salaire calculé pour ce membre.'); return; }
+    if (!confirm(`Marquer le salaire de ${ligne.p.nom} ${ligne.p.prenom} comme payé (${formatMontant(ligne.salaireMois)}) ?`)) return;
+    const { error } = await supabase.from('paiements_salaires').upsert(
+      {
+        ecole_id: currentSchoolId, personnel_id: ligne.p.id, mois: month,
+        montant_fc: Math.round(ligne.salaireMois),
+        montant_usd: config.tauxChange && config.tauxChange > 0 && ligne.salaireMois != null ? Math.round((ligne.salaireMois / config.tauxChange) * 100) / 100 : 0,
+        taux_change: config.tauxChange,
+        jours_presents: ligne.joursPresent,
+        paye_par: user.id,
+        paye_le: new Date().toISOString(),
+      },
+      { onConflict: 'ecole_id,personnel_id,mois' }
+    );
+    if (!error) reload();
+    else alert('Erreur : ' + error.message);
+  }
+
+  async function exporterFichePresence(p: typeof personnel[number]) {
+    const moisLabel = new Date(year, m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    await generateFichePresence({
+      membre: { id: p.id, nom: p.nom, postnom: p.postnom, prenom: p.prenom, matricule: p.matricule, fonction: p.fonction },
+      moisLabel,
+      workDays,
+      records,
+      config,
+      statutDe: cellStatus,
+    });
+  }
+
   async function exporterBulletin(ligne: typeof salaires[number]) {
     const moisLabel = new Date(year, m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     await generateBulletinPaie({
@@ -259,6 +298,9 @@ export default function PointagePersonnel() {
   }, [list, workDays, recByKey, config, permDates, permPayeesDates, today]);
 
   const totalSalaires = salaires.reduce((acc, x) => acc + (x.salaireMois || 0), 0);
+
+  const totalPayeFC = Object.values(paiementsSalaires).reduce((acc, p) => acc + p.montant_fc, 0);
+  const totalPayeUSD = Object.values(paiementsSalaires).reduce((acc, p) => acc + p.montant_usd, 0);
 
   // ─── Alertes retards récurrents ─────────────────────────────────────────
   const retardsParMembre = useMemo(() => {
@@ -477,6 +519,7 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
                 <th className="px-4 py-3 text-right">Salaire du mois (FC)</th>
                 <th className="px-4 py-3 text-right">Salaire du mois ($)</th>
                 <th className="px-4 py-3 text-center">Bulletin</th>
+                <th className="px-4 py-3 text-center">Paie</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -496,7 +539,17 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
                   <td className="px-4 py-2.5 text-right font-bold text-blue-700 whitespace-nowrap">{formatMontant(salaireMois)}</td>
                   <td className="px-4 py-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">{formatUSD(salaireMois, config.tauxChange)}</td>
                   <td className="px-4 py-2.5 text-center">
-                    <button onClick={() => exporterBulletin(l)} className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 border border-blue-200" title="Générer le bulletin de paie PDF">Bulletin</button>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button onClick={() => exporterBulletin(l)} className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 border border-blue-200" title="Générer le bulletin de paie PDF">Bulletin</button>
+                      <button onClick={() => exporterFichePresence(l.p)} className="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 text-xs font-semibold hover:bg-teal-100 border border-teal-200" title="Fiche de présence PDF du mois">Fiche</button>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                    {paiementsSalaires[l.p.id] ? (
+                      <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold" title={`Payé le ${formatDateTime(paiementsSalaires[l.p.id].paye_le)}`}>✓ Payé</span>
+                    ) : (
+                      <button onClick={() => marquerPaye(l)} disabled={!l.salaireMois} className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-40" title="Enregistrer le paiement du salaire">Marquer payé</button>
+                    )}
                   </td>
                 </tr>
                 );
@@ -514,6 +567,23 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
           </table>
         </div>
       </div>
+
+      {/* ═══ Historique des salaires payés du mois ═══ */}
+      {Object.keys(paiementsSalaires).length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+          <h3 className="font-bold text-gray-800 mb-3 flex items-center justify-between">
+            <span>Salaires payés — {month}</span>
+            <span className="text-sm font-semibold text-emerald-700">{Object.keys(paiementsSalaires).length} membre(s) · {formatMontant(totalPayeFC)}{totalPayeUSD > 0 ? ` (${totalPayeUSD.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$)` : ''}</span>
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {salaires.filter(x => paiementsSalaires[x.p.id]).map(x => (
+              <span key={x.p.id} className="px-3 py-1.5 rounded-full bg-green-50 border border-green-200 text-xs text-gray-700">
+                ✓ {x.p.nom} {x.p.prenom} — <span className="font-semibold text-green-700">{formatMontant(paiementsSalaires[x.p.id].montant_fc)}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Détail du jour sélectionné */}
       {selectedDay && (
