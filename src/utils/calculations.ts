@@ -100,3 +100,14 @@ export function calculerAnciennete(dateEmbauche: string): string {
   parts.push(`${jours} jour${jours > 1 ? 's' : ''}`);
   return parts.join(', ');
 }
+/** Calcule le salaire du mois : jours présents × (salaire mensuel ÷ jours ouvrables). */
+export function calculerSalaireMois(joursPresent: number, salaireMensuel: number | null, joursOuvrables: number): number | null {
+  if (salaireMensuel == null || joursOuvrables <= 0 || joursPresent <= 0) return null;
+  return (joursPresent * salaireMensuel) / joursOuvrables;
+}
+
+/** Calcule le salaire journalier : salaire mensuel ÷ jours ouvrables. */
+export function calculerSalaireJournalier(salaireMensuel: number | null, joursOuvrables: number): number | null {
+  if (salaireMensuel == null || joursOuvrables <= 0) return null;
+  return salaireMensuel / joursOuvrables;
+}
