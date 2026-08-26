@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogo, clearLogoCache } from '../contexts/LogoContext';
@@ -14,11 +14,11 @@ import { useConfiguration } from '../lib/hooks/useConfiguration';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const emptyForm = (extra?: Record<string, any>): any => ({ nom: '', description: '', is_active: true, ...extra });
 const libForm = (extra?: Record<string, string | boolean>) => ({ libelle: '', description: '', is_active: true, ...extra });
-type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'menu_par_role' | 'personnel' | 'tailles';
+type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'pointage' | 'menu_par_role' | 'personnel' | 'tailles';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'sections', label: 'Sections' }, { key: 'options', label: 'Options' }, { key: 'classes', label: 'Classes' },
   { key: 'motifs', label: 'Motifs' }, { key: 'types_paiement', label: 'Types Paiement' }, { key: 'annees_scolaires', label: 'Années Scolaires' },
-  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' }, { key: 'tailles', label: 'Tailles' },
+  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'pointage', label: 'Pointage' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' }, { key: 'tailles', label: 'Tailles' },
 ];
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -27,6 +27,9 @@ export default function Configuration() {
   const { logoUrl, refreshLogo } = useLogo();
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [ptgHeureEntree, setPtgHeureEntree] = useState('08:00');
+  const [ptgHeureSortie, setPtgHeureSortie] = useState('16:30');
+  const [ptgSaving, setPtgSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('sections');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -60,6 +63,37 @@ export default function Configuration() {
   const showError = (msg: string) => { setError(msg); };
 
   // ─── Logo ───────────────────────────────────────────────────────────────────
+  // Charger la configuration pointage au montage
+  useEffect(() => {
+    if (!currentSchoolId) return;
+    (async () => {
+      const { data } = await supabase.from('app_settings').select('key, value').eq('ecole_id', currentSchoolId).in('key', ['pointage_heure_entree', 'pointage_heure_sortie']);
+      const map: Record<string, string> = {};
+      (data || []).forEach((r: any) => { map[r.key] = r.value; });
+      if (map.pointage_heure_entree) setPtgHeureEntree(map.pointage_heure_entree);
+      if (map.pointage_heure_sortie) setPtgHeureSortie(map.pointage_heure_sortie);
+    })();
+  }, [currentSchoolId]);
+
+  async function savePointageConfig() {
+    if (!currentSchoolId) return;
+    setPtgSaving(true);
+    try {
+      await supabase.from('app_settings').upsert(
+        [
+          { ecole_id: currentSchoolId, key: 'pointage_heure_entree', value: ptgHeureEntree },
+          { ecole_id: currentSchoolId, key: 'pointage_heure_sortie', value: ptgHeureSortie },
+        ],
+        { onConflict: 'ecole_id,key' }
+      );
+      showSuccess('Horaires de pointage enregistrés');
+    } catch (err: any) {
+      showError(`Erreur : ${err?.message || err}`);
+    } finally {
+      setPtgSaving(false);
+    }
+  }
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     setLogoUploading(true);
@@ -158,6 +192,46 @@ export default function Configuration() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ─── Pointage Tab ─────────────────────────────────────────────────── */}
+      {activeTab === 'pointage' && (
+        <div className="bg-white rounded-lg shadow-sm p-6 max-w-xl">
+          <h2 className="text-lg font-bold mb-1">Configuration du pointage</h2>
+          <p className="text-sm text-gray-500 mb-5">
+            Définissez l'heure d'entrée (seuil de retard) et l'heure de sortie. Les jours ouvrables
+            sont du lundi au vendredi : tout membre sans pointage un jour ouvrable est considéré
+            <span className="font-semibold text-red-600"> absent</span> automatiquement.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Heure d'entrée (seuil de retard)</label>
+              <input
+                type="time"
+                value={ptgHeureEntree}
+                onChange={e => setPtgHeureEntree(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">Après cette heure, l'arrivée est marquée « Retard ».</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Heure de sortie</label>
+              <input
+                type="time"
+                value={ptgHeureSortie}
+                onChange={e => setPtgHeureSortie(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              />
+            </div>
+          </div>
+          <button
+            onClick={savePointageConfig}
+            disabled={ptgSaving}
+            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 text-sm"
+          >
+            {ptgSaving ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Enregistrer les horaires
+          </button>
         </div>
       )}
 

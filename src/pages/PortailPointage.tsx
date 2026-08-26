@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { QrCode, X, Loader2, CheckCircle2, LogIn, LogOut, UserCheck } from 'lucide-react';
+import { QrCode, X, Loader2, CheckCircle2, LogIn, LogOut, UserCheck, CalendarClock, Send } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
+import { loadPointageConfig, statutAuto, type PointageConfig } from '../lib/hooks/usePointage';
 
 interface PersonnelInfo {
   id: string;
@@ -36,6 +37,18 @@ export default function PortailPointage() {
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-pointage';
   const { schoolId, loading: schoolLoading } = usePublicSchool();
+  const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30' });
+  const [showPerm, setShowPerm] = useState(false);
+  const [permMatricule, setPermMatricule] = useState('');
+  const [permDebut, setPermDebut] = useState('');
+  const [permFin, setPermFin] = useState('');
+  const [permMotif, setPermMotif] = useState('');
+  const [permMsg, setPermMsg] = useState('');
+  const [permLoading, setPermLoading] = useState(false);
+
+  useEffect(() => {
+    if (schoolId) { loadPointageConfig(schoolId).then(setConfig).catch(() => {}); }
+  }, [schoolId]);
 
   useEffect(() => {
     if (showScanner) {
@@ -106,9 +119,10 @@ export default function PortailPointage() {
         .maybeSingle();
 
       if (!existing) {
+        const heureArrivee = heureActuelle();
         await supabase.from('pointages_personnel').insert({
           ecole_id: schoolId, personnel_id: personne.id, date_pointage: today,
-          heure_arrivee: heureActuelle(), statut: 'present',
+          heure_arrivee: heureArrivee, statut: statutAuto(heureArrivee, config),
         });
         setResultat({ type: 'arrivee', personne: info, heure: heureActuelle() });
       } else if (!existing.heure_depart) {
@@ -123,6 +137,33 @@ export default function PortailPointage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function demanderPermission(e: React.FormEvent) {
+    e.preventDefault();
+    if (!schoolId || !permMatricule.trim() || !permDebut || !permFin) return;
+    setPermLoading(true);
+    setPermMsg('');
+    try {
+      const { data: personne } = await supabase
+        .from('personnel')
+        .select('id')
+        .eq('ecole_id', schoolId)
+        .ilike('matricule', permMatricule.trim())
+        .maybeSingle();
+      if (!personne) { setPermMsg('Matricule introuvable.'); return; }
+      const { error } = await supabase.from('permissions_personnel').insert({
+        ecole_id: schoolId, personnel_id: personne.id,
+        date_debut: permDebut, date_fin: permFin,
+        motif: permMotif.trim() || null,
+        statut: 'en_attente',
+        demande_par: null,
+      });
+      if (error) { setPermMsg('Erreur : ' + error.message); return; }
+      setPermMsg('Demande envoyée — en attente d\'approbation.');
+      setPermMatricule(''); setPermDebut(''); setPermFin(''); setPermMotif(''); setShowPerm(false);
+    } catch (e: any) { setPermMsg('Erreur : ' + e.message); }
+    finally { setPermLoading(false); }
   }
 
   async function pointerManuel(e: React.FormEvent) {
@@ -142,6 +183,7 @@ export default function PortailPointage() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">GOLDEN ACADEMY</h1>
           <p className="text-white/60 text-sm">Scannez votre carte de service pour pointer</p>
+          <p className="text-white/40 text-xs mt-1">Heure d'entrée : <span className="text-emerald-300 font-semibold">{config.heureEntree}</span> · après cette heure = Retard</p>
         </div>
 
         {/* Bouton scan */}
@@ -176,6 +218,30 @@ export default function PortailPointage() {
             <div id={scannerDivId} className="w-full rounded-lg overflow-hidden" />
             {scanError && <p className="text-red-300 text-xs mt-2">{scanError}</p>}
           </div>
+        )}
+
+        {/* Demande de permission */}
+        <button
+          onClick={() => setShowPerm(!showPerm)}
+          className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white text-sm font-medium py-3 rounded-xl mb-4 transition-colors"
+        >
+          <CalendarClock className="w-4 h-4" /> {showPerm ? 'Fermer' : 'Demander une permission (jour(s) autorisé(s))'}
+        </button>
+
+        {showPerm && (
+          <form onSubmit={demanderPermission} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-4 space-y-3">
+            <p className="text-white/50 text-xs">Soumise à l'approbation de la direction (IT Manager / Promoteur).</p>
+            <input value={permMatricule} onChange={e => setPermMatricule(e.target.value)} placeholder="Matricule" className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 text-sm outline-none focus:border-emerald-400" />
+            <div className="grid grid-cols-2 gap-2">
+              <input type="date" value={permDebut} onChange={e => setPermDebut(e.target.value)} className="px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm outline-none focus:border-emerald-400" />
+              <input type="date" value={permFin} onChange={e => setPermFin(e.target.value)} className="px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm outline-none focus:border-emerald-400" />
+            </div>
+            <input value={permMotif} onChange={e => setPermMotif(e.target.value)} placeholder="Motif (ex. rendez-vous médical)" className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 text-sm outline-none focus:border-emerald-400" />
+            <button type="submit" disabled={permLoading} className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold py-2.5 rounded-lg disabled:opacity-50">
+              {permLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Envoyer la demande
+            </button>
+            {permMsg && <p className={`text-xs ${permMsg.includes('envoyée') ? 'text-emerald-300' : 'text-red-300'}`}>{permMsg}</p>}
+          </form>
         )}
 
         {/* Résultat */}

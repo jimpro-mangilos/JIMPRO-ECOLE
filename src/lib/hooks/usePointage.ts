@@ -31,6 +31,59 @@ export type PointageInput = {
   note: string | null;
 };
 
+export interface PointageConfig {
+  heureEntree: string;  // ex. '08:00'
+  heureSortie: string;  // ex. '16:30'
+}
+
+export const POINTAGE_DEFAUT: PointageConfig = { heureEntree: '08:00', heureSortie: '16:30' };
+
+/** Charge la configuration du pointage (heures d'entrée/sortie) de l'école. */
+export async function loadPointageConfig(schoolId: string | null): Promise<PointageConfig> {
+  if (!schoolId) return POINTAGE_DEFAUT;
+  try {
+    const { data } = await (supabase as any)
+      .from('app_settings')
+      .select('key, value')
+      .eq('ecole_id', schoolId)
+      .in('key', ['pointage_heure_entree', 'pointage_heure_sortie']);
+    const map: Record<string, string> = {};
+    (data || []).forEach((r: any) => { map[r.key] = r.value; });
+    return {
+      heureEntree: map.pointage_heure_entree || POINTAGE_DEFAUT.heureEntree,
+      heureSortie: map.pointage_heure_sortie || POINTAGE_DEFAUT.heureSortie,
+    };
+  } catch {
+    return POINTAGE_DEFAUT;
+  }
+}
+
+/** Vrai si la date est un jour ouvrable (lundi → vendredi). */
+export function estJourOuvrable(date: string | Date): boolean {
+  const d = typeof date === 'string' ? new Date(date + 'T00:00:00') : date;
+  const day = d.getDay();
+  return day >= 1 && day <= 5;
+}
+
+/** Compare deux heures 'HH:MM' → négatif si a < b, 0 si égal, positif sinon. */
+export function compareHeures(a: string, b: string): number {
+  const pa = a.split(':').map(Number);
+  const pb = b.split(':').map(Number);
+  return (pa[0] * 60 + pa[1]) - (pb[0] * 60 + pb[1]);
+}
+
+/** Statut automatique selon l'heure d'arrivée et l'heure d'entrée configurée. */
+export function statutAuto(heureArrivee: string | null, config: PointageConfig): string {
+  if (!heureArrivee) return 'absent';
+  if (compareHeures(heureArrivee.slice(0, 5), config.heureEntree) > 0) return 'retard';
+  return 'present';
+}
+
+export function formatDatePointage(date: string): string {
+  const d = new Date(date + 'T00:00:00');
+  return d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+}
+
 export function usePointage(date: string) {
   const { currentSchoolId } = useAuth();
   const queryClient = useQueryClient();
