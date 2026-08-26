@@ -47,6 +47,7 @@ const VerifierFacture = lazy(() => import('./pages/VerifierFacture'));
 const Personnel = lazy(() => import('./pages/Personnel'));
 const PersonnelDetail = lazy(() => import('./pages/PersonnelDetail'));
 const PointagePersonnel = lazy(() => import('./pages/PointagePersonnel'));
+const Recouvrement = lazy(() => import('./pages/Recouvrement'));
 
 function LoadingFallback() {
   return (
@@ -212,6 +213,17 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <LazyPage><PersonnelDetail /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/recouvrement"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><Recouvrement /></LazyPage>
                   </Layout>
                 </ProtectedRoute>
               }
