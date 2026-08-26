@@ -34,7 +34,7 @@ export default function PointagePersonnel() {
   const { personnel, loading: loadingPersonnel } = usePersonnel();
   const [search, setSearch] = useState('');
   const [month, setMonth] = useState(todayStr().slice(0, 7));
-  const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30' });
+  const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null });
   const [records, setRecords] = useState<PointageRecord[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -223,6 +223,11 @@ function formatMontant(n: number | null | undefined): string {
   return `${Math.round(n).toLocaleString('fr-FR')} FC`;
 }
 
+function formatUSD(n: number | null | undefined, taux: number | null): string {
+  if (n == null || !taux || taux <= 0) return '—';
+  return `${(n / taux).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
+}
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -368,7 +373,7 @@ function formatMontant(n: number | null | undefined): string {
         <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
           <h3 className="font-bold text-gray-800">Salaires du mois — {month}</h3>
           <span className="text-xs text-gray-500">
-            {workDays.length} jours ouvrables (lun–ven) · salaire journalier = salaire mensuel ÷ {workDays.length}
+            {workDays.length} jours ouvrables (lun–ven) · salaire journalier = salaire mensuel ÷ {workDays.length}{config.tauxChange ? ` · 1 $ = ${config.tauxChange} FC` : ''}
           </span>
         </div>
         <div className="overflow-x-auto">
@@ -379,7 +384,8 @@ function formatMontant(n: number | null | undefined): string {
                 <th className="px-4 py-3 text-center">Jours présents</th>
                 <th className="px-4 py-3 text-right">Salaire mensuel</th>
                 <th className="px-4 py-3 text-right">Salaire journalier</th>
-                <th className="px-4 py-3 text-right">Salaire du mois</th>
+                <th className="px-4 py-3 text-right">Salaire du mois (FC)</th>
+                <th className="px-4 py-3 text-right">Salaire du mois ($)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -403,6 +409,7 @@ function formatMontant(n: number | null | undefined): string {
                 <td className="px-4 py-2.5 font-bold text-gray-700">Total salaires du mois</td>
                 <td colSpan={3} />
                 <td className="px-4 py-2.5 text-right font-bold text-blue-700 whitespace-nowrap">{formatMontant(totalSalaires)}</td>
+                <td className="px-4 py-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">{formatUSD(totalSalaires, config.tauxChange)}</td>
               </tr>
             </tfoot>
           </table>

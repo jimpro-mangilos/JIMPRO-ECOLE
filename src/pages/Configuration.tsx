@@ -29,6 +29,7 @@ export default function Configuration() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [ptgHeureEntree, setPtgHeureEntree] = useState('08:00');
   const [ptgHeureSortie, setPtgHeureSortie] = useState('16:30');
+  const [ptgTauxChange, setPtgTauxChange] = useState('');
   const [ptgSaving, setPtgSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('sections');
   const [error, setError] = useState('');
@@ -72,6 +73,7 @@ export default function Configuration() {
       (data || []).forEach((r: any) => { map[r.key] = r.value; });
       if (map.pointage_heure_entree) setPtgHeureEntree(map.pointage_heure_entree);
       if (map.pointage_heure_sortie) setPtgHeureSortie(map.pointage_heure_sortie);
+      if (map.pointage_taux_change) setPtgTauxChange(map.pointage_taux_change);
     })();
   }, [currentSchoolId]);
 
@@ -83,6 +85,7 @@ export default function Configuration() {
         [
           { ecole_id: currentSchoolId, key: 'pointage_heure_entree', value: ptgHeureEntree },
           { ecole_id: currentSchoolId, key: 'pointage_heure_sortie', value: ptgHeureSortie },
+          { ecole_id: currentSchoolId, key: 'pointage_taux_change', value: ptgTauxChange },
         ],
         { onConflict: 'ecole_id,key' }
       );
@@ -223,6 +226,19 @@ export default function Configuration() {
                 onChange={e => setPtgHeureSortie(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Taux de change (1 $US = ... FC)</label>
+              <input
+                type="number"
+                min="1"
+                step="0.01"
+                value={ptgTauxChange}
+                onChange={e => setPtgTauxChange(e.target.value)}
+                placeholder="Ex : 2800"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">Permet d'afficher le salaire payable en dollars (en plus des francs).</p>
             </div>
           </div>
           <button
