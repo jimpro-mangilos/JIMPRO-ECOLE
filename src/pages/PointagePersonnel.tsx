@@ -25,6 +25,7 @@ function workingDaysOfMonth(year: number, month: number): string[] {
 interface Permission {
   id: string; ecole_id: string; personnel_id: string; date_debut: string; date_fin: string;
   motif: string | null; statut: string; created_at: string; decision_note: string | null;
+  paye: boolean | null;
 }
 
 export default function PointagePersonnel() {
@@ -71,11 +72,11 @@ export default function PointagePersonnel() {
     return map;
   }, [records]);
 
-  // Permissions approuvées couvrant une date
+  // Permissions approuvées PAYÉES couvrant une date (comptées comme présentes pour le salaire)
   const permDates = useMemo(() => {
     const set = new Set<string>();
     for (const p of permissions) {
-      if (p.statut !== 'approuvee') continue;
+      if (p.statut !== 'approuvee' || p.paye !== true) continue;
       const start = new Date(p.date_debut + 'T00:00:00');
       const end = new Date(p.date_fin + 'T00:00:00');
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -171,11 +172,12 @@ export default function PointagePersonnel() {
   }
 
   // Approbation d'une permission
-  async function decidePermission(p: Permission, approuve: boolean) {
+  async function decidePermission(p: Permission, approuve: boolean, paye?: boolean) {
     if (!user) return;
     setPermBusy(p.id);
     const { error } = await supabase.from('permissions_personnel').update({
       statut: approuve ? 'approuvee' : 'refusee',
+      paye: approuve ? (paye ?? true) : null,
       decide_par: user.id,
       decided_at: new Date().toISOString(),
     }).eq('id', p.id);
@@ -191,7 +193,10 @@ export default function PointagePersonnel() {
       let joursPresent = 0;
       for (const d of workDays) {
         const rec = recByKey.get(`${p.id}_${d}`);
-        if (!rec) continue;
+        if (!rec) {
+          if (permDates.has(`${p.id}_${d}`)) joursPresent++; // permission payée = jour travaillé
+          continue;
+        }
         const st = (rec.statut === 'present' && rec.heure_arrivee && compareHeures(rec.heure_arrivee.slice(0, 5), config.heureEntree) > 0) ? 'retard' : rec.statut;
         if (st === 'present' || st === 'retard') joursPresent++;
       }
@@ -200,7 +205,7 @@ export default function PointagePersonnel() {
       const salaireMois = joursPresent > 0 && salaireJournalier != null ? joursPresent * salaireJournalier : null;
       return { p, joursPresent, salaireMensuel, salaireJournalier, salaireMois };
     });
-  }, [list, workDays, recByKey, config]);
+  }, [list, workDays, recByKey, config, permDates]);
 
   const totalSalaires = salaires.reduce((acc, x) => acc + (x.salaireMois || 0), 0);
 
@@ -259,9 +264,10 @@ function formatMontant(n: number | null | undefined): string {
       {/* Permissions en attente (approbation IT manager / promoteur) */}
       {isApprover && pendingPerms.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-          <h3 className="font-bold text-amber-800 flex items-center gap-2 mb-3">
+          <h3 className="font-bold text-amber-800 flex items-center gap-2 mb-1">
             <ShieldCheck className="w-5 h-5" /> Permissions en attente d'approbation ({pendingPerms.length})
           </h3>
+          <p className="text-xs text-amber-700/80 mb-3">Payé = jours comptés comme présents dans le salaire du mois · Non payé = jours déduits.</p>
           <div className="space-y-2">
             {pendingPerms.map(p => {
               const m = permById.get(p.personnel_id);
@@ -273,9 +279,12 @@ function formatMontant(n: number | null | undefined): string {
                       {formatDatePointage(p.date_debut)} → {formatDatePointage(p.date_fin)}{p.motif ? ` — ${p.motif}` : ''}
                     </span>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => decidePermission(p, true)} disabled={permBusy === p.id} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50">
-                      <ShieldCheck className="w-3.5 h-3.5" /> Approuver
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => decidePermission(p, true, true)} disabled={permBusy === p.id} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50" title="Les jours seront payés (comptés comme présents)">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Approuver (payé)
+                    </button>
+                    <button onClick={() => decidePermission(p, true, false)} disabled={permBusy === p.id} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 disabled:opacity-50" title="Les jours ne seront pas payés (déduits du salaire)">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Approuver (non payé)
                     </button>
                     <button onClick={() => decidePermission(p, false)} disabled={permBusy === p.id} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-50">
                       <ShieldX className="w-3.5 h-3.5" /> Refuser
