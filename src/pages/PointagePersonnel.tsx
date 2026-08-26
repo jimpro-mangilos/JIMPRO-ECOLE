@@ -28,7 +28,8 @@ interface Permission {
 }
 
 export default function PointagePersonnel() {
-  const { currentSchoolId, user } = useAuth();
+  const { currentSchoolId, user, isAdmin, isItManager, isPromoteur } = useAuth();
+  const isApprover = isAdmin() || isItManager() || isPromoteur();
   const { personnel, loading: loadingPersonnel } = usePersonnel();
   const [search, setSearch] = useState('');
   const [month, setMonth] = useState(todayStr().slice(0, 7));
@@ -182,6 +183,27 @@ export default function PointagePersonnel() {
     setPermBusy(null);
   }
 
+  // ─── Salaires du mois : jours présents × salaire journalier ─────────────
+  // salaire journalier = salaire mensuel ÷ jours ouvrables du mois
+  const salaires = useMemo(() => {
+    const nbJours = workDays.length;
+    return list.map(p => {
+      let joursPresent = 0;
+      for (const d of workDays) {
+        const rec = recByKey.get(`${p.id}_${d}`);
+        if (!rec) continue;
+        const st = (rec.statut === 'present' && rec.heure_arrivee && compareHeures(rec.heure_arrivee.slice(0, 5), config.heureEntree) > 0) ? 'retard' : rec.statut;
+        if (st === 'present' || st === 'retard') joursPresent++;
+      }
+      const salaireMensuel = p.salaire ?? null;
+      const salaireJournalier = salaireMensuel != null && nbJours > 0 ? salaireMensuel / nbJours : null;
+      const salaireMois = joursPresent > 0 && salaireJournalier != null ? joursPresent * salaireJournalier : null;
+      return { p, joursPresent, salaireMensuel, salaireJournalier, salaireMois };
+    });
+  }, [list, workDays, recByKey, config]);
+
+  const totalSalaires = salaires.reduce((acc, x) => acc + (x.salaireMois || 0), 0);
+
   const pendingPerms = permissions.filter(p => p.statut === 'en_attente');
   const permById = useMemo(() => {
     const map = new Map<string, { nom: string; prenom: string }>();
@@ -190,6 +212,11 @@ export default function PointagePersonnel() {
   }, [personnel]);
 
   const timeInput = 'w-24 px-2 py-1.5 border border-slate-200 rounded-md text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+
+function formatMontant(n: number | null | undefined): string {
+  if (n == null) return '—';
+  return `${Math.round(n).toLocaleString('fr-FR')} FC`;
+}
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -230,7 +257,7 @@ export default function PointagePersonnel() {
       </div>
 
       {/* Permissions en attente (approbation IT manager / promoteur) */}
-      {pendingPerms.length > 0 && (
+      {isApprover && pendingPerms.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
           <h3 className="font-bold text-amber-800 flex items-center gap-2 mb-3">
             <ShieldCheck className="w-5 h-5" /> Permissions en attente d'approbation ({pendingPerms.length})
@@ -325,6 +352,52 @@ export default function PointagePersonnel() {
             {list.length === 0 && <div className="text-center py-12 text-gray-400">Aucun personnel.</div>}
           </div>
         )}
+      </div>
+
+      {/* ═══ Salaires du mois — jours présents × salaire journalier ═══ */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-6">
+        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+          <h3 className="font-bold text-gray-800">Salaires du mois — {month}</h3>
+          <span className="text-xs text-gray-500">
+            {workDays.length} jours ouvrables (lun–ven) · salaire journalier = salaire mensuel ÷ {workDays.length}
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase">
+              <tr>
+                <th className="px-4 py-3">Personnel</th>
+                <th className="px-4 py-3 text-center">Jours présents</th>
+                <th className="px-4 py-3 text-right">Salaire mensuel</th>
+                <th className="px-4 py-3 text-right">Salaire journalier</th>
+                <th className="px-4 py-3 text-right">Salaire du mois</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {salaires.map(({ p, joursPresent, salaireMensuel, salaireJournalier, salaireMois }) => (
+                <tr key={p.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-2.5">
+                    <div className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</div>
+                    <div className="text-[11px] text-gray-400">{p.fonction}</div>
+                  </td>
+                  <td className="px-4 py-2.5 text-center">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${joursPresent > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{joursPresent}</span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 whitespace-nowrap">{formatMontant(salaireMensuel)}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 whitespace-nowrap">{formatMontant(salaireJournalier)}</td>
+                  <td className="px-4 py-2.5 text-right font-bold text-blue-700 whitespace-nowrap">{formatMontant(salaireMois)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="bg-slate-50">
+              <tr>
+                <td className="px-4 py-2.5 font-bold text-gray-700">Total salaires du mois</td>
+                <td colSpan={3} />
+                <td className="px-4 py-2.5 text-right font-bold text-blue-700 whitespace-nowrap">{formatMontant(totalSalaires)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
 
       {/* Détail du jour sélectionné */}
