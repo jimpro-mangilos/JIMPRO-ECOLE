@@ -31,3 +31,14 @@ export function parseScannedMatricule(raw: string | null | undefined): string {
   if (m) s = m[1];
   return s.toUpperCase().replace(/[^A-Z0-9\-]/g, '');
 }
+
+/**
+ * Vrai si le matricule ressemble à un matricule valide de l'app
+ * (ex. CSGAA-20260818-EUKG5 : préfixe + date 8 chiffres + code).
+ * Permet de détecter un scan corrompu par l'encodage du lecteur.
+ */
+export function isMatriculePlausible(matricule: string): boolean {
+  if (!matricule || matricule.length < 8 || matricule.length > 40) return false;
+  if (!/\d{8}/.test(matricule)) return false; // doit contenir une date AAAAMMJJ
+  return /^[A-Z0-9\-]+$/.test(matricule);
+}

@@ -4,7 +4,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 import { loadPointageConfig, statutAuto, type PointageConfig } from '../lib/hooks/usePointage';
-import { parseScannedMatricule } from '../utils/ascii';
+import { parseScannedMatricule, isMatriculePlausible } from '../utils/ascii';
 
 interface PersonnelInfo {
   id: string;
@@ -63,10 +63,13 @@ export default function PortailPointage() {
           if (!scannerRunning.current) return;
           scannerRunning.current = false;
           const matriculeExtrait = parseScannedMatricule(decodedText);
-          if (matriculeExtrait) {
+          if (matriculeExtrait && isMatriculePlausible(matriculeExtrait)) {
             setShowScanner(false);
             setScanError('');
             await pointer(matriculeExtrait);
+          } else if (matriculeExtrait) {
+            setScanError('Scan illisible (encodage du lecteur). Configurez le lecteur en ASCII ou saisissez le matricule manuellement.');
+            scannerRunning.current = true;
           } else {
             setScanError('Aucun matricule valide trouvé. Utilisez un lecteur 2D ou saisissez le matricule.');
             scannerRunning.current = true;
@@ -179,6 +182,7 @@ export default function PortailPointage() {
     e.preventDefault();
     const m = parseScannedMatricule(matriculeManuel);
     if (!m) { setScanError('Matricule invalide.'); return; }
+    if (!isMatriculePlausible(m)) { setScanError('Scan illisible (encodage). Configurez le lecteur en ASCII ou vérifiez le matricule.'); return; }
     await pointer(m);
     setMatriculeManuel('');
   }
