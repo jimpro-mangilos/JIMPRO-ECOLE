@@ -145,13 +145,22 @@ export default function PortailPointage() {
     setPermLoading(true);
     setPermMsg('');
     try {
-      const { data: personne } = await supabase
+      let { data: personne } = await supabase
         .from('personnel')
         .select('id')
         .eq('ecole_id', schoolId)
         .ilike('matricule', permMatricule.trim())
         .maybeSingle();
-      if (!personne) { setPermMsg('Matricule introuvable.'); return; }
+      // Fallback : recherche globale (même logique que le pointage)
+      if (!personne) {
+        const { data: fb } = await supabase
+          .from('personnel')
+          .select('id')
+          .ilike('matricule', permMatricule.trim())
+          .maybeSingle();
+        personne = fb;
+      }
+      if (!personne) { setPermMsg('Matricule introuvable. Vérifiez le matricule imprimé sur la carte.'); return; }
       const { error } = await supabase.from('permissions_personnel').insert({
         ecole_id: schoolId, personnel_id: personne.id,
         date_debut: permDebut, date_fin: permFin,
@@ -201,7 +210,7 @@ export default function PortailPointage() {
             <input
               value={matriculeManuel}
               onChange={e => setMatriculeManuel(e.target.value)}
-              placeholder="Ex : PER-20260818-ABC12"
+              placeholder="Ex : CSGAA-20260818-XXXXX"
               className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 text-sm outline-none focus:border-emerald-400"
             />
             <button type="submit" className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg">Pointer</button>
