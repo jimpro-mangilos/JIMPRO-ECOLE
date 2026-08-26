@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import QRCode from 'qrcode';
 import { getSchoolInitials } from '../utils/schoolInitials';
+import { asciiFold } from '../utils/ascii';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Données & helpers partagés — source unique pour la carte d'élève
@@ -33,7 +34,7 @@ export function formatDateNaissance(d?: string | null): string {
 export async function generateQrDataUrl(eleve: CarteEleve): Promise<string> {
   const nomComplet = `${eleve.nom} ${eleve.postnom ? eleve.postnom + ' ' : ''}${eleve.prenom}`;
   return QRCode.toDataURL(
-    `MATRICULE:${eleve.matricule}|ELEVE:${nomComplet}|SECTION:${eleve.section}|CLASSE:${eleve.classe || ''}`,
+    `MATRICULE:${eleve.matricule}|ELEVE:${asciiFold(nomComplet)}|SECTION:${asciiFold(eleve.section)}|CLASSE:${asciiFold(eleve.classe || '')}`,
     { width: 800, margin: 2, errorCorrectionLevel: 'H' }
   );
 }

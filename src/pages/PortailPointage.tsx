@@ -4,6 +4,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 import { loadPointageConfig, statutAuto, type PointageConfig } from '../lib/hooks/usePointage';
+import { parseScannedMatricule } from '../utils/ascii';
 
 interface PersonnelInfo {
   id: string;
@@ -61,14 +62,13 @@ export default function PortailPointage() {
         async (decodedText) => {
           if (!scannerRunning.current) return;
           scannerRunning.current = false;
-          const match = decodedText.match(/MATRICULE:([^|]+)/i);
-          const matriculeExtrait = match ? match[1].trim() : '';
+          const matriculeExtrait = parseScannedMatricule(decodedText);
           if (matriculeExtrait) {
             setShowScanner(false);
             setScanError('');
-            await pointer(matriculeExtrait.toUpperCase());
+            await pointer(matriculeExtrait);
           } else {
-            setScanError('Aucun matricule valide trouvé.');
+            setScanError('Aucun matricule valide trouvé. Utilisez un lecteur 2D ou saisissez le matricule.');
             scannerRunning.current = true;
           }
         },
@@ -177,8 +177,9 @@ export default function PortailPointage() {
 
   async function pointerManuel(e: React.FormEvent) {
     e.preventDefault();
-    if (!matriculeManuel.trim()) return;
-    await pointer(matriculeManuel.toUpperCase());
+    const m = parseScannedMatricule(matriculeManuel);
+    if (!m) { setScanError('Matricule invalide.'); return; }
+    await pointer(m);
     setMatriculeManuel('');
   }
 
@@ -210,7 +211,7 @@ export default function PortailPointage() {
             <input
               value={matriculeManuel}
               onChange={e => setMatriculeManuel(e.target.value)}
-              placeholder="Ex : CSGAA-20260818-XXXXX"
+              placeholder="Matricule ou scanner votre carte (lecteur 2D)"
               className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 text-sm outline-none focus:border-emerald-400"
             />
             <button type="submit" className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg">Pointer</button>

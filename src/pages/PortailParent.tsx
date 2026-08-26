@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X, BookOpen, Upload } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
+import { parseScannedMatricule } from '../utils/ascii';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/calculations';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 
@@ -69,10 +70,9 @@ export default function PortailParent() {
         (decodedText) => {
           if (!scannerRunning.current) return;
           scannerRunning.current = false;
-          const match = decodedText.match(/MATRICULE:([^|]+)/i);
-          const matriculeExtrait = match ? match[1].trim() : '';
+          const matriculeExtrait = parseScannedMatricule(decodedText);
           if (matriculeExtrait) {
-            const matriculeUpper = matriculeExtrait.toUpperCase();
+            const matriculeUpper = matriculeExtrait;
             setMatricule(matriculeUpper);
             setShowScanner(false);
             setScanError('');

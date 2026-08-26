@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { QrCode, X, Search, Loader2, CheckCircle, XCircle, Calendar, RefreshCw } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
+import { parseScannedMatricule } from '../utils/ascii';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 import { formatDateTime } from '../utils/calculations';
 
@@ -77,12 +78,11 @@ export default function PortailRecouvrement() {
         async (decodedText) => {
           if (!scannerRunning.current) return;
           scannerRunning.current = false;
-          const match = decodedText.match(/MATRICULE:([^|]+)/i);
-          const matriculeExtrait = match ? match[1].trim() : '';
+          const matriculeExtrait = parseScannedMatricule(decodedText);
           if (matriculeExtrait) {
             setShowScanner(false);
             setScanError('');
-            await verifierMatricule(matriculeExtrait.toUpperCase());
+            await verifierMatricule(matriculeExtrait);
           } else {
             setScanError('Aucun matricule valide trouvé.');
           }

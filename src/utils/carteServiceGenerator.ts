@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import html2canvas from 'html2canvas';
 import { CarteServiceCard, type CarteService } from '../components/CarteServiceCard';
 import { loadLogoBase64, loadSchoolName } from './pdfTheme';
+import { asciiFold } from './ascii';
 
 const CARD_W = 54; // mm (largeur — carte verticale)
 const CARD_H = 86; // mm (hauteur)
@@ -105,7 +106,7 @@ export async function generateCartesService(list: CarteService[]): Promise<void>
 
 async function buildQrDataUrl(p: CarteService): Promise<string> {
   return QRCode.toDataURL(
-    `MATRICULE:${p.matricule || ''}|NOM:${p.nom} ${p.postnom ? p.postnom + ' ' : ''}${p.prenom}|FONCTION:${p.fonction}`,
+    `MATRICULE:${p.matricule || ''}|NOM:${asciiFold(`${p.nom} ${p.postnom ? p.postnom + ' ' : ''}${p.prenom}`)}|FONCTION:${asciiFold(p.fonction)}`,
     { width: 800, margin: 2, errorCorrectionLevel: 'H' }
   );
 }
