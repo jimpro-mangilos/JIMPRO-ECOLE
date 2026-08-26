@@ -274,6 +274,7 @@ export default function Chat() {
   const [showDiffusionModal, setShowDiffusionModal] = useState(false);
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const attachInputRef = useRef<HTMLInputElement>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -819,7 +820,7 @@ export default function Chat() {
                 </div>
               )}
               <div className="flex items-end gap-2">
-                <input ref={useRef<HTMLInputElement>(null)} type="file" className="hidden" id="chat-attach-input" onChange={handleAttachmentFile} />
+                <input ref={attachInputRef} type="file" className="hidden" id="chat-attach-input" onChange={handleAttachmentFile} />
                 <button onClick={() => document.getElementById('chat-attach-input')?.click()} className="p-2.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0" title="Joindre un fichier"><Paperclip className="w-4 h-4" /></button>
                 <textarea
                   ref={textareaRef}
