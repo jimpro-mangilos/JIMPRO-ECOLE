@@ -30,6 +30,7 @@ export default function Configuration() {
   const [ptgHeureEntree, setPtgHeureEntree] = useState('08:00');
   const [ptgHeureSortie, setPtgHeureSortie] = useState('16:30');
   const [ptgTauxChange, setPtgTauxChange] = useState('');
+  const [ptgSeuilRetards, setPtgSeuilRetards] = useState('3');
   const [ptgSaving, setPtgSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('sections');
   const [error, setError] = useState('');
@@ -74,6 +75,7 @@ export default function Configuration() {
       if (map.pointage_heure_entree) setPtgHeureEntree(map.pointage_heure_entree);
       if (map.pointage_heure_sortie) setPtgHeureSortie(map.pointage_heure_sortie);
       if (map.pointage_taux_change) setPtgTauxChange(map.pointage_taux_change);
+      if (map.pointage_seuil_retards) setPtgSeuilRetards(map.pointage_seuil_retards);
     })();
   }, [currentSchoolId]);
 
@@ -86,6 +88,7 @@ export default function Configuration() {
           { ecole_id: currentSchoolId, key: 'pointage_heure_entree', value: ptgHeureEntree },
           { ecole_id: currentSchoolId, key: 'pointage_heure_sortie', value: ptgHeureSortie },
           { ecole_id: currentSchoolId, key: 'pointage_taux_change', value: ptgTauxChange },
+          { ecole_id: currentSchoolId, key: 'pointage_seuil_retards', value: ptgSeuilRetards },
         ],
         { onConflict: 'ecole_id,key' }
       );
@@ -226,6 +229,17 @@ export default function Configuration() {
                 onChange={e => setPtgHeureSortie(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Seuil de retards récurrents (alerte)</label>
+              <input
+                type="number"
+                min="1"
+                value={ptgSeuilRetards}
+                onChange={e => setPtgSeuilRetards(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">Un membre atteignant ce nombre de retards dans le mois est signalé.</p>
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-gray-700 mb-1">Taux de change (1 $US = ... FC)</label>

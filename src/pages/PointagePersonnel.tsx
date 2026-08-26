@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generatePointageReport } from '../utils/pointageReportGenerator';
 import { generatePointageSalaireReport } from '../utils/pointageSalaireReportGenerator';
+import { generateBulletinPaie } from '../utils/bulletinPaieGenerator';
 
 function todayStr(): string {
   const d = new Date();
@@ -35,7 +36,7 @@ export default function PointagePersonnel() {
   const { personnel, loading: loadingPersonnel } = usePersonnel();
   const [search, setSearch] = useState('');
   const [month, setMonth] = useState(todayStr().slice(0, 7));
-  const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null });
+  const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null, seuilRetards: 3 });
   const [records, setRecords] = useState<PointageRecord[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,16 +74,29 @@ export default function PointagePersonnel() {
     return map;
   }, [records]);
 
-  // Permissions approuvées PAYÉES couvrant une date (comptées comme présentes pour le salaire)
+  // Permissions approuvées couvrant une date (affichage grille)
   const permDates = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of permissions) {
+      if (p.statut !== 'approuvee') continue;
+      const start = new Date(p.date_debut + 'T00:00:00');
+      const end = new Date(p.date_fin + 'T00:00:00');
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        set.add(`${p.personnel_id}_${d.toISOString().slice(0, 10)}`);
+      }
+    }
+    return set;
+  }, [permissions]);
+
+  // Permissions approuvées PAYÉES (comptées comme présentes pour le salaire)
+  const permPayeesDates = useMemo(() => {
     const set = new Set<string>();
     for (const p of permissions) {
       if (p.statut !== 'approuvee' || p.paye !== true) continue;
       const start = new Date(p.date_debut + 'T00:00:00');
       const end = new Date(p.date_fin + 'T00:00:00');
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const key = `${p.personnel_id}_${d.toISOString().slice(0, 10)}`;
-        set.add(key);
+        set.add(`${p.personnel_id}_${d.toISOString().slice(0, 10)}`);
       }
     }
     return set;
@@ -162,6 +176,24 @@ export default function PointagePersonnel() {
     if (!error) reload();
   }
 
+  async function exporterBulletin(ligne: typeof salaires[number]) {
+    const moisLabel = new Date(year, m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    await generateBulletinPaie({
+      nom: ligne.p.nom, postnom: ligne.p.postnom, prenom: ligne.p.prenom,
+      matricule: ligne.p.matricule, fonction: ligne.p.fonction,
+      moisLabel,
+      joursOuvrables: workDays.length,
+      joursPresent: ligne.joursPresent,
+      joursAbsent: ligne.joursAbsent,
+      joursPermissionPayee: ligne.joursPermissionPayee,
+      joursPermissionNonPayee: ligne.joursPermissionNonPayee,
+      salaireMensuel: ligne.salaireMensuel,
+      salaireJournalier: ligne.salaireJournalier,
+      salaireMois: ligne.salaireMois,
+      tauxChange: config.tauxChange,
+    });
+  }
+
   async function exportSalaires() {
     await generatePointageSalaireReport({
       month: m, year,
@@ -203,23 +235,47 @@ export default function PointagePersonnel() {
     const nbJours = workDays.length;
     return list.map(p => {
       let joursPresent = 0;
+      let joursAbsent = 0;
+      let joursPermissionPayee = 0;
+      let joursPermissionNonPayee = 0;
       for (const d of workDays) {
         const rec = recByKey.get(`${p.id}_${d}`);
         if (!rec) {
-          if (permDates.has(`${p.id}_${d}`)) joursPresent++; // permission payée = jour travaillé
+          if (permPayeesDates.has(`${p.id}_${d}`)) { joursPermissionPayee++; joursPresent++; }
+          else if (permDates.has(`${p.id}_${d}`)) { joursPermissionNonPayee++; }
+          else if (d <= today) { joursAbsent++; }
           continue;
         }
         const st = (rec.statut === 'present' && rec.heure_arrivee && compareHeures(rec.heure_arrivee.slice(0, 5), config.heureEntree) > 0) ? 'retard' : rec.statut;
         if (st === 'present' || st === 'retard') joursPresent++;
+        else if (st === 'absent') joursAbsent++;
+        else if (st === 'permission') joursPermissionNonPayee++;
       }
       const salaireMensuel = p.salaire ?? null;
       const salaireJournalier = salaireMensuel != null && nbJours > 0 ? salaireMensuel / nbJours : null;
       const salaireMois = joursPresent > 0 && salaireJournalier != null ? joursPresent * salaireJournalier : null;
-      return { p, joursPresent, salaireMensuel, salaireJournalier, salaireMois };
+      return { p, joursPresent, joursAbsent, joursPermissionPayee, joursPermissionNonPayee, salaireMensuel, salaireJournalier, salaireMois };
     });
-  }, [list, workDays, recByKey, config, permDates]);
+  }, [list, workDays, recByKey, config, permDates, permPayeesDates, today]);
 
   const totalSalaires = salaires.reduce((acc, x) => acc + (x.salaireMois || 0), 0);
+
+  // ─── Alertes retards récurrents ─────────────────────────────────────────
+  const retardsParMembre = useMemo(() => {
+    const map = new Map<string, { nom: string; prenom: string; retards: number }>();
+    const pastDays = workDays.filter(d => d <= today);
+    for (const p of list) {
+      let retards = 0;
+      for (const d of pastDays) {
+        if (cellStatus(p.id, d).statut === 'retard') retards++;
+      }
+      if (retards > 0) map.set(p.id, { nom: p.nom, prenom: p.prenom, retards });
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, workDays, recByKey, permDates, config, today]);
+
+  const membresAlerte = [...retardsParMembre.values()].filter(m => m.retards >= config.seuilRetards);
 
   const pendingPerms = permissions.filter(p => p.statut === 'en_attente');
   const permById = useMemo(() => {
@@ -280,6 +336,22 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
           </div>
         ))}
       </div>
+
+      {/* Alertes retards récurrents */}
+      {membresAlerte.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+          <h3 className="font-bold text-red-700 flex items-center gap-2 mb-2">
+            <XCircle className="w-5 h-5" /> Retards récurrents ({config.seuilRetards} retards ou plus ce mois)
+          </h3>
+          <ul className="space-y-1">
+            {membresAlerte.map(m => (
+              <li key={m.nom + m.prenom} className="text-sm text-red-700">
+                ⚠ {m.nom} {m.prenom} — <span className="font-semibold">{m.retards} retards</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Permissions en attente (approbation IT manager / promoteur) */}
       {isApprover && pendingPerms.length > 0 && (
@@ -352,7 +424,10 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
                 {list.map(p => (
                   <tr key={p.id} className="hover:bg-slate-50">
                     <td className="px-3 py-2 sticky left-0 bg-white">
-                      <div className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</span>
+                        {(() => { const r = retardsParMembre.get(p.id); return r && r.retards >= config.seuilRetards ? <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold" title="Retards récurrents">⚠ {r.retards}</span> : null; })()}
+                      </div>
                       <div className="text-[11px] text-gray-400">{p.fonction}</div>
                     </td>
                     {workDays.map(d => {
@@ -401,10 +476,13 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
                 <th className="px-4 py-3 text-right">Salaire journalier</th>
                 <th className="px-4 py-3 text-right">Salaire du mois (FC)</th>
                 <th className="px-4 py-3 text-right">Salaire du mois ($)</th>
+                <th className="px-4 py-3 text-center">Bulletin</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {salaires.map(({ p, joursPresent, salaireMensuel, salaireJournalier, salaireMois }) => (
+              {salaires.map((l) => {
+                const { p, joursPresent, salaireMensuel, salaireJournalier, salaireMois } = l;
+                return (
                 <tr key={p.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
                     <div className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</div>
@@ -416,8 +494,13 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
                   <td className="px-4 py-2.5 text-right text-gray-700 whitespace-nowrap">{formatMontant(salaireMensuel)}</td>
                   <td className="px-4 py-2.5 text-right text-gray-700 whitespace-nowrap">{formatMontant(salaireJournalier)}</td>
                   <td className="px-4 py-2.5 text-right font-bold text-blue-700 whitespace-nowrap">{formatMontant(salaireMois)}</td>
+                  <td className="px-4 py-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">{formatUSD(salaireMois, config.tauxChange)}</td>
+                  <td className="px-4 py-2.5 text-center">
+                    <button onClick={() => exporterBulletin(l)} className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 border border-blue-200" title="Générer le bulletin de paie PDF">Bulletin</button>
+                  </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
             <tfoot className="bg-slate-50">
               <tr>
@@ -425,6 +508,7 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
                 <td colSpan={3} />
                 <td className="px-4 py-2.5 text-right font-bold text-blue-700 whitespace-nowrap">{formatMontant(totalSalaires)}</td>
                 <td className="px-4 py-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">{formatUSD(totalSalaires, config.tauxChange)}</td>
+                <td />
               </tr>
             </tfoot>
           </table>

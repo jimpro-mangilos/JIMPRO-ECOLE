@@ -37,7 +37,7 @@ export default function PortailPointage() {
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-pointage';
   const { schoolId, loading: schoolLoading } = usePublicSchool();
-  const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null });
+  const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null, seuilRetards: 3 });
   const [showPerm, setShowPerm] = useState(false);
   const [permMatricule, setPermMatricule] = useState('');
   const [permDebut, setPermDebut] = useState('');

@@ -35,9 +35,10 @@ export interface PointageConfig {
   heureEntree: string;  // ex. '08:00'
   heureSortie: string;  // ex. '16:30'
   tauxChange: number | null; // FC pour 1 USD (null = non configuré)
+  seuilRetards: number;    // nb de retards avant alerte (défaut 3)
 }
 
-export const POINTAGE_DEFAUT: PointageConfig = { heureEntree: '08:00', heureSortie: '16:30', tauxChange: null };
+export const POINTAGE_DEFAUT: PointageConfig = { heureEntree: '08:00', heureSortie: '16:30', tauxChange: null, seuilRetards: 3 };
 
 /** Charge la configuration du pointage (heures d'entrée/sortie) de l'école. */
 export async function loadPointageConfig(schoolId: string | null): Promise<PointageConfig> {
@@ -47,14 +48,16 @@ export async function loadPointageConfig(schoolId: string | null): Promise<Point
       .from('app_settings')
       .select('key, value')
       .eq('ecole_id', schoolId)
-      .in('key', ['pointage_heure_entree', 'pointage_heure_sortie', 'pointage_taux_change']);
+      .in('key', ['pointage_heure_entree', 'pointage_heure_sortie', 'pointage_taux_change', 'pointage_seuil_retards']);
     const map: Record<string, string> = {};
     (data || []).forEach((r: any) => { map[r.key] = r.value; });
     const taux = map.pointage_taux_change ? parseFloat(map.pointage_taux_change) : null;
+    const seuil = map.pointage_seuil_retards ? parseInt(map.pointage_seuil_retards, 10) : NaN;
     return {
       heureEntree: map.pointage_heure_entree || POINTAGE_DEFAUT.heureEntree,
       heureSortie: map.pointage_heure_sortie || POINTAGE_DEFAUT.heureSortie,
       tauxChange: taux && !isNaN(taux) && taux > 0 ? taux : null,
+      seuilRetards: !isNaN(seuil) && seuil > 0 ? seuil : POINTAGE_DEFAUT.seuilRetards,
     };
   } catch {
     return POINTAGE_DEFAUT;
