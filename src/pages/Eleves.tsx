@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import MultiSelectFilter from '../components/MultiSelectFilter';
-import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, FileText, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import type { Database } from '../lib/database.types';
@@ -11,6 +11,7 @@ import { useEleves } from '../lib/hooks/useEleves';
 import { useSections, useOptions, useClasses } from '../lib/hooks/useReferenceData';
 import { generateElevesReport } from '../utils/pdfGenerator';
 import { generateCartesEtudiants } from '../utils/carteEtudiantGenerator';
+import { generateBulletinNotes } from '../utils/bulletinNotesGenerator';
 import { useLogo } from '../contexts/LogoContext';
 import { useAuth } from '../contexts/AuthContext';
 import { compressPhoto } from '../utils/photoCompression';
@@ -94,6 +95,28 @@ export default function Eleves() {
     setPhotoPreview(null);
     setShowModal(false);
   };
+
+  async function genererBulletin(eleve: any) {
+    try {
+      const { data: devoirs } = await supabase.from('devoirs').select('id, titre, date_limite').eq('classe_id', eleve.classe_id);
+      const { data: notes } = await supabase.from('notes_eleves').select('devoir_id, note, appreciation').eq('eleve_id', eleve.id);
+      const noteMap: Record<string, { note: number | null; appreciation?: string | null }> = {};
+      for (const n of (notes || []) as any[]) noteMap[n.devoir_id] = { note: n.note, appreciation: n.appreciation };
+      const lignes = ((devoirs || []) as any[]).map((d: any) => ({
+        titre: d.titre,
+        dateLimite: d.date_limite,
+        note: noteMap[d.id]?.note ?? null,
+        appreciation: noteMap[d.id]?.appreciation || null,
+      }));
+      await generateBulletinNotes({
+        eleveNom: `${eleve.nom} ${eleve.postnom || ''} ${eleve.prenom}`,
+        eleveMatricule: eleve.matricule,
+        classe: eleve.classe || '—',
+        periodeLabel: 'Évaluations enregistrées',
+        lignes,
+      });
+    } catch (err: any) { alert('Erreur bulletin: ' + (err?.message || '')); }
+  }
 
   const handleEditClick = (eleve: Eleve) => {
     openEdit(eleve);
@@ -341,6 +364,7 @@ export default function Eleves() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => handleViewDetails(eleve)} className="p-2 rounded-lg hover:bg-blue-50 text-blue-600" title="Détails"><Eye className="w-4 h-4" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); genererBulletin(eleve); }} className="p-2 rounded-lg hover:bg-purple-50 text-purple-600" title="Bulletin de notes PDF"><FileText className="w-4 h-4" /></button>
                       {!isReadOnly() && <button onClick={(e) => { e.stopPropagation(); handleEditClick(eleve); }} className="p-2 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Edit className="w-4 h-4" /></button>}
                       {!isReadOnly() && <button onClick={(e) => { e.stopPropagation(); handlePayment(eleve); }} className="p-2 rounded-lg hover:bg-green-50 text-green-600" title="Paiement"><Plus className="w-4 h-4" /></button>}
                       {isItManager() && <button onClick={(e) => { e.stopPropagation(); deleteEleve(eleve.id); }} className="p-2 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-4 h-4" /></button>}

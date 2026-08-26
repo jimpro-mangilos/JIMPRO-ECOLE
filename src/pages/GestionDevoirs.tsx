@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, FileText, Edit, Trash2, Loader2, X, Search } from 'lucide-react';
+import { Plus, FileText, Edit, Trash2, Loader2, X, Search, ClipboardList } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useSections, useClasses } from '../lib/hooks/useReferenceData';
@@ -22,6 +22,10 @@ export default function GestionDevoirs() {
   const [form, setForm] = useState({ titre: '', description: '', classe_id: '', date_limite: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [notesDevoir, setNotesDevoir] = useState<DevoirItem | null>(null);
+  const [notesEleves, setNotesEleves] = useState<{ id: string; nom: string; postnom: string | null; prenom: string; matricule: string | null }[]>([]);
+  const [notesMap, setNotesMap] = useState<Record<string, string>>({});
+  const [notesSaving, setNotesSaving] = useState(false);
 
   const { data: devoirs = [], isLoading } = useQuery({
     queryKey: ['devoirs', { schoolId: currentSchoolId }],
@@ -39,6 +43,36 @@ export default function GestionDevoirs() {
   }), [devoirs, search, filterSection, filterClasse]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['devoirs'] });
+
+  async function openNotes(d: DevoirItem) {
+    if (!d.classe_id) { toast.error(`Le devoir « ${d.titre} » n'est pas lié à une classe.`); return; }
+    setNotesDevoir(d);
+    setNotesMap({});
+    const [re, rn] = await Promise.all([
+      supabase.from('eleves').select('id, nom, postnom, prenom, matricule').eq('classe_id', d.classe_id).order('nom'),
+      supabase.from('notes_eleves').select('eleve_id, note').eq('devoir_id', d.id),
+    ]);
+    setNotesEleves((re.data as any[]) || []);
+    const map: Record<string, string> = {};
+    for (const n of (rn.data as any[]) || []) map[n.eleve_id] = String(n.note);
+    setNotesMap(map);
+  }
+
+  async function saveNotes() {
+    if (!notesDevoir) return;
+    setNotesSaving(true);
+    const upserts = notesEleves.map(el => ({
+      ecole_id: currentSchoolId,
+      eleve_id: el.id,
+      devoir_id: notesDevoir.id,
+      note: notesMap[el.id] ? parseFloat(notesMap[el.id]) : null,
+    })).filter(x => x.note != null && !isNaN(x.note));
+    const { error } = await supabase.from('notes_eleves').upsert(upserts, { onConflict: 'eleve_id,devoir_id' });
+    setNotesSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Notes enregistrées');
+    setNotesDevoir(null);
+  }
 
   const openCreate = () => { setEditingId(null); setForm({ titre: '', description: '', classe_id: '', date_limite: '' }); setShowForm(true); setError(''); };
   const openEdit = (d: DevoirItem) => { setEditingId(d.id); setForm({ titre: d.titre, description: d.description || '', classe_id: d.classe_id || '', date_limite: d.date_limite ? d.date_limite.split('T')[0] : '' }); setShowForm(true); setError(''); };
@@ -75,10 +109,48 @@ export default function GestionDevoirs() {
         : <div className="bg-white rounded-lg shadow-sm border overflow-hidden"><table className="w-full text-sm">
           <thead className="bg-gray-50 border-b"><tr><th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Titre</th><th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Classe</th><th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Professeur</th><th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Date limite</th><th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th><th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Horodatage</th></tr></thead>
           <tbody className="divide-y divide-gray-50">{filtered.map(d => (
-            <tr key={d.id} className="hover:bg-gray-50 cursor-pointer"><td className="px-4 py-3 font-medium text-gray-900">{d.titre}</td><td className="px-4 py-3 text-gray-600">{d.classes?.nom || '—'}</td><td className="px-4 py-3 text-gray-600">{d.profiles ? `${d.profiles.prenom} ${d.profiles.nom}` : '—'}</td><td className="px-4 py-3 text-gray-500 text-xs">{d.date_limite ? new Date(d.date_limite).toLocaleDateString('fr-FR') : '—'}</td><td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">{d.fichier_url && <a href={d.fichier_url} target="_blank" rel="noopener" className="text-xs text-amber-600 hover:underline px-2">📎</a>}<button onClick={() => openEdit(d)} className="p-1.5 text-amber-600 hover:bg-amber-50 rounded"><Edit className="w-4 h-4" /></button><button onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }} className="p-1.5 text-red-500 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4" /></button></div></td><td className="px-4 py-3 text-gray-500 text-xs">{d.created_at ? formatDateTime(d.created_at) : '-'}</td></tr>
+            <tr key={d.id} className="hover:bg-gray-50 cursor-pointer"><td className="px-4 py-3 font-medium text-gray-900">{d.titre}</td><td className="px-4 py-3 text-gray-600">{d.classes?.nom || '—'}</td><td className="px-4 py-3 text-gray-600">{d.profiles ? `${d.profiles.prenom} ${d.profiles.nom}` : '—'}</td><td className="px-4 py-3 text-gray-500 text-xs">{d.date_limite ? new Date(d.date_limite).toLocaleDateString('fr-FR') : '—'}</td><td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">{d.fichier_url && <a href={d.fichier_url} target="_blank" rel="noopener" className="text-xs text-amber-600 hover:underline px-2">📎</a>}<button onClick={(e) => { e.stopPropagation(); openNotes(d); }} title="Saisir les notes" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><ClipboardList className="w-4 h-4" /></button><button onClick={() => openEdit(d)} className="p-1.5 text-amber-600 hover:bg-amber-50 rounded"><Edit className="w-4 h-4" /></button><button onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }} className="p-1.5 text-red-500 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4" /></button></div></td><td className="px-4 py-3 text-gray-500 text-xs">{d.created_at ? formatDateTime(d.created_at) : '-'}</td></tr>
           ))}</tbody>
         </table></div>
       }
+
+      {notesDevoir && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setNotesDevoir(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <div>
+                <h3 className="font-bold">Notes — {notesDevoir.titre}</h3>
+                <p className="text-xs text-gray-500">{notesDevoir.classes?.nom || ''} · /20</p>
+              </div>
+              <button onClick={() => setNotesDevoir(null)} className="p-1.5 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="overflow-y-auto p-4 space-y-2">
+              {notesEleves.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-8">Aucun élève dans cette classe.</p>
+              ) : notesEleves.map(el => (
+                <div key={el.id} className="flex items-center justify-between gap-3 border border-gray-100 rounded-lg px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-800 truncate">{el.nom} {el.postnom || ''} {el.prenom}</div>
+                    <div className="text-[11px] text-gray-400">{el.matricule || ''}</div>
+                  </div>
+                  <input
+                    type="number" min="0" max="20" step="0.5" value={notesMap[el.id] || ''}
+                    onChange={e => setNotesMap(m => ({ ...m, [el.id]: e.target.value }))}
+                    placeholder="Note /20"
+                    className="w-20 px-2 py-1.5 border rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3 px-5 py-4 border-t">
+              <button onClick={saveNotes} disabled={notesSaving} className="flex-1 bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 font-medium disabled:opacity-50 flex items-center justify-center gap-2">
+                {notesSaving && <Loader2 className="w-4 h-4 animate-spin" />} Enregistrer les notes
+              </button>
+              <button onClick={() => setNotesDevoir(null)} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowForm(false)}>
