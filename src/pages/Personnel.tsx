@@ -16,6 +16,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateCarteService, generateCartesService } from '../utils/carteServiceGenerator';
+import CameraCapture from '../components/CameraCapture';
 import { formatDateTime, calculerAnciennete } from '../utils/calculations';
 
 interface PersonnelForm {
@@ -97,10 +98,8 @@ export default function Personnel() {
     return supabase.storage.from('personnel-docs').getPublicUrl(path).data.publicUrl;
   }
 
-  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const url = await uploadFile(f, 'photos');
+  async function onPhoto(file: File) {
+    const url = await uploadFile(file, 'photos');
     if (url) set('photo_url', url);
   }
 
@@ -406,10 +405,12 @@ export default function Personnel() {
               </div>
               <div>
                 <label className={labelClass}>Photo</label>
-                <div className="flex items-center gap-2">
-                  <input type="file" accept="image/*" onChange={onPhoto} className="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:text-xs hover:file:bg-blue-100" />
-                  {form.photo_url && <a href={form.photo_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline whitespace-nowrap">Voir</a>}
-                </div>
+                <CameraCapture onCapture={onPhoto} compact />
+                {form.photo_url && (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <a href={form.photo_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline">Voir la photo</a>
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>Pièce d'étude (document)</label>

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import CameraCapture from '../components/CameraCapture';
 import type { Database } from '../lib/database.types';
 import { calculateAverageAge, formatDateTime } from '../utils/calculations';
 import EleveDetailsModal from '../components/EleveDetailsModal';
@@ -64,6 +65,7 @@ export default function Eleves() {
   const [, setPhotoUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [cameraFile, setCameraFile] = useState<File | null>(null);
 
   const sectionList = sections as { id: string; nom: string }[];
   const optionList = options as { id: string; nom: string; section_id: string }[];
@@ -103,7 +105,7 @@ export default function Eleves() {
     try {
       // Upload photo if file selected
       let photoUrl = formData.photo_url;
-      const file = photoInputRef.current?.files?.[0];
+      const file = photoInputRef.current?.files?.[0] || cameraFile;
       if (file) {
         const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
         const compressed = await compressPhoto(file);
@@ -412,6 +414,9 @@ export default function Eleves() {
                     const f = e.target.files?.[0];
                     setPhotoPreview(f ? URL.createObjectURL(f) : null);
                   }} className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                  <div className="mt-1.5">
+                    <CameraCapture compact onCapture={(file) => { setCameraFile(file); setPhotoPreview(URL.createObjectURL(file)); }} />
+                  </div>
                   {(photoPreview || formData.photo_url) && (
                     <div className="flex items-end gap-2 mt-1">
                       <img src={photoPreview || formData.photo_url} alt="Aperçu" className="w-16 h-16 object-cover rounded-lg border" />
