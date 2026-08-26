@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogo, clearLogoCache } from '../contexts/LogoContext';
 import { invalidatePrefixCache } from '../utils/matriculeGenerator';
-import { Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Upload, RotateCcw } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Upload, Download, RotateCcw } from 'lucide-react';
 import MenuConfigTab from '../components/MenuConfigTab';
 import PersonnelConfigTab from '../components/PersonnelConfigTab';
 import TaillesConfigTab from '../components/TaillesConfigTab';
@@ -14,11 +14,11 @@ import { useConfiguration } from '../lib/hooks/useConfiguration';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const emptyForm = (extra?: Record<string, any>): any => ({ nom: '', description: '', is_active: true, ...extra });
 const libForm = (extra?: Record<string, string | boolean>) => ({ libelle: '', description: '', is_active: true, ...extra });
-type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'pointage' | 'menu_par_role' | 'personnel' | 'tailles';
+type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'pointage' | 'sauvegarde' | 'menu_par_role' | 'personnel' | 'tailles';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'sections', label: 'Sections' }, { key: 'options', label: 'Options' }, { key: 'classes', label: 'Classes' },
   { key: 'motifs', label: 'Motifs' }, { key: 'types_paiement', label: 'Types Paiement' }, { key: 'annees_scolaires', label: 'Années Scolaires' },
-  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'pointage', label: 'Pointage' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' }, { key: 'tailles', label: 'Tailles' },
+  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'pointage', label: 'Pointage' }, { key: 'sauvegarde', label: 'Sauvegarde' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' }, { key: 'tailles', label: 'Tailles' },
 ];
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -32,6 +32,9 @@ export default function Configuration() {
   const [ptgTauxChange, setPtgTauxChange] = useState('');
   const [ptgSeuilRetards, setPtgSeuilRetards] = useState('3');
   const [ptgSaving, setPtgSaving] = useState(false);
+  const [sauvegardeBusy, setSauvegardeBusy] = useState(false);
+  const [sauvegardeMsg, setSauvegardeMsg] = useState('');
+  const importFileRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('sections');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -78,6 +81,49 @@ export default function Configuration() {
       if (map.pointage_seuil_retards) setPtgSeuilRetards(map.pointage_seuil_retards);
     })();
   }, [currentSchoolId]);
+
+  const TABLES_SAUVEGARDE = ['eleves', 'personnel', 'paiements', 'pointages_personnel', 'permissions_personnel', 'paiements_salaires', 'notes_eleves', 'sections', 'options', 'classes', 'motifs_paiement', 'types_paiement', 'annees_scolaires', 'types_uniforme'];
+
+  async function exporterSauvegarde() {
+    if (!currentSchoolId) return;
+    setSauvegardeBusy(true); setSauvegardeMsg('');
+    try {
+      const data: Record<string, any[]> = {};
+      for (const t of TABLES_SAUVEGARDE) {
+        const { data: rows } = await (supabase as any).from(t).select('*').eq('ecole_id', currentSchoolId);
+        data[t] = rows || [];
+      }
+      const blob = new Blob([JSON.stringify({ ecole_id: currentSchoolId, date: new Date().toISOString(), data }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `sauvegarde-jimpro-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      setSauvegardeMsg('Sauvegarde exportée.');
+    } catch (err: any) { setSauvegardeMsg('Erreur export : ' + (err?.message || err)); }
+    finally { setSauvegardeBusy(false); }
+  }
+
+  async function importerSauvegarde(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !currentSchoolId) return;
+    if (!confirm('Restaurer cette sauvegarde ? Les lignes existantes seront remplacées (id conservé).')) return;
+    setSauvegardeBusy(true); setSauvegardeMsg('');
+    try {
+      const json = JSON.parse(await file.text());
+      let total = 0;
+      for (const t of TABLES_SAUVEGARDE) {
+        const rows = (json.data?.[t] || []).filter((r: any) => r.ecole_id === currentSchoolId);
+        if (rows.length === 0) continue;
+        const { error } = await (supabase as any).from(t).upsert(rows, { onConflict: 'id' });
+        if (error) throw new Error(`${t} : ${error.message}`);
+        total += rows.length;
+      }
+      setSauvegardeMsg(`Import terminé : ${total} lignes restaurées.`);
+    } catch (err: any) { setSauvegardeMsg('Erreur import : ' + (err?.message || err)); }
+    finally { setSauvegardeBusy(false); }
+  }
 
   async function savePointageConfig() {
     if (!currentSchoolId) return;
@@ -197,6 +243,27 @@ export default function Configuration() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Sauvegarde Tab ───────────────────────────────────────────────── */}
+      {activeTab === 'sauvegarde' && (
+        <div className="bg-white rounded-lg shadow-sm p-6 max-w-xl">
+          <h2 className="text-lg font-bold mb-1">Sauvegarde des données</h2>
+          <p className="text-sm text-gray-500 mb-5">
+            Exportez toutes les données de l'école (élèves, personnel, paiements, pointage, salaires, notes…) dans un fichier JSON,
+            ou restaurez-les depuis une sauvegarde.
+          </p>
+          <div className="space-y-3">
+            <button onClick={exporterSauvegarde} disabled={sauvegardeBusy} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 text-sm">
+              {sauvegardeBusy ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Exporter la sauvegarde (JSON)
+            </button>
+            <button onClick={() => importFileRef.current?.click()} disabled={sauvegardeBusy} className="w-full flex items-center justify-center gap-2 bg-slate-700 text-white px-4 py-2.5 rounded-lg hover:bg-slate-800 font-semibold disabled:opacity-50 text-sm">
+              <Upload className="w-4 h-4" /> Restaurer une sauvegarde
+            </button>
+            <input ref={importFileRef} type="file" accept="application/json" onChange={importerSauvegarde} className="hidden" />
+            {sauvegardeMsg && <p className="text-sm text-gray-600">{sauvegardeMsg}</p>}
           </div>
         </div>
       )}

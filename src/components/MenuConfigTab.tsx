@@ -13,6 +13,9 @@ import {
   Settings,
   Shield,
   MessageCircle,
+  UserCog,
+  UserCheck,
+  BookOpen,
   GripVertical,
   ChevronUp,
   ChevronDown,
@@ -52,6 +55,12 @@ const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
   'configuration': Settings,
   'admin': Shield,
   'chat': MessageCircle,
+  'personnel': UserCog,
+  'pointage': UserCheck,
+  'recouvrement': Wallet,
+  'portail-professeur': BookOpen,
+  'gestion-cours': BookOpen,
+  'gestion-devoirs': FileText,
 };
 
 const DEFAULT_MENU_ITEMS = [
@@ -67,6 +76,12 @@ const DEFAULT_MENU_ITEMS = [
   { menu_key: 'configuration', label: 'Configuration', ordre: 10 },
   { menu_key: 'admin', label: 'Administration', ordre: 11 },
   { menu_key: 'chat', label: 'Messages', ordre: 12 },
+  { menu_key: 'personnel', label: 'Personnel', ordre: 13 },
+  { menu_key: 'pointage', label: 'Pointage', ordre: 14 },
+  { menu_key: 'recouvrement', label: 'Recouvrement', ordre: 15 },
+  { menu_key: 'portail-professeur', label: 'Portail Professeur', ordre: 16 },
+  { menu_key: 'gestion-cours', label: 'Gestion Cours', ordre: 17 },
+  { menu_key: 'gestion-devoirs', label: 'Gestion Devoirs', ordre: 18 },
 ];
 
 export default function MenuConfigTab() {

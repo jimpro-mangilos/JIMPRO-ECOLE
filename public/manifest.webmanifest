@@ -1,0 +1,12 @@
+{
+  "name": "JIMPRO - Système de Gestion Scolaire",
+  "short_name": "JIMPRO",
+  "description": "Système de gestion scolaire : élèves, personnel, pointage, salaires, paiements.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#1e3a8a",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
