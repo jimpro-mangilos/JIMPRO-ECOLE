@@ -162,7 +162,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* ═══ PHOTO — ronde à DROITE (comme le modèle) ═══ */}
-      <div style={{ position: 'absolute', top: 140, left: 202, width: 100, height: 100, borderRadius: '50%', background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 0 0 4px rgba(255,255,255,0.92), 0 10px 24px rgba(6,41,30,0.24)' }}>
+      <div style={{ position: 'absolute', top: 140, left: 28, width: 100, height: 100, borderRadius: '50%', background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 0 0 4px rgba(255,255,255,0.92), 0 10px 24px rgba(6,41,30,0.24)' }}>
         <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#ffffff', padding: 3 }}>
           <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', background: '#eef3ea' }}>
             {personnel.photo_url && !photoError ? (
@@ -178,10 +178,9 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* ═══ NOM + fonction — à GAUCHE de la photo ═══ */}
-      <div style={{ position: 'absolute', top: 140, left: 28, right: 214, textAlign: 'left' }}>
+      <div style={{ position: 'absolute', top: 140, left: 140, right: 30, textAlign: 'left' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: INK, letterSpacing: 0.3, lineHeight: 1.2 }}>
           {personnel.nom.toUpperCase()} <span style={{ fontWeight: 600, color: INK }}>{personnel.prenom}</span>
-          {personnel.sexe ? <span style={{ fontSize: 11, fontWeight: 700, color: EMERALD, marginLeft: 4 }}>· {personnel.sexe}</span> : null}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', marginTop: 5 }}>
           <div style={{ width: 26, height: 1.5, background: 'linear-gradient(90deg, #e3b94f, transparent)' }} />
