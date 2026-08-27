@@ -18,7 +18,7 @@ export async function generateCarteEtudiant(
   const qr = await generateQrDataUrl(eleve);
   const canvas = await renderCarteEleveToCanvas(eleve, schoolName, logoUrl ?? null, qr, 3);
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [CARD_H, CARD_W] });
-  doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, CARD_W, CARD_H);
+  doc.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, CARD_W, CARD_H);
   return doc;
 }
 
@@ -45,7 +45,7 @@ export async function generateCartesEtudiants(
 
     const qr = await generateQrDataUrl(eleves[i]);
     const canvas = await renderCarteEleveToCanvas(eleves[i], schoolName, logoUrl ?? null, qr, 2);
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', x, y, CARD_W, CARD_H);
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', x, y, CARD_W, CARD_H);
   }
   return doc;
 }

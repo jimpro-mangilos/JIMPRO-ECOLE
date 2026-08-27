@@ -95,10 +95,11 @@ export async function generateCarteService(p: CarteService): Promise<void> {
 
   const canvas = await renderCarteServiceToCanvas(p, schoolName, logo || null, qrDataUrl);
 
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+  // PNG (sans perte) : texte net, aucun artefact JPEG sur les petits caractères
+  const dataUrl = canvas.toDataURL('image/png');
   const a = document.createElement('a');
   a.href = dataUrl;
-  a.download = `Carte-service-${(p.matricule || p.nom || 'personnel').replace(/\s+/g, '-')}.jpg`;
+  a.download = `Carte-service-${(p.matricule || p.nom || 'personnel').replace(/\s+/g, '-')}.png`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -119,7 +120,7 @@ export async function generateCartesService(list: CarteService[]): Promise<void>
     const qrDataUrl = await buildQrDataUrl(p);
     const canvas = await renderCarteServiceToCanvas(p, schoolName, logo || null, qrDataUrl);
     if (i > 0) doc.addPage([CARD_W, CARD_H], 'portrait');
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, CARD_W, CARD_H);
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, CARD_W, CARD_H);
   }
   doc.save(`Cartes-service-${list.length}-membres.pdf`);
 }
