@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { getSchoolInitials } from '../utils/schoolInitials';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Carte de service du personnel — template « Vert & Or »
-// Design moderne inspiré du modèle de référence (mockup 500×500) :
-//  · fond clair, ruban VERT diagonal en haut à gauche + motif DORÉ vif
-//  · bandeau MARINE supérieur réduit (nom de l'école + logo)
-//  · photo RONDE remontée, double anneau or / vert
-//  · identité : nom marine + sexe vert, fonction verte cerclée d'or
-//  · champs : matricule, e-mail, téléphone, date de naissance + sexe,
-//    date d'embauche + nationalité
-//  · QR code à droite, bande MARINE inférieure (site web + année)
+// Carte de service du personnel — template « Émeraude & Or » (édition prestige)
+// Composition en couches :
+//  · entête ÉMERAUDE profonde : nappe de points dorés, facettes de gemme,
+//    couture OR diagonale, nom de l'école + logo cerclé or
+//  · double cadre intérieur en filet or
+//  · photo RONDE à triple anneau (or / blanc / émeraude) + badge losange or
+//  · identité : label « IDENTITÉ », nom + sexe, fonction cerclée d'or
+//  · panneau de champs SAGE arrondi (matricule, e-mail, téléphone,
+//    date de naissance + sexe, date d'embauche + nationalité)
+//  · QR dans un cadre or facetté
+//  · bande ÉMERAUDE inférieure : liseré or + rangée de losanges
 // Format vertical 54 × 86 mm.
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -33,21 +35,20 @@ export interface CarteService {
 
 export const CARTE_SERVICE_W = 324; // 54 mm × 6
 export const CARTE_SERVICE_H = 516; // 86 mm × 6
-export const CARTE_SERVICE_QR = 112; // ~19 mm × 19 mm
+export const CARTE_SERVICE_QR = 104; // ~17 mm
 
-// ─── Palette « Vert & Or » ─────────────────────────────────────────────────────
-const GREEN_DEEP = '#0a3529';
-const GREEN = '#0f4c3a';
-const GOLD = '#e6b422';      // doré vif
-const GOLD_LIGHT = '#f7d774';
-const GOLD_DARK = '#b8891a';
-const NAVY_DEEP = '#0d1f38';
-const NAVY = '#16324a';
-const BG = '#f7f8fc';
-const INK = '#1c2b42';
-const MUTED = '#7c8698';
-const LINE = '#e6eaf3';
-const PHOTO_BG = '#eef4e7';  // vert très clair
+// ─── Palette « Émeraude & Or » ─────────────────────────────────────────────────
+const EMERALD = '#0b3d2e';
+const EMERALD_DEEP = '#06291e';
+const EMERALD_LIGHT = '#155c45';
+const GOLD = '#e3b94f';
+const GOLD_LIGHT = '#f4dc94';
+const GOLD_DARK = '#a97f1f';
+const IVORY = '#fbfaf4';
+const INK = '#24352b';
+const MUTED = '#8b958c';
+const SAGE = '#edf2e7';
+const LINE = '#e3e8db';
 
 const FONT = "'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
 
@@ -70,17 +71,17 @@ function formatDate(d?: string | null): string {
 
 function Field({ label, value, nowrap }: { label: string; value: string; nowrap?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '4px 0', borderBottom: '1px solid ' + LINE }}>
-      <div style={{ width: 3, height: 22, borderRadius: 2, margin: '2px 8px 0 0', flexShrink: 0, background: `linear-gradient(180deg, ${GOLD}, ${GOLD_DARK})` }} />
+    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '3px 0', borderBottom: '1px solid ' + LINE }}>
+      <div style={{ width: 3, height: 20, borderRadius: 2, margin: '2px 8px 0 0', flexShrink: 0, background: `linear-gradient(180deg, ${GOLD_LIGHT}, ${GOLD_DARK})` }} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 6.8, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase' }}>{label}</div>
-        <div style={{ fontSize: 10.5, fontWeight: 600, color: INK, marginTop: 1.5, lineHeight: 1.25, ...(nowrap ? { whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const } : {}) }}>{value}</div>
+        <div style={{ fontSize: 6.5, fontWeight: 700, letterSpacing: 1.6, color: MUTED, textTransform: 'uppercase' }}>{label}</div>
+        <div style={{ fontSize: 10.5, fontWeight: 600, color: INK, marginTop: 1, lineHeight: 1.25, ...(nowrap ? { whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const } : {}) }}>{value}</div>
       </div>
     </div>
   );
 }
 
-/** Petit losange doré (séparateur). */
+/** Petit losange doré. */
 function Diamond({ size = 5, color = GOLD }: { size?: number; color?: string }) {
   return <div style={{ width: size, height: size, transform: 'rotate(45deg)', background: color, flexShrink: 0 }} />;
 }
@@ -97,139 +98,175 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
   const siteWeb = personnel.siteWeb || slugifySchool(schoolName);
   const annee = '2026-2027';
 
-  // ═══ Bandeau supérieur réduit — VERT + liseré or + texture diagonale ═══
+  // ═══ Entête ÉMERAUDE — nappe de points, facettes de gemme, couture or ═══
   const headerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="96" viewBox="0 0 324 96">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="136" viewBox="0 0 324 136">` +
     `<defs>` +
-    `<linearGradient id="vh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
-    `<linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}"/></linearGradient>` +
+    `<linearGradient id="hbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${EMERALD_DEEP}"/><stop offset="0.55" stop-color="${EMERALD}"/><stop offset="1" stop-color="${EMERALD_LIGHT}"/></linearGradient>` +
+    `<linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="0.5" stop-color="${GOLD}"/><stop offset="1" stop-color="${GOLD_DARK}"/></linearGradient>` +
+    `<linearGradient id="hg2" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD}"/><stop offset="1" stop-color="${GOLD_DARK}"/></linearGradient>` +
+    `<pattern id="dots" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="1.6" cy="1.6" r="0.9" fill="${GOLD_LIGHT}" opacity="0.55"/></pattern>` +
     `</defs>` +
-    // bandeau VERT arrondi
-    `<rect x="0" y="0" width="324" height="96" rx="14" fill="url(#vh)"/>` +
-    // texture diagonale dorée subtile (écho du ruban du modèle)
-    `<g stroke="#f5d97e" stroke-width="1.5" opacity="0.13">` +
-    `<path d="M-20 112 L112 0"/><path d="M28 112 L160 0"/><path d="M76 112 L208 0"/>` +
-    `<path d="M124 112 L256 0"/><path d="M172 112 L304 0"/><path d="M220 112 L324 52"/>` +
-    `</g>` +
-    // liseré OR vif en bas du bandeau
-    `<rect x="0" y="91" width="324" height="5" fill="url(#vg)"/>` +
-    // losange or décoratif (haut, à droite du nom)
-    `<polygon points="178,12 186,20 178,28 170,20" fill="url(#vg)"/>` +
+    // fond émeraude
+    `<rect x="0" y="0" width="324" height="136" fill="url(#hbg)"/>` +
+    // nappe de points dorés
+    `<rect x="0" y="0" width="324" height="136" fill="url(#dots)" opacity="0.25"/>` +
+    // facettes de gemme (haut droite)
+    `<polygon points="206,0 324,0 324,112" fill="${EMERALD_LIGHT}" opacity="0.45"/>` +
+    `<polygon points="206,0 272,0 250,66" fill="${EMERALD_DEEP}" opacity="0.5"/>` +
+    `<polygon points="272,0 324,0 324,112 292,60" fill="url(#hg2)" opacity="0.8"/>` +
+    // éclat or (facette fine)
+    `<polygon points="206,0 224,34" fill="url(#hg)" opacity="0.9"/>` +
+    // couture OR diagonale en bas de l'entête
+    `<polygon points="0,124 324,118 324,136 0,136" fill="url(#hg)"/>` +
+    // filet or fin au-dessus de la couture
+    `<polygon points="0,116 324,110 324,113 0,119" fill="url(#hg)" opacity="0.55"/>` +
+    // losanges or le long de la couture
+    `<polygon points="34,112 40,118 34,124 28,118" fill="${GOLD_LIGHT}" opacity="0.9"/>` +
+    `<polygon points="70,108 76,114 70,120 64,114" fill="${GOLD_LIGHT}" opacity="0.9"/>` +
+    `<polygon points="106,104 112,110 106,116 100,110" fill="${GOLD_LIGHT}" opacity="0.9"/>` +
+    `<polygon points="142,100 148,106 142,112 136,106" fill="${GOLD_LIGHT}" opacity="0.9"/>` +
     `</svg>`
   )}`;
 
-  // ═══ Bande inférieure — marine + liseré or ═══
+  // ═══ Bande inférieure ÉMERAUDE — liseré or + rangée de losanges ═══
   const footerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="52" viewBox="0 0 324 52" preserveAspectRatio="none">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="58" viewBox="0 0 324 58" preserveAspectRatio="none">` +
     `<defs>` +
-    `<linearGradient id="fh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${NAVY}"/><stop offset="1" stop-color="${NAVY_DEEP}"/></linearGradient>` +
-    `<linearGradient id="fo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${GOLD}"/><stop offset="1" stop-color="${GOLD_LIGHT}"/></linearGradient>` +
+    `<linearGradient id="fbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${EMERALD_LIGHT}"/><stop offset="1" stop-color="${EMERALD_DEEP}"/></linearGradient>` +
+    `<linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD_DARK}"/></linearGradient>` +
     `</defs>` +
-    // liseré or vif supérieur
-    `<rect x="0" y="0" width="324" height="4" fill="url(#fo)"/>` +
-    `<rect x="0" y="4" width="324" height="48" fill="url(#fh)"/>` +
+    // liseré or supérieur
+    `<rect x="0" y="0" width="324" height="3" fill="url(#fg)"/>` +
+    // rangée de losanges or
+    `<g fill="${GOLD_LIGHT}" opacity="0.9">` +
+    `<polygon points="24,6 29,11 24,16 19,11"/>` +
+    `<polygon points="58,6 63,11 58,16 53,11"/>` +
+    `<polygon points="92,6 97,11 92,16 87,11"/>` +
+    `<polygon points="126,6 131,11 126,16 121,11"/>` +
+    `<polygon points="160,6 165,11 160,16 155,11"/>` +
+    `<polygon points="194,6 199,11 194,16 189,11"/>` +
+    `<polygon points="228,6 233,11 228,16 223,11"/>` +
+    `<polygon points="262,6 267,11 262,16 257,11"/>` +
+    `<polygon points="296,6 301,11 296,16 291,11"/>` +
+    `</g>` +
+    // corps émeraude
+    `<rect x="0" y="16" width="324" height="42" fill="url(#fbg)"/>` +
     `</svg>`
   )}`;
 
   return (
-    <div style={{ width: CARTE_SERVICE_W, height: CARTE_SERVICE_H, position: 'relative', overflow: 'hidden', fontFamily: FONT, background: BG, borderRadius: 14, color: INK, boxShadow: '0 24px 64px rgba(13,31,56,0.22)' }}>
-      {/* Bandeau supérieur */}
-      <img src={headerSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 96 }} />
+    <div style={{ width: CARTE_SERVICE_W, height: CARTE_SERVICE_H, position: 'relative', overflow: 'hidden', fontFamily: FONT, background: IVORY, borderRadius: 14, color: INK, boxShadow: '0 24px 64px rgba(6,41,30,0.28)' }}>
+      {/* Double cadre intérieur en filet or */}
+      <div style={{ position: 'absolute', top: 6, left: 6, right: 6, bottom: 6, borderRadius: 10, border: '1px solid rgba(227,185,79,0.35)' }} />
+      <div style={{ position: 'absolute', top: 10, left: 10, right: 10, bottom: 10, borderRadius: 8, border: '1px solid rgba(227,185,79,0.14)' }} />
+
+      {/* Entête */}
+      <img src={headerSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 136 }} />
 
       {/* Logo école (cerclé or) */}
-      <div style={{ position: 'absolute', top: 22, right: 24, width: 44, height: 44, borderRadius: '50%', background: '#ffffff', border: '2px solid ' + GOLD, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(13,31,56,0.30)' }}>
+      <div style={{ position: 'absolute', top: 20, right: 24, width: 46, height: 46, borderRadius: '50%', background: '#ffffff', border: '2px solid ' + GOLD, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(6,41,30,0.35)' }}>
         {logoUrl && !logoError ? (
           <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setLogoError(true)} />
         ) : (
-          <span style={{ fontSize: 14, fontWeight: 800, color: GREEN, letterSpacing: 0.5 }}>{getSchoolInitials(schoolName)}</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: EMERALD, letterSpacing: 0.5 }}>{getSchoolInitials(schoolName)}</span>
         )}
       </div>
 
       {/* Nom de l'école + titre */}
-      <div style={{ position: 'absolute', top: 28, left: 28, right: 80 }}>
+      <div style={{ position: 'absolute', top: 26, left: 28, right: 84 }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Diamond size={4} color={GOLD_LIGHT} />
-          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.2, color: '#ffffff', textTransform: 'uppercase', marginLeft: 7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.4, color: '#ffffff', textTransform: 'uppercase', marginLeft: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName}</span>
         </div>
-        <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 3, color: GOLD_LIGHT, marginTop: 5, textTransform: 'uppercase' }}>Carte de service</div>
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: 6 }}>
+          <div style={{ width: 26, height: 1, background: 'linear-gradient(90deg, transparent, #e3b94f)' }} />
+          <span style={{ fontSize: 8.5, fontWeight: 600, letterSpacing: 3.5, color: GOLD_LIGHT, margin: '0 8px', textTransform: 'uppercase' }}>Carte de service</span>
+          <div style={{ width: 26, height: 1, background: 'linear-gradient(270deg, transparent, #e3b94f)' }} />
+        </div>
       </div>
 
-      {/* ═══ Photo — RONDE, remontée, double anneau or / vert ═══ */}
-      <div style={{ position: 'absolute', top: 106, left: 108, width: 108, height: 108, borderRadius: '50%', background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2.5, boxShadow: '0 0 0 4px rgba(255,255,255,0.95), 0 10px 24px rgba(13,31,56,0.28)' }}>
+      {/* ═══ Photo — RONDE, triple anneau or / blanc / émeraude + badge ═══ */}
+      <div style={{ position: 'absolute', top: 144, left: 106, width: 112, height: 112, borderRadius: '50%', background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2.5, boxShadow: '0 0 0 5px rgba(255,255,255,0.95), 0 12px 28px rgba(6,41,30,0.30)' }}>
         <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#ffffff', padding: 3 }}>
-          <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: `linear-gradient(140deg, ${GREEN}, ${GREEN_DEEP})`, padding: 2.5 }}>
-            <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', background: PHOTO_BG }}>
+          <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: `linear-gradient(140deg, ${EMERALD}, ${EMERALD_DEEP})`, padding: 2.5 }}>
+            <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', background: SAGE }}>
               {personnel.photo_url && !photoError ? (
                 <img src={personnel.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setPhotoError(true)} />
               ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(160deg, ${PHOTO_BG}, #dfeed2)` }}>
-                  <span style={{ fontSize: 30, fontWeight: 800, color: GREEN }}>{initials}</span>
-                  <span style={{ fontSize: 7, fontWeight: 600, letterSpacing: 2, color: GREEN, marginTop: 3, textTransform: 'uppercase' }}>Photo</span>
+                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(160deg, ${SAGE}, #dce9d2)` }}>
+                  <span style={{ fontSize: 30, fontWeight: 800, color: EMERALD }}>{initials}</span>
+                  <span style={{ fontSize: 6.5, fontWeight: 600, letterSpacing: 2, color: EMERALD, marginTop: 3, textTransform: 'uppercase' }}>Photo</span>
                 </div>
               )}
             </div>
           </div>
         </div>
-      </div>
-
-      {/* ═══ Identité — NOM + prénom + sexe, fonction ═══ */}
-      <div style={{ position: 'absolute', top: 221, left: 0, right: 0, textAlign: 'center' }}>
-        <div style={{ fontSize: 18.5, fontWeight: 800, color: NAVY, letterSpacing: 0.3, lineHeight: 1.15, padding: '0 10px' }}>
-          {personnel.nom.toUpperCase()} <span style={{ fontWeight: 700, color: NAVY }}>{personnel.prenom}</span>
-          {personnel.sexe ? <span style={{ fontSize: 13, fontWeight: 800, color: GREEN, marginLeft: 7 }}>· {personnel.sexe}</span> : null}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 7, padding: '0 10px' }}>
-          <span style={{ width: 22, height: 1.5, background: 'linear-gradient(90deg, transparent, #e6b422)', flexShrink: 0 }} />
-          <Diamond size={5} color={GOLD} />
-          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: GREEN, textTransform: 'uppercase', margin: '0 9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{personnel.fonction}</span>
-          <Diamond size={5} color={GOLD} />
-          <span style={{ width: 22, height: 1.5, background: 'linear-gradient(270deg, transparent, #e6b422)', flexShrink: 0 }} />
+        {/* Badge losange or sous l'anneau */}
+        <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', background: '#fff', padding: 1.5, borderRadius: 3 }}>
+          <Diamond size={9} color={GOLD} />
         </div>
       </div>
 
-      {/* Séparateur or discret */}
-      <div style={{ position: 'absolute', top: 262, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 84, height: 1, background: 'linear-gradient(90deg, transparent, #d9c97c)' }} />
+      {/* ═══ Identité — label + nom + sexe, fonction ═══ */}
+      <div style={{ position: 'absolute', top: 262, left: 0, right: 0, textAlign: 'center' }}>
+        <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: 4, color: GOLD_DARK, textTransform: 'uppercase' }}>Identité</div>
+        <div style={{ fontSize: 19, fontWeight: 800, color: INK, letterSpacing: 0.3, lineHeight: 1.15, marginTop: 4, padding: '0 10px' }}>
+          {personnel.nom.toUpperCase()} <span style={{ fontWeight: 700, color: INK }}>{personnel.prenom}</span>
+          {personnel.sexe ? <span style={{ fontSize: 13, fontWeight: 800, color: EMERALD, marginLeft: 7 }}>· {personnel.sexe}</span> : null}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 6, padding: '0 10px' }}>
+          <span style={{ width: 20, height: 1.5, background: 'linear-gradient(90deg, transparent, #e3b94f)', flexShrink: 0 }} />
+          <Diamond size={5} color={GOLD} />
+          <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 2, color: EMERALD, textTransform: 'uppercase', margin: '0 8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{personnel.fonction}</span>
+          <Diamond size={5} color={GOLD} />
+          <span style={{ width: 20, height: 1.5, background: 'linear-gradient(270deg, transparent, #e3b94f)', flexShrink: 0 }} />
+        </div>
+      </div>
+
+      {/* Séparateur or */}
+      <div style={{ position: 'absolute', top: 314, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 80, height: 1, background: 'linear-gradient(90deg, transparent, #d9c072)' }} />
         <Diamond size={5} color={GOLD} />
-        <div style={{ width: 84, height: 1, background: 'linear-gradient(270deg, transparent, #d9c97c)' }} />
+        <div style={{ width: 80, height: 1, background: 'linear-gradient(270deg, transparent, #d9c072)' }} />
       </div>
 
-      {/* ═══ Champs d'information ═══ */}
-      <div style={{ position: 'absolute', top: 274, left: 36, right: 148 }}>
-        <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
-        <Field label="E-mail" value={personnel.email || '—'} nowrap />
-        <Field label="Téléphone" value={personnel.telephone || '—'} />
-        {/* Date de naissance + Sexe côte à côte */}
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Field label="Date de naissance" value={formatDate(personnel.date_naissance)} />
+      {/* ═══ Panneau de champs SAGE ═══ */}
+      <div style={{ position: 'absolute', top: 322, left: 22, right: 140, height: 136, borderRadius: 12, background: SAGE, border: '1px solid ' + LINE, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)' }}>
+        <div style={{ padding: '6px 12px' }}>
+          <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
+          <Field label="E-mail" value={personnel.email || '—'} nowrap />
+          <Field label="Téléphone" value={personnel.telephone || '—'} />
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Field label="Date de naissance" value={formatDate(personnel.date_naissance)} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Field label="Sexe" value={personnel.sexe || '—'} nowrap />
+            </div>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Field label="Sexe" value={personnel.sexe || '—'} nowrap />
-          </div>
-        </div>
-        {/* Date d'embauche + Nationalité côte à côte */}
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Field label="Date d'embauche" value={formatDate(personnel.date_embauche)} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Field label="Nationalité" value={personnel.nationalite || '—'} nowrap />
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Field label="Date d'embauche" value={formatDate(personnel.date_embauche)} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Field label="Nationalité" value={personnel.nationalite || '—'} nowrap />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ═══ QR Code — cadre vert + or ═══ */}
-      <div style={{ position: 'absolute', top: 292, right: 12, borderRadius: 12, background: `linear-gradient(140deg, ${GREEN}, ${GREEN_DEEP})`, padding: 3, boxShadow: '0 8px 20px rgba(13,31,56,0.18)', zIndex: 4 }}>
-        <div style={{ borderRadius: 9, background: '#ffffff', padding: 4 }}>
+      {/* ═══ QR Code — cadre or facetté ═══ */}
+      <div style={{ position: 'absolute', top: 340, right: 14, borderRadius: 12, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2.5, boxShadow: '0 8px 20px rgba(6,41,30,0.20)', zIndex: 4 }}>
+        <div style={{ borderRadius: 9, background: '#ffffff', padding: 3 }}>
           <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
         </div>
       </div>
 
-      {/* ═══ Bande inférieure — site web + année ═══ */}
-      <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: CARTE_SERVICE_W, height: 52 }} />
-      <div style={{ position: 'absolute', bottom: 12, left: 18, fontSize: 8.5, fontWeight: 600, letterSpacing: 1.5, color: 'rgba(255,255,255,0.80)' }}>{annee}</div>
-      <div style={{ position: 'absolute', bottom: 12, left: 70, right: 0, textAlign: 'left', fontSize: 9.5, fontWeight: 700, letterSpacing: 1.2, color: '#ffffff', textTransform: 'lowercase' }}>{siteWeb}</div>
+      {/* ═══ Bande inférieure ÉMERAUDE — site web + année ═══ */}
+      <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: CARTE_SERVICE_W, height: 58 }} />
+      <div style={{ position: 'absolute', bottom: 13, left: 20, fontSize: 8.5, fontWeight: 600, letterSpacing: 1.5, color: 'rgba(255,255,255,0.85)' }}>{annee}</div>
+      <div style={{ position: 'absolute', bottom: 13, left: 74, right: 0, textAlign: 'left', fontSize: 9.5, fontWeight: 700, letterSpacing: 1.2, color: '#ffffff', textTransform: 'lowercase' }}>{siteWeb}</div>
     </div>
   );
 }
