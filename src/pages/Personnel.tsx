@@ -86,7 +86,7 @@ export default function Personnel() {
 
   async function genMatricule() {
     if (!currentSchoolId) return;
-    const m = await generatePersonnelMatricule(currentSchoolId);
+    const m = await generatePersonnelMatricule(currentSchoolId, form.date_embauche);
     set('matricule', m);
   }
 

@@ -41,10 +41,12 @@ export const ETATS_CIVILS = ['Célibataire', 'Marié(e)', 'Divorcé(e)', 'Veuf/V
 export const STATUT_PERSONNEL_LABELS: Record<string, string> = { actif: 'Actif', inactif: 'Inactif', suspendu: 'Suspendu' };
 export const STATUT_PERSONNEL_COLORS: Record<string, string> = { actif: 'bg-green-100 text-green-700', inactif: 'bg-gray-100 text-gray-600', suspendu: 'bg-amber-100 text-amber-700' };
 
-export async function generatePersonnelMatricule(schoolId: string): Promise<string> {
+export async function generatePersonnelMatricule(schoolId: string, date?: string | null): Promise<string> {
   const { data: pref } = await supabase.from('app_settings').select('value').eq('ecole_id', schoolId).eq('key', 'personnel_matricule_prefix').maybeSingle();
   const prefix = ((pref as any)?.value || '').trim() || 'PER';
-  const d = new Date();
+  // Le matricule se base sur la date d'embauche (sinon la date du jour)
+  const m = (date || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date();
   const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let uid = '';

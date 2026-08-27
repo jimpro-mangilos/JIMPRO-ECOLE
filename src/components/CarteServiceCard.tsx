@@ -65,9 +65,9 @@ function formatDate(d?: string | null): string {
   return d;
 }
 
-function Field({ label, value, nowrap }: { label: string; value: string; nowrap?: boolean }) {
+function Field({ label, value, nowrap, narrow }: { label: string; value: string; nowrap?: boolean; narrow?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '4px 0', borderBottom: '1px solid #f0ece3' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '4px 0', borderBottom: '1px solid #f0ece3', width: narrow ? 148 : '100%' }}>
       <div style={{ width: 3, height: 26, borderRadius: 2, margin: '2px 10px 0 0', flexShrink: 0, background: `linear-gradient(180deg, ${GOLD}, ${GOLD_LIGHT})` }} />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase' }}>{label}</div>
@@ -218,12 +218,12 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       {/* Filigrane subtil (initiale école) */}
       <div style={{ position: 'absolute', top: 324, left: 16, fontSize: 132, fontWeight: 900, lineHeight: 1, color: NAVY, opacity: 0.03, letterSpacing: -8, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
 
-      {/* ═══ Champs d'information ═══ */}
-      <div style={{ position: 'absolute', top: 266, left: 30, right: 146 }}>
-        <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
-        <Field label="E-mail" value={personnel.email || '—'} />
-        <Field label="Téléphone" value={personnel.telephone || '—'} />
-        <Field label="Date d'embauche" value={formatDate(personnel.date_embauche)} />
+      {/* ═══ Champs d'information — E-mail pleine largeur (une seule ligne) ═══ */}
+      <div style={{ position: 'absolute', top: 266, left: 30, right: 30 }}>
+        <Field label="Matricule" value={personnel.matricule || '—'} nowrap narrow />
+        <Field label="E-mail" value={personnel.email || '—'} nowrap />
+        <Field label="Téléphone" value={personnel.telephone || '—'} narrow />
+        <Field label="Date d'embauche" value={formatDate(personnel.date_embauche)} narrow />
       </div>
 
       {/* ═══ QR Code — 20 × 20 mm, bordure dégradée or ═══ */}
