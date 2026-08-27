@@ -191,31 +191,25 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
         <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #d8b45a, transparent)' }} />
       </div>
 
-      {/* ═══ CHAMPS — en bas (comme le modèle) ═══ */}
-      <div style={{ position: 'absolute', top: 276, left: 30, right: 148 }}>
+      {/* ═══ CHAMPS — colonne de droite sous le nom/fonction ═══ */}
+      <div style={{ position: 'absolute', top: 202, left: 132, right: 30 }}>
         <Field value={personnel.matricule || '—'} nowrap />
+        <Field value={formatDate(personnel.date_embauche)} nowrap />
         <Field value={personnel.email || '—'} nowrap />
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Field value={personnel.telephone || '—'} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Field value={personnel.sexe || '—'} nowrap />
-          </div>
-        </div>
+        <Field value={personnel.telephone || '—'} />
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <Field value={formatDate(personnel.date_naissance)} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Field value={formatDate(personnel.date_embauche)} />
+            <Field value={personnel.sexe || '—'} nowrap />
           </div>
         </div>
         <Field value={personnel.nationalite || '—'} nowrap />
       </div>
 
-      {/* ═══ QR — cadre or ═══ */}
-      <div style={{ position: 'absolute', top: 294, right: 12, borderRadius: 10, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, zIndex: 4 }}>
+      {/* ═══ QR — descendu, juste au-dessus de la bande (intervalle blanc) ═══ */}
+      <div style={{ position: 'absolute', top: 356, left: 26, borderRadius: 10, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, zIndex: 4 }}>
         <div style={{ borderRadius: 8, background: '#ffffff', padding: 3 }}>
           <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
         </div>
