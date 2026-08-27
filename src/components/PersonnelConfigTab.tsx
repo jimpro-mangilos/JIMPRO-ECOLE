@@ -22,7 +22,8 @@ export default function PersonnelConfigTab() {
     console.log('[ConfigPersonnel] chargement ecole', schoolId);
     // Résilience : une table absente (ex. domaines_personnel avant migration)
     // ou une erreur RLS ne doit jamais faire planter l'onglet.
-    const safe = (p: Promise<{ data: any; error: any }>) => p.catch(() => ({ data: null, error: null }));
+    // Le builder Supabase est un "thenable" (pas de .catch) : Promise.resolve l'assimile
+    const safe = (p: PromiseLike<any>) => Promise.resolve(p).catch(() => ({ data: null, error: null }));
     // Filet de sécurité : même si une requête ne répond pas, l'onglet s'affiche
     const timer = setTimeout(() => {
       console.warn('[ConfigPersonnel] TIMEOUT 8s - requetes toujours en cours');

@@ -94,7 +94,8 @@ export default function Personnel() {
   useEffect(() => {
     if (!currentSchoolId) return;
     (async () => {
-      const safe = (p: Promise<{ data: any; error: any }>) => p.catch(() => ({ data: null, error: null }));
+      // Le builder Supabase est un "thenable" (pas de .catch) : Promise.resolve l'assimile
+      const safe = (p: PromiseLike<any>) => Promise.resolve(p).catch(() => ({ data: null, error: null }));
       const [f, d] = await Promise.all([
         safe(supabase.from('fonctions_personnel').select('libelle').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre') as any),
         safe(supabase.from('domaines_personnel').select('libelle').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre') as any),
