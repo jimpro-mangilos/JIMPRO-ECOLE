@@ -95,41 +95,40 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
   const siteWeb = personnel.siteWeb || slugifySchool(schoolName);
   const annee = '2026-2027';
 
-  // ═══ Entête : éventails d'arcs aux deux coins + couture arc ═══
+  // ═══ Entête réduite : éventails d'arcs aux deux coins + couture arc ═══
   const headerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="132" viewBox="0 0 324 132">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="100" viewBox="0 0 324 100">` +
     `<defs>` +
     `<linearGradient id="hb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${EMERALD}"/><stop offset="1" stop-color="${EMERALD_DEEP}"/></linearGradient>` +
     `<linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="0.55" stop-color="${GOLD}"/><stop offset="1" stop-color="${GOLD_DARK}"/></linearGradient>` +
     `</defs>` +
     // fond émeraude
-    `<rect x="0" y="0" width="324" height="132" rx="14" fill="url(#hb)"/>` +
-    // éventail d'arcs concentriques — coin haut GAUCHE (lignes sur les angles)
+    `<rect x="0" y="0" width="324" height="100" rx="14" fill="url(#hb)"/>` +
+    // éventail d'arcs concentriques — coin haut GAUCHE
     `<g fill="none" stroke="url(#hg)" stroke-linecap="round">` +
-    `<path d="M0,30 A30,30 0 0 1 30,0" stroke-width="2.4"/>` +
-    `<path d="M0,45 A45,45 0 0 1 45,0" stroke-width="1.8" opacity="0.95"/>` +
-    `<path d="M0,60 A60,60 0 0 1 60,0" stroke-width="1.5" opacity="0.8"/>` +
-    `<path d="M0,75 A75,75 0 0 1 75,0" stroke-width="1.2" opacity="0.6"/>` +
+    `<path d="M0,24 A24,24 0 0 1 24,0" stroke-width="2.2"/>` +
+    `<path d="M0,37 A37,37 0 0 1 37,0" stroke-width="1.7" opacity="0.95"/>` +
+    `<path d="M0,50 A50,50 0 0 1 50,0" stroke-width="1.4" opacity="0.8"/>` +
+    `<path d="M0,63 A63,63 0 0 1 63,0" stroke-width="1.1" opacity="0.6"/>` +
     `</g>` +
-    `<circle cx="7" cy="7" r="2.2" fill="url(#hg)"/>` +
+    `<circle cx="6" cy="6" r="2" fill="url(#hg)"/>` +
     // éventail d'arcs — coin haut DROIT
     `<g fill="none" stroke="url(#hg)" stroke-linecap="round">` +
-    `<path d="M324,30 A30,30 0 0 0 294,0" stroke-width="2.4"/>` +
-    `<path d="M324,45 A45,45 0 0 0 279,0" stroke-width="1.8" opacity="0.95"/>` +
-    `<path d="M324,60 A60,60 0 0 0 264,0" stroke-width="1.5" opacity="0.8"/>` +
+    `<path d="M324,24 A24,24 0 0 0 300,0" stroke-width="2.2"/>` +
+    `<path d="M324,37 A37,37 0 0 0 287,0" stroke-width="1.7" opacity="0.95"/>` +
+    `<path d="M324,50 A50,50 0 0 0 274,0" stroke-width="1.4" opacity="0.8"/>` +
     `</g>` +
-    `<circle cx="317" cy="7" r="2.2" fill="url(#hg)"/>` +
+    `<circle cx="318" cy="6" r="2" fill="url(#hg)"/>` +
     // filet courbe sous le nom
-    `<path d="M100,78 C170,84 250,84 290,74" stroke="url(#hg)" stroke-width="1.1" fill="none" opacity="0.55" stroke-linecap="round"/>` +
+    `<path d="M96,62 C166,68 246,68 284,60" stroke="url(#hg)" stroke-width="1.1" fill="none" opacity="0.55" stroke-linecap="round"/>` +
     // couture OR en ARC (bas de l'entête)
-    `<path d="M0,126 C80,114 244,114 324,126 L324,132 C244,120 80,120 0,132 Z" fill="url(#hg)"/>` +
+    `<path d="M0,94 C80,85 244,85 324,94 L324,100 C244,91 80,91 0,100 Z" fill="url(#hg)"/>` +
     // points ronds le long de la couture
-    `<circle cx="32" cy="124" r="1.8" fill="${GOLD_LIGHT}"/>` +
-    `<circle cx="84" cy="119" r="1.8" fill="${GOLD_LIGHT}"/>` +
-    `<circle cx="136" cy="116" r="1.8" fill="${GOLD_LIGHT}"/>` +
-    `<circle cx="188" cy="116" r="1.8" fill="${GOLD_LIGHT}"/>` +
-    `<circle cx="240" cy="119" r="1.8" fill="${GOLD_LIGHT}"/>` +
-    `<circle cx="292" cy="124" r="1.8" fill="${GOLD_LIGHT}"/>` +
+    `<circle cx="34" cy="92" r="1.7" fill="${GOLD_LIGHT}"/>` +
+    `<circle cx="92" cy="88" r="1.7" fill="${GOLD_LIGHT}"/>` +
+    `<circle cx="150" cy="86" r="1.7" fill="${GOLD_LIGHT}"/>` +
+    `<circle cx="208" cy="86" r="1.7" fill="${GOLD_LIGHT}"/>` +
+    `<circle cx="266" cy="89" r="1.7" fill="${GOLD_LIGHT}"/>` +
     `</svg>`
   )}`;
 
@@ -156,13 +155,13 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
   return (
     <div style={{ width: CARTE_SERVICE_W, height: CARTE_SERVICE_H, position: 'relative', overflow: 'hidden', fontFamily: FONT, background: IVORY, borderRadius: 14, color: INK, boxShadow: '0 24px 64px rgba(6,41,30,0.24)' }}>
       {/* Entête */}
-      <img src={headerSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 132 }} />
+      <img src={headerSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 100 }} />
 
       {/* Monogramme ton sur ton (coin haut droit) */}
-      <div style={{ position: 'absolute', top: 8, right: 60, fontSize: 88, fontWeight: 800, lineHeight: 1, color: EMERALD_LIGHT, opacity: 0.22, letterSpacing: -8, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
+      <div style={{ position: 'absolute', top: 2, right: 58, fontSize: 64, fontWeight: 800, lineHeight: 1, color: EMERALD_LIGHT, opacity: 0.22, letterSpacing: -8, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
 
       {/* Logo école (rond blanc, anneau or) */}
-      <div style={{ position: 'absolute', top: 40, right: 26, width: 46, height: 46, borderRadius: '50%', background: '#ffffff', border: '1.5px solid ' + GOLD, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 10px rgba(6,41,30,0.30)' }}>
+      <div style={{ position: 'absolute', top: 16, right: 26, width: 42, height: 42, borderRadius: '50%', background: '#ffffff', border: '1.5px solid ' + GOLD, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 10px rgba(6,41,30,0.30)' }}>
         {logoUrl && !logoError ? (
           <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setLogoError(true)} />
         ) : (
@@ -171,16 +170,16 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* Nom de l'école + titre (entre les éventails) */}
-      <div style={{ position: 'absolute', top: 28, left: 96, right: 82 }}>
+      <div style={{ position: 'absolute', top: 14, left: 88, right: 76 }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Dot size={3.5} color={GOLD_LIGHT} />
-          <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 1.2, color: '#ffffff', textTransform: 'uppercase', marginLeft: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.1, color: '#ffffff', textTransform: 'uppercase', marginLeft: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName}</span>
         </div>
-        <div style={{ fontSize: 8.5, fontWeight: 600, letterSpacing: 3.5, color: GOLD_LIGHT, marginTop: 6, textTransform: 'uppercase' }}>Carte de service</div>
+        <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: 3.2, color: GOLD_LIGHT, marginTop: 4, textTransform: 'uppercase' }}>Carte de service</div>
       </div>
 
       {/* ═══ Photo — RONDE, anneau or ═══ */}
-      <div style={{ position: 'absolute', top: 142, left: 108, width: 108, height: 108, borderRadius: '50%', background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 0 0 4px rgba(255,255,255,0.92), 0 10px 24px rgba(6,41,30,0.24)' }}>
+      <div style={{ position: 'absolute', top: 112, left: 108, width: 108, height: 108, borderRadius: '50%', background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 0 0 4px rgba(255,255,255,0.92), 0 10px 24px rgba(6,41,30,0.24)' }}>
         <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#ffffff', padding: 3 }}>
           <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', background: '#f1f4ec' }}>
             {personnel.photo_url && !photoError ? (
@@ -196,7 +195,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* ═══ Identité — nom + sexe, filet or, fonction ═══ */}
-      <div style={{ position: 'absolute', top: 260, left: 0, right: 0, textAlign: 'center' }}>
+      <div style={{ position: 'absolute', top: 230, left: 0, right: 0, textAlign: 'center' }}>
         <div style={{ fontSize: 18.5, fontWeight: 700, color: INK, letterSpacing: 0.4, lineHeight: 1.15, padding: '0 14px' }}>
           {personnel.nom.toUpperCase()} <span style={{ fontWeight: 600, color: INK }}>{personnel.prenom}</span>
           {personnel.sexe ? <span style={{ fontSize: 12, fontWeight: 700, color: EMERALD, marginLeft: 6 }}>· {personnel.sexe}</span> : null}
@@ -208,14 +207,14 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* Séparateur */}
-      <div style={{ position: 'absolute', top: 308, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', top: 282, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg, transparent, #d8b45a)' }} />
         <Diamond size={4} />
         <div style={{ width: 60, height: 1, background: 'linear-gradient(270deg, transparent, #d8b45a)' }} />
       </div>
 
       {/* ═══ Champs — aérés, dates + sexe en grille ═══ */}
-      <div style={{ position: 'absolute', top: 322, left: 34, right: 142 }}>
+      <div style={{ position: 'absolute', top: 294, left: 34, right: 142 }}>
         <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
         <Field label="E-mail" value={personnel.email || '—'} nowrap />
         <Field label="Téléphone" value={personnel.telephone || '—'} />
@@ -238,7 +237,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* ═══ QR Code — cadre or ═══ */}
-      <div style={{ position: 'absolute', top: 338, right: 14, borderRadius: 10, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, zIndex: 4 }}>
+      <div style={{ position: 'absolute', top: 310, right: 14, borderRadius: 10, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, zIndex: 4 }}>
         <div style={{ borderRadius: 8, background: '#ffffff', padding: 3 }}>
           <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
         </div>
