@@ -199,27 +199,27 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
           {personnel.nom.toUpperCase()} <span style={{ fontWeight: 800, color: NAVY }}>{personnel.prenom}</span>
           {personnel.sexe ? <span style={{ fontSize: 14, fontWeight: 700, color: GOLD_DARK, marginLeft: 8 }}>· {personnel.sexe}</span> : null}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
-          <span style={{ width: 22, height: 1, background: 'linear-gradient(90deg, transparent, #c9a227)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4, padding: '0 8px' }}>
+          <span style={{ width: 22, height: 1, background: 'linear-gradient(90deg, transparent, #c9a227)', flexShrink: 0 }} />
           <Diamond size={5} />
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 9px' }}>{personnel.fonction}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{personnel.fonction}</span>
           <Diamond size={5} />
-          <span style={{ width: 22, height: 1, background: 'linear-gradient(270deg, transparent, #c9a227)' }} />
+          <span style={{ width: 22, height: 1, background: 'linear-gradient(270deg, transparent, #c9a227)', flexShrink: 0 }} />
         </div>
       </div>
 
       {/* Séparateur architectural : filets + losange */}
-      <div style={{ position: 'absolute', top: 260, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', top: 266, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: 90, height: 1, background: 'linear-gradient(90deg, transparent, #d8d2c4)' }} />
         <Diamond size={6} color={GOLD} />
         <div style={{ width: 90, height: 1, background: 'linear-gradient(270deg, transparent, #d8d2c4)' }} />
       </div>
 
       {/* Filigrane subtil (initiale école) */}
-      <div style={{ position: 'absolute', top: 324, left: 16, fontSize: 132, fontWeight: 900, lineHeight: 1, color: NAVY, opacity: 0.03, letterSpacing: -8, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
+      <div style={{ position: 'absolute', top: 415, left: 14, fontSize: 92, fontWeight: 900, lineHeight: 1, color: NAVY, opacity: 0.02, letterSpacing: -6, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
 
       {/* ═══ Champs d'information — E-mail pleine largeur (une seule ligne) ═══ */}
-      <div style={{ position: 'absolute', top: 266, left: 30, right: 30 }}>
+      <div style={{ position: 'absolute', top: 270, left: 30, right: 30 }}>
         <Field label="Matricule" value={personnel.matricule || '—'} nowrap narrow />
         <Field label="E-mail" value={personnel.email || '—'} nowrap />
         <Field label="Téléphone" value={personnel.telephone || '—'} narrow />
