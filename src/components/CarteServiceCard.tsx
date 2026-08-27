@@ -124,6 +124,13 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
     `<polygon points="270,60 324,60 324,96" fill="url(#g3)"/>` +
     // contour triangulaire discret
     `<polygon points="278,4 322,4 300,46" fill="none" stroke="${GOLD_LIGHT}" stroke-opacity="0.3" stroke-width="1.5"/>` +
+    // éclats dorés sur la facette sombre (haut droite)
+    `<polygon points="236,52 240,56 236,60 232,56" fill="url(#go)" opacity="0.8"/>` +
+    `<polygon points="262,68 266,72 262,76 258,72" fill="url(#go)" opacity="0.65"/>` +
+    `<polygon points="288,40 292,44 288,48 284,44" fill="url(#go)" opacity="0.75"/>` +
+    `<polygon points="306,58 310,62 306,66 302,62" fill="url(#go)" opacity="0.6"/>` +
+    // petit losange or au-dessus du nom de l'école
+    `<polygon points="150,10 154,14 150,18 146,14" fill="url(#go)" opacity="0.85"/>` +
     `</svg>`
   )}`;
 
@@ -147,6 +154,14 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
     `<polygon points="0,11 24,4 54,10 84,4 114,11 144,4 174,10 204,4 234,11 264,4 294,10 324,4 324,0 0,0" fill="url(#gof)"/>` +
     // bande verte dégradée
     `<polygon points="0,51 324,51 324,4 294,10 264,4 234,11 204,4 174,10 144,4 114,11 84,4 54,10 24,4 0,11" fill="url(#gz)"/>` +
+    // losanges dorés subtils dans la bande verte
+    `<g fill="#f7d774" opacity="0.28">` +
+    `<polygon points="40,22 44,26 40,30 36,26"/>` +
+    `<polygon points="96,22 100,26 96,30 92,26"/>` +
+    `<polygon points="152,22 156,26 152,30 148,26"/>` +
+    `<polygon points="208,22 212,26 208,30 204,26"/>` +
+    `<polygon points="264,22 268,26 264,30 260,26"/>` +
+    `</g>` +
     `</svg>`
   )}`;
 
@@ -191,6 +206,12 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
             </div>
           </div>
         </div>
+        {/* Couronne dorée au sommet de l'anneau */}
+        <div style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', filter: 'drop-shadow(0 2px 3px rgba(11,61,46,0.25))' }}>
+          <Diamond size={5} color={GOLD} />
+          <Diamond size={8} color={GOLD_LIGHT} />
+          <Diamond size={5} color={GOLD} />
+        </div>
       </div>
 
       {/* ═══ Identité — NOM + prénom + sexe, fonction ═══ */}
@@ -198,6 +219,10 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
         <div style={{ fontSize: 20, fontWeight: 800, color: NAVY, letterSpacing: 0.4, lineHeight: 1.15, padding: '0 12px' }}>
           {personnel.nom.toUpperCase()} <span style={{ fontWeight: 800, color: NAVY }}>{personnel.prenom}</span>
           {personnel.sexe ? <span style={{ fontSize: 14, fontWeight: 700, color: GOLD_DARK, marginLeft: 8 }}>· {personnel.sexe}</span> : null}
+        </div>
+        {/* Filet or sous le nom */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 3 }}>
+          <div style={{ width: 108, height: 1.5, background: 'linear-gradient(90deg, transparent, #c9a227, transparent)' }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4, padding: '0 8px' }}>
           <span style={{ width: 22, height: 1, background: 'linear-gradient(90deg, transparent, #c9a227)', flexShrink: 0 }} />
