@@ -43,7 +43,6 @@ const GOLD_LIGHT = '#f2dda0';
 const GOLD_DARK = '#a97f1f';
 const IVORY = '#fcfbf7';
 const INK = '#24332a';
-const MUTED = '#8b9187';
 const LINE = '#e8e9e2';
 
 const FONT = "'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
@@ -69,14 +68,11 @@ function Dot({ size = 4, color = GOLD }: { size?: number; color?: string }) {
   return <div style={{ width: size, height: size, borderRadius: '50%', background: color, flexShrink: 0 }} />;
 }
 
-function Field({ label, value, nowrap }: { label: string; value: string; nowrap?: boolean }) {
+function Field({ value, nowrap }: { value: string; nowrap?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '3px 0', borderBottom: '1px solid ' + LINE }}>
-      <div style={{ width: 3, height: 19, borderRadius: 99, margin: '2px 7px 0 0', flexShrink: 0, background: `linear-gradient(180deg, ${GOLD_LIGHT}, ${GOLD_DARK})` }} />
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 6.2, fontWeight: 600, letterSpacing: 1.6, color: MUTED, textTransform: 'uppercase' }}>{label}</div>
-        <div style={{ fontSize: 10.2, fontWeight: 600, color: INK, marginTop: 1, lineHeight: 1.25, ...(nowrap ? { whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const } : {}) }}>{value}</div>
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid ' + LINE }}>
+      <div style={{ width: 3, height: 20, borderRadius: 99, marginRight: 8, flexShrink: 0, background: `linear-gradient(180deg, ${GOLD_LIGHT}, ${GOLD_DARK})` }} />
+      <div style={{ fontSize: 10.8, fontWeight: 600, color: INK, lineHeight: 1.3, ...(nowrap ? { whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const } : {}) }}>{value}</div>
     </div>
   );
 }
@@ -197,25 +193,25 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
 
       {/* ═══ CHAMPS — en bas (comme le modèle) ═══ */}
       <div style={{ position: 'absolute', top: 276, left: 30, right: 148 }}>
-        <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
-        <Field label="E-mail" value={personnel.email || '—'} nowrap />
+        <Field value={personnel.matricule || '—'} nowrap />
+        <Field value={personnel.email || '—'} nowrap />
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Field label="Téléphone" value={personnel.telephone || '—'} />
+            <Field value={personnel.telephone || '—'} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Field label="Sexe" value={personnel.sexe || '—'} nowrap />
+            <Field value={personnel.sexe || '—'} nowrap />
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Field label="Date de naissance" value={formatDate(personnel.date_naissance)} />
+            <Field value={formatDate(personnel.date_naissance)} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Field label="Date d'embauche" value={formatDate(personnel.date_embauche)} />
+            <Field value={formatDate(personnel.date_embauche)} />
           </div>
         </div>
-        <Field label="Nationalité" value={personnel.nationalite || '—'} nowrap />
+        <Field value={personnel.nationalite || '—'} nowrap />
       </div>
 
       {/* ═══ QR — cadre or ═══ */}
