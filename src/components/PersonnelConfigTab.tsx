@@ -18,20 +18,36 @@ export default function PersonnelConfigTab() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    console.log('[ConfigPersonnel] chargement ecole', schoolId);
     // Résilience : une table absente (ex. domaines_personnel avant migration)
     // ou une erreur RLS ne doit jamais faire planter l'onglet.
     const safe = (p: Promise<{ data: any; error: any }>) => p.catch(() => ({ data: null, error: null }));
-    const [f, d, n, p] = await Promise.all([
-      safe(supabase.from('fonctions_personnel').select('*').eq('ecole_id', schoolId).order('ordre') as any),
-      safe(supabase.from('domaines_personnel').select('*').eq('ecole_id', schoolId).order('ordre') as any),
-      safe(supabase.from('niveaux_etude').select('*').eq('ecole_id', schoolId).order('ordre') as any),
-      safe(supabase.from('app_settings').select('value').eq('ecole_id', schoolId).eq('key', 'personnel_matricule_prefix').maybeSingle() as any),
-    ]);
-    setFonctions((f.data as Item[]) || []);
-    setDomaines((d.data as Item[]) || []);
-    setNiveaux((n.data as Item[]) || []);
-    setPrefix((p.data as any)?.value || '');
-    setLoading(false);
+    // Filet de sécurité : même si une requête ne répond pas, l'onglet s'affiche
+    const timer = setTimeout(() => {
+      console.warn('[ConfigPersonnel] TIMEOUT 8s - requetes toujours en cours');
+      setLoading(false);
+    }, 8000);
+    try {
+      const [f, d, n, p] = await Promise.all([
+        safe(supabase.from('fonctions_personnel').select('*').eq('ecole_id', schoolId).order('ordre') as any),
+        safe(supabase.from('domaines_personnel').select('*').eq('ecole_id', schoolId).order('ordre') as any),
+        safe(supabase.from('niveaux_etude').select('*').eq('ecole_id', schoolId).order('ordre') as any),
+        safe(supabase.from('app_settings').select('value').eq('ecole_id', schoolId).eq('key', 'personnel_matricule_prefix').maybeSingle() as any),
+      ]);
+      console.log('[ConfigPersonnel] resultats:', {
+        fonctions: (f.data || []).length, domaines: (d.data || []).length,
+        niveaux: (n.data || []).length, prefix: (p.data as any)?.value || '',
+      });
+      setFonctions((f.data as Item[]) || []);
+      setDomaines((d.data as Item[]) || []);
+      setNiveaux((n.data as Item[]) || []);
+      setPrefix((p.data as any)?.value || '');
+    } catch (err) {
+      console.error('[ConfigPersonnel] erreur chargement:', err);
+    } finally {
+      clearTimeout(timer);
+      setLoading(false);
+    }
   }, [schoolId]);
 
   useEffect(() => { load(); }, [load]);
