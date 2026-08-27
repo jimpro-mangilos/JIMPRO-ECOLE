@@ -97,25 +97,24 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
   const siteWeb = personnel.siteWeb || slugifySchool(schoolName);
   const annee = '2026-2027';
 
-  // ═══ Bandeau supérieur réduit — marine + ruban vert + motif or ═══
+  // ═══ Bandeau supérieur réduit — VERT + liseré or + texture diagonale ═══
   const headerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="96" viewBox="0 0 324 96">` +
     `<defs>` +
-    `<linearGradient id="nh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${NAVY_DEEP}"/><stop offset="1" stop-color="${NAVY}"/></linearGradient>` +
-    `<linearGradient id="vt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${GREEN}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
-    `<linearGradient id="gd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}"/></linearGradient>` +
+    `<linearGradient id="vh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
+    `<linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}"/></linearGradient>` +
     `</defs>` +
-    // bandeau marine arrondi
-    `<rect x="0" y="0" width="324" height="96" rx="14" fill="url(#nh)"/>` +
-    // ruban VERT : triangle de coin (n'empiète pas sur le nom de l'école)
-    `<polygon points="0,0 96,0 0,96" fill="url(#vt)"/>` +
-    `<polygon points="0,0 76,0 0,76" fill="url(#vt)" opacity="0.85"/>` +
-    // motif DORÉ vif : liseré le long du triangle + éclat en haut à droite
-    `<polygon points="0,92 92,0 100,0 0,100" fill="url(#gd)" opacity="0.95"/>` +
-    `<polygon points="196,0 224,0 210,26" fill="url(#gd)" opacity="0.9"/>` +
-    `<polygon points="282,0 324,0 324,14 296,0" fill="url(#gd)" opacity="0.7"/>` +
-    // losange or décoratif
-    `<polygon points="168,16 174,22 168,28 162,22" fill="url(#gd)"/>` +
+    // bandeau VERT arrondi
+    `<rect x="0" y="0" width="324" height="96" rx="14" fill="url(#vh)"/>` +
+    // texture diagonale dorée subtile (écho du ruban du modèle)
+    `<g stroke="#f5d97e" stroke-width="1.5" opacity="0.13">` +
+    `<path d="M-20 112 L112 0"/><path d="M28 112 L160 0"/><path d="M76 112 L208 0"/>` +
+    `<path d="M124 112 L256 0"/><path d="M172 112 L304 0"/><path d="M220 112 L324 52"/>` +
+    `</g>` +
+    // liseré OR vif en bas du bandeau
+    `<rect x="0" y="91" width="324" height="5" fill="url(#vg)"/>` +
+    // losange or décoratif (haut, à droite du nom)
+    `<polygon points="178,12 186,20 178,28 170,20" fill="url(#vg)"/>` +
     `</svg>`
   )}`;
 
