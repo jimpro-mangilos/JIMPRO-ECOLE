@@ -10,10 +10,9 @@ const db: any = supabase;
 export function useConfiguration() {
   const queryClient = useQueryClient();
   const { currentSchoolId } = useAuth();
-  if (!currentSchoolId) {
-    throw new Error('Configuration indisponible : aucune école associée à votre compte.');
-  }
-  const schoolId = currentSchoolId;
+  // Pas de throw pendant le rendu : on retourne des valeurs sûres (évite la
+  // corruption du DOM React en StrictMode quand l'école n'est pas encore prête).
+  const schoolId = currentSchoolId || '';
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: queryKeys.sections.all });
     queryClient.invalidateQueries({ queryKey: queryKeys.options.all });

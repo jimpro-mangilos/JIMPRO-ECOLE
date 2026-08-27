@@ -18,11 +18,14 @@ export default function PersonnelConfigTab() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    // Résilience : une table absente (ex. domaines_personnel avant migration)
+    // ou une erreur RLS ne doit jamais faire planter l'onglet.
+    const safe = (p: Promise<{ data: any; error: any }>) => p.catch(() => ({ data: null, error: null }));
     const [f, d, n, p] = await Promise.all([
-      supabase.from('fonctions_personnel').select('*').eq('ecole_id', schoolId).order('ordre'),
-      supabase.from('domaines_personnel').select('*').eq('ecole_id', schoolId).order('ordre'),
-      supabase.from('niveaux_etude').select('*').eq('ecole_id', schoolId).order('ordre'),
-      supabase.from('app_settings').select('value').eq('ecole_id', schoolId).eq('key', 'personnel_matricule_prefix').maybeSingle(),
+      safe(supabase.from('fonctions_personnel').select('*').eq('ecole_id', schoolId).order('ordre') as any),
+      safe(supabase.from('domaines_personnel').select('*').eq('ecole_id', schoolId).order('ordre') as any),
+      safe(supabase.from('niveaux_etude').select('*').eq('ecole_id', schoolId).order('ordre') as any),
+      safe(supabase.from('app_settings').select('value').eq('ecole_id', schoolId).eq('key', 'personnel_matricule_prefix').maybeSingle() as any),
     ]);
     setFonctions((f.data as Item[]) || []);
     setDomaines((d.data as Item[]) || []);

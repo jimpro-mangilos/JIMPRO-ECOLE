@@ -9,6 +9,7 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  componentStack: string;
 }
 
 // Chunk-load errors happen when a lazy-loaded module (code-split chunk) fails to
@@ -22,15 +23,16 @@ function isChunkLoadError(error: Error | null | undefined): boolean {
 export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, componentStack: '' };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+    return { hasError: true, error, componentStack: '' };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('[ErrorBoundary]', error, info.componentStack);
+    this.setState({ componentStack: info.componentStack || '' });
 
     // Stale chunk → reload once (guarded to avoid a reload loop).
     if (isChunkLoadError(error)) {
@@ -73,6 +75,12 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
                 ? 'Une nouvelle version de l’application est disponible. Rechargez la page pour continuer.'
                 : this.state.error?.message || 'Erreur inattendue dans cette section.'}
             </p>
+            {!chunkError && this.state.componentStack && (
+              <details className="mb-4 text-left">
+                <summary className="text-xs text-red-400 cursor-pointer">Détails techniques (pile du composant)</summary>
+                <pre className="mt-2 text-[10px] text-gray-500 bg-gray-50 rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{this.state.componentStack}</pre>
+              </details>
+            )}
             <button
               onClick={this.handleReset}
               className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
