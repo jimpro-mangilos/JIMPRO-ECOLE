@@ -150,10 +150,25 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
     `<linearGradient id="gz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN_LIGHT}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
     `<linearGradient id="gof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}"/></linearGradient>` +
     `</defs>` +
-    // fine couche dorée supérieure (zigzag)
-    `<polygon points="0,11 24,4 54,10 84,4 114,11 144,4 174,10 204,4 234,11 264,4 294,10 324,4 324,0 0,0" fill="url(#gof)"/>` +
-    // bande verte dégradée
-    `<polygon points="0,51 324,51 324,4 294,10 264,4 234,11 204,4 174,10 144,4 114,11 84,4 54,10 24,4 0,11" fill="url(#gz)"/>` +
+    // bande verte dégradée avec bord supérieur en dents de TRIANGLES
+    `<polygon points="0,51 324,51 324,0 318,16 312,0 300,16 288,0 276,16 264,0 252,16 240,0 228,16 216,0 204,16 192,0 180,16 168,0 156,16 144,0 132,16 120,0 108,16 96,0 84,16 72,0 60,16 48,0 36,16 24,0 12,16 0,0" fill="url(#gz)"/>` +
+    // TRIANGLES dorés (dents pointant vers le bas)
+    `<g fill="url(#gof)">` +
+    `<polygon points="0,0 12,16 24,0"/>` +
+    `<polygon points="24,0 36,16 48,0"/>` +
+    `<polygon points="48,0 60,16 72,0"/>` +
+    `<polygon points="72,0 84,16 96,0"/>` +
+    `<polygon points="96,0 108,16 120,0"/>` +
+    `<polygon points="120,0 132,16 144,0"/>` +
+    `<polygon points="144,0 156,16 168,0"/>` +
+    `<polygon points="168,0 180,16 192,0"/>` +
+    `<polygon points="192,0 204,16 216,0"/>` +
+    `<polygon points="216,0 228,16 240,0"/>` +
+    `<polygon points="240,0 252,16 264,0"/>` +
+    `<polygon points="264,0 276,16 288,0"/>` +
+    `<polygon points="288,0 300,16 312,0"/>` +
+    `<polygon points="312,0 318,16 324,0"/>` +
+    `</g>` +
     // losanges dorés subtils dans la bande verte
     `<g fill="#f7d774" opacity="0.28">` +
     `<polygon points="40,22 44,26 40,30 36,26"/>` +
