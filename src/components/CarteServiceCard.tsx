@@ -107,11 +107,11 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
     `</defs>` +
     // bandeau marine arrondi
     `<rect x="0" y="0" width="324" height="96" rx="14" fill="url(#nh)"/>` +
-    // ruban VERT diagonal (coin haut gauche)
-    `<polygon points="0,0 104,0 158,48 54,48" fill="url(#vt)"/>` +
-    `<polygon points="0,0 104,0 104,9 0,22" fill="url(#vt)" opacity="0.8"/>` +
-    // motif DORÉ vif : fine bande dorée le long du ruban + éclat en haut à droite
-    `<polygon points="0,52 158,52 162,56 0,56" fill="url(#gd)" opacity="0.9"/>` +
+    // ruban VERT : triangle de coin (n'empiète pas sur le nom de l'école)
+    `<polygon points="0,0 96,0 0,96" fill="url(#vt)"/>` +
+    `<polygon points="0,0 76,0 0,76" fill="url(#vt)" opacity="0.85"/>` +
+    // motif DORÉ vif : liseré le long du triangle + éclat en haut à droite
+    `<polygon points="0,92 92,0 100,0 0,100" fill="url(#gd)" opacity="0.95"/>` +
     `<polygon points="196,0 224,0 210,26" fill="url(#gd)" opacity="0.9"/>` +
     `<polygon points="282,0 324,0 324,14 296,0" fill="url(#gd)" opacity="0.7"/>` +
     // losange or décoratif
@@ -174,12 +174,12 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* ═══ Identité — NOM + prénom + sexe, fonction ═══ */}
-      <div style={{ position: 'absolute', top: 224, left: 0, right: 0, textAlign: 'center' }}>
+      <div style={{ position: 'absolute', top: 221, left: 0, right: 0, textAlign: 'center' }}>
         <div style={{ fontSize: 18.5, fontWeight: 800, color: NAVY, letterSpacing: 0.3, lineHeight: 1.15, padding: '0 10px' }}>
           {personnel.nom.toUpperCase()} <span style={{ fontWeight: 700, color: NAVY }}>{personnel.prenom}</span>
           {personnel.sexe ? <span style={{ fontSize: 13, fontWeight: 800, color: GREEN, marginLeft: 7 }}>· {personnel.sexe}</span> : null}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 5, padding: '0 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 7, padding: '0 10px' }}>
           <span style={{ width: 22, height: 1.5, background: 'linear-gradient(90deg, transparent, #e6b422)', flexShrink: 0 }} />
           <Diamond size={5} color={GOLD} />
           <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: GREEN, textTransform: 'uppercase', margin: '0 9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{personnel.fonction}</span>
