@@ -8,6 +8,7 @@ type Item = { id: string; libelle: string; ordre: number; is_active: boolean };
 export default function PersonnelConfigTab() {
   const { currentSchoolId } = useAuth();
   const [fonctions, setFonctions] = useState<Item[]>([]);
+  const [domaines, setDomaines] = useState<Item[]>([]);
   const [niveaux, setNiveaux] = useState<Item[]>([]);
   const [prefix, setPrefix] = useState('');
   const [prefixSaving, setPrefixSaving] = useState(false);
@@ -17,12 +18,14 @@ export default function PersonnelConfigTab() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [f, n, p] = await Promise.all([
+    const [f, d, n, p] = await Promise.all([
       supabase.from('fonctions_personnel').select('*').eq('ecole_id', schoolId).order('ordre'),
+      supabase.from('domaines_personnel').select('*').eq('ecole_id', schoolId).order('ordre'),
       supabase.from('niveaux_etude').select('*').eq('ecole_id', schoolId).order('ordre'),
       supabase.from('app_settings').select('value').eq('ecole_id', schoolId).eq('key', 'personnel_matricule_prefix').maybeSingle(),
     ]);
     setFonctions((f.data as Item[]) || []);
+    setDomaines((d.data as Item[]) || []);
     setNiveaux((n.data as Item[]) || []);
     setPrefix((p.data as any)?.value || '');
     setLoading(false);
@@ -39,8 +42,8 @@ export default function PersonnelConfigTab() {
     alert(error ? 'Erreur enregistrement' : 'Préfixe enregistré');
   }
 
-  async function addItem(table: 'fonctions_personnel' | 'niveaux_etude', source: Item[], setSource: (v: Item[]) => void) {
-    const libelle = prompt(table === 'fonctions_personnel' ? 'Nouvelle fonction' : 'Nouveau niveau d\'étude');
+  async function addItem(table: 'fonctions_personnel' | 'domaines_personnel' | 'niveaux_etude', source: Item[], setSource: (v: Item[]) => void) {
+    const libelle = prompt(table === 'fonctions_personnel' ? 'Nouvelle fonction' : table === 'domaines_personnel' ? 'Nouveau domaine' : 'Nouveau niveau d\'étude');
     if (!libelle?.trim()) return;
     const maxOrdre = source.reduce((m, x) => Math.max(m, x.ordre || 0), 0) + 1;
     const { error } = await supabase.from(table).insert({ ecole_id: schoolId, libelle: libelle.trim(), ordre: maxOrdre, is_active: true });
@@ -49,7 +52,7 @@ export default function PersonnelConfigTab() {
     await load();
   }
 
-  async function renameItem(table: 'fonctions_personnel' | 'niveaux_etude', item: Item) {
+  async function renameItem(table: 'fonctions_personnel' | 'domaines_personnel' | 'niveaux_etude', item: Item) {
     const libelle = prompt('Libellé', item.libelle);
     if (!libelle?.trim() || libelle === item.libelle) return;
     const { error } = await supabase.from(table).update({ libelle: libelle.trim() }).eq('id', item.id);
@@ -57,12 +60,12 @@ export default function PersonnelConfigTab() {
     await load();
   }
 
-  async function toggleItem(table: 'fonctions_personnel' | 'niveaux_etude', item: Item) {
+  async function toggleItem(table: 'fonctions_personnel' | 'domaines_personnel' | 'niveaux_etude', item: Item) {
     await supabase.from(table).update({ is_active: !item.is_active }).eq('id', item.id);
     await load();
   }
 
-  async function deleteItem(table: 'fonctions_personnel' | 'niveaux_etude', item: Item) {
+  async function deleteItem(table: 'fonctions_personnel' | 'domaines_personnel' | 'niveaux_etude', item: Item) {
     if (!confirm(`Supprimer « ${item.libelle} » ?`)) return;
     await supabase.from(table).delete().eq('id', item.id);
     await load();
@@ -100,6 +103,17 @@ export default function PersonnelConfigTab() {
         onRename={(item) => renameItem('fonctions_personnel', item)}
         onToggle={(item) => toggleItem('fonctions_personnel', item)}
         onDelete={(item) => deleteItem('fonctions_personnel', item)}
+      />
+
+      {/* Domaines */}
+      <ConfigList
+        title="Domaines"
+        description="Domaines d'activité du personnel (Enseignement, Administration, Comptabilité...)."
+        items={domaines}
+        onAdd={() => addItem('domaines_personnel', domaines, setDomaines)}
+        onRename={(item) => renameItem('domaines_personnel', item)}
+        onToggle={(item) => toggleItem('domaines_personnel', item)}
+        onDelete={(item) => deleteItem('domaines_personnel', item)}
       />
 
       {/* Niveaux d'étude */}

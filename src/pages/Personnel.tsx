@@ -52,6 +52,9 @@ const EMPTY_FORM: PersonnelForm = {
   telephone: '', email: '', date_embauche: '', salaire: '', adresse: '', domaine: '', statut: 'actif',
 };
 
+// Repli si l'école n'a pas encore défini ses listes dans Configuration → Personnel
+const DEFAULT_DOMAINES = ['Enseignement', 'Administration', 'Comptabilité', 'Technique / Maintenance', 'Santé', 'Sécurité', 'Transport', 'Cuisine', 'Bibliothèque', 'Autre'];
+
 function formatDate(d?: string | null): string {
   if (!d) return '—';
   const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -79,11 +82,29 @@ export default function Personnel() {
   const [form, setForm] = useState<PersonnelForm>(EMPTY_FORM);
   const { currentSchoolId } = useAuth();
   const [niveaux, setNiveaux] = useState<{ id: string; libelle: string }[]>([]);
+  const [configFonctions, setConfigFonctions] = useState<string[]>([]);
+  const [configDomaines, setConfigDomaines] = useState<string[]>([]);
 
   useEffect(() => {
     if (!currentSchoolId) return;
     supabase.from('niveaux_etude').select('id, libelle').eq('ecole_id', currentSchoolId).order('ordre').then((res: any) => setNiveaux(res.data || []));
   }, [currentSchoolId]);
+
+  // Fonctions & domaines définis par l'école (Configuration → Personnel)
+  useEffect(() => {
+    if (!currentSchoolId) return;
+    (async () => {
+      const [f, d] = await Promise.all([
+        supabase.from('fonctions_personnel').select('libelle').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
+        supabase.from('domaines_personnel').select('libelle').eq('ecole_id', currentSchoolId).eq('is_active', true).order('ordre'),
+      ]);
+      setConfigFonctions(((f.data as any[]) || []).map((r: any) => r.libelle as string).filter(Boolean));
+      setConfigDomaines(((d.data as any[]) || []).map((r: any) => r.libelle as string).filter(Boolean));
+    })();
+  }, [currentSchoolId]);
+
+  const fonctionOptions = configFonctions.length ? configFonctions : FONCTIONS_SUGGEREES;
+  const domaineOptions = configDomaines.length ? configDomaines : DEFAULT_DOMAINES;
 
   async function genMatricule() {
     if (!currentSchoolId) return;
@@ -194,6 +215,10 @@ export default function Personnel() {
     e.preventDefault();
     if (!form.nom.trim() || !form.prenom.trim() || !form.fonction.trim()) {
       alert('Nom, prénom et fonction sont requis.');
+      return;
+    }
+    if (!form.matricule.trim()) {
+      alert('Le matricule est obligatoire : renseignez la date d\'embauche puis générez le matricule.');
       return;
     }
     setSaving(true);
@@ -371,27 +396,37 @@ export default function Personnel() {
             </div>
             <form onSubmit={handleSubmit} className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Matricule</label>
-                <div className="flex gap-2">
-                  <input className={inputClass} value={form.matricule} onChange={e => set('matricule', e.target.value)} placeholder="Auto" />
-                  <button type="button" onClick={genMatricule} className="px-3 rounded-lg bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300 whitespace-nowrap flex items-center gap-1">
-                    <Wand2 className="w-3.5 h-3.5" /> Générer
-                  </button>
-                </div>
+                <label className={labelClass}>Matricule {form.date_embauche || form.matricule ? '*' : ''}</label>
+                {form.date_embauche || form.matricule ? (
+                  <div className="flex gap-2">
+                    <input className={inputClass} value={form.matricule} onChange={e => set('matricule', e.target.value)} placeholder="Généré ou saisi" />
+                    <button type="button" onClick={genMatricule} className="px-3 rounded-lg bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300 whitespace-nowrap flex items-center gap-1">
+                      <Wand2 className="w-3.5 h-3.5" /> Générer
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    Renseignez d'abord la <b>date d'embauche</b> pour débloquer le matricule.
+                  </p>
+                )}
               </div>
               <div>
                 <label className={labelClass}>Fonction *</label>
-                <input className={inputClass} value={form.fonction} onChange={e => set('fonction', e.target.value)} list="fonctions-list" placeholder="Ex : Enseignant" required />
-                <datalist id="fonctions-list">
-                  {FONCTIONS_SUGGEREES.map(f => <option key={f} value={f} />)}
-                </datalist>
+                <select className={inputClass} value={form.fonction} onChange={e => set('fonction', e.target.value)} required>
+                  <option value="">— Sélectionner —</option>
+                  {form.fonction && !fonctionOptions.includes(form.fonction) ? <option value={form.fonction}>{form.fonction} (non listée)</option> : null}
+                  {fonctionOptions.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+                <p className="text-[10px] text-gray-400 mt-1">Liste définie dans Configuration → Personnel</p>
               </div>
               <div>
                 <label className={labelClass}>Domaine</label>
-                <input className={inputClass} value={form.domaine} onChange={e => set('domaine', e.target.value)} list="domaines-list" placeholder="Ex : Enseignement" />
-                <datalist id="domaines-list">
-                  {['Enseignement', 'Administration', 'Comptabilité', 'Technique / Maintenance', 'Santé', 'Sécurité', 'Transport', 'Cuisine', 'Bibliothèque', 'Autre'].map(d => <option key={d} value={d} />)}
-                </datalist>
+                <select className={inputClass} value={form.domaine} onChange={e => set('domaine', e.target.value)}>
+                  <option value="">— Sélectionner —</option>
+                  {form.domaine && !domaineOptions.includes(form.domaine) ? <option value={form.domaine}>{form.domaine} (non listé)</option> : null}
+                  {domaineOptions.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+                <p className="text-[10px] text-gray-400 mt-1">Liste définie dans Configuration → Personnel</p>
               </div>
               <div>
                 <label className={labelClass}>État-civil</label>
@@ -472,7 +507,7 @@ export default function Personnel() {
               </div>
               <div>
                 <label className={labelClass}>Date d'embauche</label>
-                <input type="date" className={inputClass} value={form.date_embauche} onChange={e => set('date_embauche', e.target.value)} />
+                <input type="date" className={inputClass} value={form.date_embauche} onChange={e => { const d = e.target.value; set('date_embauche', d); if (d && !form.matricule.trim() && currentSchoolId) generatePersonnelMatricule(currentSchoolId, d).then(m => set('matricule', m)).catch(() => {}); }} />
               </div>
               <div>
                 <label className={labelClass}>Ancienneté</label>
