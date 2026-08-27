@@ -232,13 +232,6 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
         </div>
       </div>
 
-      {/* Séparateur architectural : filets + losange */}
-      <div style={{ position: 'absolute', top: 266, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 90, height: 1, background: 'linear-gradient(90deg, transparent, #d8d2c4)' }} />
-        <Diamond size={6} color={GOLD} />
-        <div style={{ width: 90, height: 1, background: 'linear-gradient(270deg, transparent, #d8d2c4)' }} />
-      </div>
-
       {/* Filigrane subtil (initiale école) */}
       <div style={{ position: 'absolute', top: 415, left: 14, fontSize: 92, fontWeight: 900, lineHeight: 1, color: NAVY, opacity: 0.02, letterSpacing: -6, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
 
