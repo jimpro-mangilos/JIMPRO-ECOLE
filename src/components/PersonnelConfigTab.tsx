@@ -13,6 +13,7 @@ export default function PersonnelConfigTab() {
   const [prefix, setPrefix] = useState('');
   const [prefixSaving, setPrefixSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   const schoolId = currentSchoolId!;
 
@@ -25,6 +26,7 @@ export default function PersonnelConfigTab() {
     // Filet de sécurité : même si une requête ne répond pas, l'onglet s'affiche
     const timer = setTimeout(() => {
       console.warn('[ConfigPersonnel] TIMEOUT 8s - requetes toujours en cours');
+      setLoadError('Délai dépassé : une requête Supabase ne répond pas. Rechargez la page.');
       setLoading(false);
     }, 8000);
     try {
@@ -42,8 +44,10 @@ export default function PersonnelConfigTab() {
       setDomaines((d.data as Item[]) || []);
       setNiveaux((n.data as Item[]) || []);
       setPrefix((p.data as any)?.value || '');
+      setLoadError('');
     } catch (err) {
       console.error('[ConfigPersonnel] erreur chargement:', err);
+      setLoadError((err as Error)?.message || 'Erreur lors du chargement.');
     } finally {
       clearTimeout(timer);
       setLoading(false);
@@ -66,7 +70,12 @@ export default function PersonnelConfigTab() {
     if (!libelle?.trim()) return;
     const maxOrdre = source.reduce((m, x) => Math.max(m, x.ordre || 0), 0) + 1;
     const { error } = await supabase.from(table).insert({ ecole_id: schoolId, libelle: libelle.trim(), ordre: maxOrdre, is_active: true });
-    if (error) alert(error.message);
+    if (error) {
+      console.error('[ConfigPersonnel] insertion refusée:', error);
+      setLoadError('Insertion refusée : ' + error.message);
+      return;
+    }
+    setLoadError('');
     setSource([]); // placeholder (load() sera rappelé)
     await load();
   }
@@ -96,6 +105,12 @@ export default function PersonnelConfigTab() {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          <b>Erreur :</b> {loadError}
+        </div>
+      )}
+
       {/* Préfixe matricule personnel */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-lg font-bold mb-1">Préfixe matricule personnel</h2>
