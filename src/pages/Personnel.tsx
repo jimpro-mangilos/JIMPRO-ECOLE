@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateCarteService, generateCartesService } from '../utils/carteServiceGenerator';
 import CameraCapture from '../components/CameraCapture';
+import { compressImage } from '../utils/compressImage';
 import { formatDateTime, calculerAnciennete } from '../utils/calculations';
 
 interface PersonnelForm {
@@ -99,7 +100,14 @@ export default function Personnel() {
   }
 
   async function onPhoto(file: File) {
-    const url = await uploadFile(file, 'photos');
+    // Compression forcée : photo < 50 Ko (caméra ou upload)
+    let toUpload = file;
+    try {
+      toUpload = await compressImage(file);
+    } catch {
+      // Si la compression échoue, on conserve le fichier d'origine
+    }
+    const url = await uploadFile(toUpload, 'photos');
     if (url) set('photo_url', url);
   }
 
