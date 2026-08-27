@@ -67,7 +67,7 @@ function formatDate(d?: string | null): string {
 
 function Field({ label, value, nowrap, narrow }: { label: string; value: string; nowrap?: boolean; narrow?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '4px 0', borderBottom: '1px solid #f0ece3', width: narrow ? 148 : '100%' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid #f0ece3', width: narrow ? 148 : '100%' }}>
       <div style={{ width: 3, height: 26, borderRadius: 2, margin: '2px 10px 0 0', flexShrink: 0, background: `linear-gradient(180deg, ${GOLD}, ${GOLD_LIGHT})` }} />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase' }}>{label}</div>
