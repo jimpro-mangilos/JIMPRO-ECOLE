@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import { createElement } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import html2canvas from 'html2canvas';
 import { CarteServiceCard, type CarteService } from '../components/CarteServiceCard';
 import { loadLogoBase64, loadSchoolName } from './pdfTheme';
@@ -26,6 +26,20 @@ async function waitForImages(container: HTMLElement): Promise<void> {
   );
 }
 
+/** Vérifie qu'une image se charge (sinon le composant affiche le fallback initiales). */
+function imageLoads(url: string | null | undefined): Promise<boolean> {
+  if (!url) return Promise.resolve(false);
+  return new Promise<boolean>((resolve) => {
+    const img = new Image();
+    let done = false;
+    const finish = (ok: boolean) => { if (!done) { done = true; clearTimeout(timer); resolve(ok); } };
+    const timer = setTimeout(() => finish(img.complete && img.naturalWidth > 0), 3000);
+    img.onload = () => finish(true);
+    img.onerror = () => finish(false);
+    img.src = url;
+  });
+}
+
 async function renderCarteServiceToCanvas(
   personnel: CarteService,
   schoolName: string,
@@ -40,12 +54,19 @@ async function renderCarteServiceToCanvas(
   container.style.zIndex = '-1';
   document.body.appendChild(container);
 
-  let root: Root | null = null;
   try {
-    root = createRoot(container);
-    root.render(createElement(CarteServiceCard, { personnel, schoolName, logoUrl, qrDataUrl }));
+    // Rendu STATIQUE (react-dom/server) : AUCUN second root React sur le DOM —
+    // évite la corruption "Failed to execute 'removeChild'" du root principal.
+    const [photoOk, logoOk] = await Promise.all([imageLoads(personnel.photo_url), imageLoads(logoUrl)]);
+    container.innerHTML = renderToString(
+      createElement(CarteServiceCard, {
+        personnel: photoOk ? personnel : { ...personnel, photo_url: null },
+        schoolName,
+        logoUrl: logoOk ? logoUrl : null,
+        qrDataUrl,
+      })
+    );
 
-    await new Promise((r) => setTimeout(r, 0));
     await waitForImages(container);
     await new Promise((r) => setTimeout(r, 60));
 
@@ -54,7 +75,6 @@ async function renderCarteServiceToCanvas(
 
     return await html2canvas(cardEl, { scale, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
   } finally {
-    if (root) root.unmount();
     container.remove();
   }
 }

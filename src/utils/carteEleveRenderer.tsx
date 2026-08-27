@@ -1,4 +1,4 @@
-import { createRoot, type Root } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import html2canvas from 'html2canvas';
 import { CarteEleveCard, type CarteEleve } from '../components/CarteEleveCard';
 
@@ -42,17 +42,23 @@ export async function renderCarteEleveToCanvas(
   container.style.zIndex = '-1';
   document.body.appendChild(container);
 
-  let root: Root | null = null;
   try {
-    root = createRoot(container);
-    root.render(
-      <CarteEleveCard eleve={eleve} schoolName={schoolName} logoUrl={logoUrl} qrDataUrl={qrDataUrl} />
+    // Rendu STATIQUE (react-dom/server) : AUCUN second root React sur le DOM —
+    // évite la corruption "Failed to execute 'removeChild'" du root principal.
+    const photoOk = await imageLoads(eleve.photo_url);
+    const logoOk = await imageLoads(logoUrl);
+    container.innerHTML = renderToString(
+      <CarteEleveCard
+        eleve={photoOk ? eleve : { ...eleve, photo_url: null }}
+        schoolName={schoolName}
+        logoUrl={logoOk ? logoUrl : null}
+        qrDataUrl={qrDataUrl}
+      />
     );
 
-    // Attendre le premier rendu React (microtask) puis les images
-    await new Promise((r) => setTimeout(r, 0));
+    // Attendre le chargement des images avant la capture
     await waitForImages(container);
-    // Laisser React flusher les fallbacks (logo/photo en erreur) avant la capture
+    // Laisser les images se stabiliser avant la capture
     await new Promise((r) => setTimeout(r, 60));
 
     const cardEl = container.firstElementChild as HTMLElement;
@@ -66,10 +72,20 @@ export async function renderCarteEleveToCanvas(
     });
     return canvas;
   } finally {
-    if (root) {
-      // Unmount propre (async, mais on ne peut pas await ici sans changer la signature)
-      root.unmount();
-    }
     container.remove();
   }
+}
+
+/** Vérifie qu'une image se charge (sinon le composant affiche le fallback initiales). */
+function imageLoads(url: string | null | undefined): Promise<boolean> {
+  if (!url) return Promise.resolve(false);
+  return new Promise<boolean>((resolve) => {
+    const img = new Image();
+    let done = false;
+    const finish = (ok: boolean) => { if (!done) { done = true; clearTimeout(timer); resolve(ok); } };
+    const timer = setTimeout(() => finish(img.complete && img.naturalWidth > 0), 3000);
+    img.onload = () => finish(true);
+    img.onerror = () => finish(false);
+    img.src = url;
+  });
 }
