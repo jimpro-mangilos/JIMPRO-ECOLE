@@ -150,33 +150,12 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
     `<linearGradient id="gz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN_LIGHT}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
     `<linearGradient id="gof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}"/></linearGradient>` +
     `</defs>` +
-    // bande verte dégradée avec bord supérieur en dents de TRIANGLES
-    `<polygon points="0,51 324,51 324,0 318,16 312,0 300,16 288,0 276,16 264,0 252,16 240,0 228,16 216,0 204,16 192,0 180,16 168,0 156,16 144,0 132,16 120,0 108,16 96,0 84,16 72,0 60,16 48,0 36,16 24,0 12,16 0,0" fill="url(#gz)"/>` +
-    // TRIANGLES dorés (dents pointant vers le bas)
-    `<g fill="url(#gof)">` +
-    `<polygon points="0,0 12,16 24,0"/>` +
-    `<polygon points="24,0 36,16 48,0"/>` +
-    `<polygon points="48,0 60,16 72,0"/>` +
-    `<polygon points="72,0 84,16 96,0"/>` +
-    `<polygon points="96,0 108,16 120,0"/>` +
-    `<polygon points="120,0 132,16 144,0"/>` +
-    `<polygon points="144,0 156,16 168,0"/>` +
-    `<polygon points="168,0 180,16 192,0"/>` +
-    `<polygon points="192,0 204,16 216,0"/>` +
-    `<polygon points="216,0 228,16 240,0"/>` +
-    `<polygon points="240,0 252,16 264,0"/>` +
-    `<polygon points="264,0 276,16 288,0"/>` +
-    `<polygon points="288,0 300,16 312,0"/>` +
-    `<polygon points="312,0 318,16 324,0"/>` +
-    `</g>` +
-    // losanges dorés subtils dans la bande verte
-    `<g fill="#f7d774" opacity="0.28">` +
-    `<polygon points="40,22 44,26 40,30 36,26"/>` +
-    `<polygon points="96,22 100,26 96,30 92,26"/>` +
-    `<polygon points="152,22 156,26 152,30 148,26"/>` +
-    `<polygon points="208,22 212,26 208,30 204,26"/>` +
-    `<polygon points="264,22 268,26 264,30 260,26"/>` +
-    `</g>` +
+    // bande verte avec 3 sommets TRIANGULAIRES (le centre, vert, est le plus grand)
+    `<polygon points="0,51 324,51 324,24 257,8 190,24 126,2 62,24 31,8 0,24" fill="url(#gz)"/>` +
+    // TRIANGLE doré à gauche
+    `<polygon points="0,24 31,8 62,24" fill="url(#gof)"/>` +
+    // TRIANGLE doré à droite (le sommet central reste vert)
+    `<polygon points="190,24 257,8 324,24" fill="url(#gof)"/>` +
     // MOTIFS D'ANGLE : plis dorés aux coins inférieurs
     `<polygon points="0,51 30,51 0,21" fill="url(#gof)"/>` +
     `<polygon points="0,51 18,51 0,33" fill="#f7d774" opacity="0.85"/>` +
