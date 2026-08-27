@@ -58,13 +58,20 @@ function slugifySchool(name: string): string {
   return `www.${base || 'ecole'}.cd`;
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function formatDate(d?: string | null): string {
+  if (!d) return '—';
+  const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return d;
+}
+
+function Field({ label, value, nowrap }: { label: string; value: string; nowrap?: boolean }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', padding: '4px 0', borderBottom: '1px solid #f0ece3' }}>
       <div style={{ width: 3, height: 26, borderRadius: 2, margin: '2px 10px 0 0', flexShrink: 0, background: `linear-gradient(180deg, ${GOLD}, ${GOLD_LIGHT})` }} />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase' }}>{label}</div>
-        <div style={{ fontSize: 11, fontWeight: 600, color: NAVY, marginTop: 2, lineHeight: 1.25, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{value}</div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: NAVY, marginTop: 2, lineHeight: 1.25, overflowWrap: 'break-word', wordBreak: 'break-word', ...(nowrap ? { whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const } : {}) }}>{value}</div>
       </div>
     </div>
   );
@@ -186,22 +193,23 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
         </div>
       </div>
 
-      {/* ═══ Identité — NOM + prénom (police agrandie), fonction agrandie ═══ */}
-      <div style={{ position: 'absolute', top: 218, left: 0, right: 0, textAlign: 'center' }}>
+      {/* ═══ Identité — NOM + prénom + sexe, fonction ═══ */}
+      <div style={{ position: 'absolute', top: 214, left: 0, right: 0, textAlign: 'center' }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: NAVY, letterSpacing: 0.4, lineHeight: 1.15, padding: '0 12px' }}>
           {personnel.nom.toUpperCase()} <span style={{ fontWeight: 800, color: NAVY }}>{personnel.prenom}</span>
+          {personnel.sexe ? <span style={{ fontSize: 14, fontWeight: 700, color: GOLD_DARK, marginLeft: 8 }}>· {personnel.sexe}</span> : null}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
           <span style={{ width: 22, height: 1, background: 'linear-gradient(90deg, transparent, #c9a227)' }} />
           <Diamond size={5} />
-          <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1.5, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 9px' }}>{personnel.fonction}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 9px' }}>{personnel.fonction}</span>
           <Diamond size={5} />
           <span style={{ width: 22, height: 1, background: 'linear-gradient(270deg, transparent, #c9a227)' }} />
         </div>
       </div>
 
       {/* Séparateur architectural : filets + losange */}
-      <div style={{ position: 'absolute', top: 264, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', top: 260, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: 90, height: 1, background: 'linear-gradient(90deg, transparent, #d8d2c4)' }} />
         <Diamond size={6} color={GOLD} />
         <div style={{ width: 90, height: 1, background: 'linear-gradient(270deg, transparent, #d8d2c4)' }} />
@@ -211,15 +219,15 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       <div style={{ position: 'absolute', top: 324, left: 16, fontSize: 132, fontWeight: 900, lineHeight: 1, color: NAVY, opacity: 0.03, letterSpacing: -8, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
 
       {/* ═══ Champs d'information ═══ */}
-      <div style={{ position: 'absolute', top: 270, left: 30, right: 154 }}>
-        <Field label="Matricule" value={personnel.matricule || '—'} />
+      <div style={{ position: 'absolute', top: 266, left: 30, right: 146 }}>
+        <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
         <Field label="E-mail" value={personnel.email || '—'} />
         <Field label="Téléphone" value={personnel.telephone || '—'} />
-        <Field label="Adresse" value={personnel.adresse || '—'} />
+        <Field label="Date d'embauche" value={formatDate(personnel.date_embauche)} />
       </div>
 
       {/* ═══ QR Code — 20 × 20 mm, bordure dégradée or ═══ */}
-      <div style={{ position: 'absolute', top: 358, right: 20, borderRadius: 14, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 8px 20px rgba(11,61,46,0.16)', zIndex: 4 }}>
+      <div style={{ position: 'absolute', top: 358, right: 12, borderRadius: 14, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 8px 20px rgba(11,61,46,0.16)', zIndex: 4 }}>
         <div style={{ borderRadius: 12, background: '#ffffff', padding: 4 }}>
           <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
         </div>
