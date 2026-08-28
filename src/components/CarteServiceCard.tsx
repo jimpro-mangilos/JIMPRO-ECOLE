@@ -32,7 +32,7 @@ export interface CarteService {
 
 export const CARTE_SERVICE_W = 324; // 54 mm × 6
 export const CARTE_SERVICE_H = 516; // 86 mm × 6
-export const CARTE_SERVICE_QR = 124; // ~21 mm × 21 mm
+export const CARTE_SERVICE_QR = 112; // ~19 mm × 19 mm
 
 // ─── Palette « Prestige » : vert profond + or ─────────────────────────────────
 const GREEN_DEEP = '#0a3529';
@@ -237,7 +237,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* ═══ QR Code — 20 × 20 mm, bordure dégradée or ═══ */}
-      <div style={{ position: 'absolute', top: 310, right: 12, zIndex: 4 }}>
+      <div style={{ position: 'absolute', top: 310, right: 18, zIndex: 4 }}>
         <div style={{ borderRadius: 14, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 8px 20px rgba(11,61,46,0.16)' }}>
           <div style={{ borderRadius: 12, background: '#ffffff', overflow: 'hidden' }}>
             {/* JIMPRO intégré au décor du cadre (bandeau or au-dessus du code) */}
