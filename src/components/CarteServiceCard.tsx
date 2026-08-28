@@ -66,7 +66,7 @@ function Field({ label, value, nowrap, narrow }: { label: string; value: string;
       <div style={{ width: 3, height: 26, borderRadius: 2, margin: '2px 10px 0 0', flexShrink: 0, background: `linear-gradient(180deg, ${GOLD}, ${GOLD_LIGHT})` }} />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase' }}>{label}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: NAVY, marginTop: 2, lineHeight: 1.25, overflowWrap: 'break-word', wordBreak: 'break-word', ...(nowrap ? { whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const } : {}) }}>{value}</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: NAVY, marginTop: 2, lineHeight: 1.25, overflowWrap: 'break-word', wordBreak: 'break-word', ...(nowrap ? { whiteSpace: 'nowrap' as const } : {}) }}>{value}</div>
       </div>
     </div>
   );
