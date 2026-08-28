@@ -32,7 +32,7 @@ export interface CarteService {
 
 export const CARTE_SERVICE_W = 324; // 54 mm × 6
 export const CARTE_SERVICE_H = 516; // 86 mm × 6
-export const CARTE_SERVICE_QR = 140; // ~23 mm × 23 mm
+export const CARTE_SERVICE_QR = 112; // ~19 mm × 19 mm
 
 // ─── Palette « Prestige » : vert profond + or ─────────────────────────────────
 const GREEN_DEEP = '#0a3529';
@@ -224,9 +224,9 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       <div style={{ position: 'absolute', top: 415, left: 14, fontSize: 92, fontWeight: 900, lineHeight: 1, color: NAVY, opacity: 0.02, letterSpacing: -6, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
 
       {/* ═══ Champs d'information — E-mail pleine largeur (une seule ligne) ═══ */}
-      <div style={{ position: 'absolute', top: 268, left: 30, right: 164 }}>
+      <div style={{ position: 'absolute', top: 268, left: 30, right: 148 }}>
         <div style={{ marginBottom: 12 }}>
-          <Field label="Matricule" value={personnel.matricule || '—'} />
+          <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
         </div>
         <div style={{ marginBottom: 12 }}>
           <Field label="Téléphone" value={personnel.telephone || '—'} />
