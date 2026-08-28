@@ -232,6 +232,9 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
         <div style={{ marginBottom: 12 }}>
           <Field label="Téléphone" value={personnel.telephone || '—'} />
         </div>
+        <div style={{ marginBottom: 12 }}>
+          <Field label="Année scolaire" value={annee} />
+        </div>
       </div>
 
       {/* ═══ QR Code — 20 × 20 mm, bordure dégradée or ═══ */}
