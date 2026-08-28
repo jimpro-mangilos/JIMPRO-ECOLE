@@ -32,7 +32,7 @@ export interface CarteService {
 
 export const CARTE_SERVICE_W = 324; // 54 mm × 6
 export const CARTE_SERVICE_H = 516; // 86 mm × 6
-export const CARTE_SERVICE_QR = 120; // 20 mm × 20 mm
+export const CARTE_SERVICE_QR = 140; // ~23 mm × 23 mm
 
 // ─── Palette « Prestige » : vert profond + or ─────────────────────────────────
 const GREEN_DEEP = '#0a3529';
@@ -225,7 +225,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       <div style={{ position: 'absolute', top: 415, left: 14, fontSize: 92, fontWeight: 900, lineHeight: 1, color: NAVY, opacity: 0.02, letterSpacing: -6, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
 
       {/* ═══ Champs d'information — E-mail pleine largeur (une seule ligne) ═══ */}
-      <div style={{ position: 'absolute', top: 268, left: 30, right: 148 }}>
+      <div style={{ position: 'absolute', top: 268, left: 30, right: 164 }}>
         <div style={{ marginBottom: 12 }}>
           <Field label="Matricule" value={personnel.matricule || '—'} />
         </div>
@@ -238,7 +238,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* ═══ QR Code — 20 × 20 mm, bordure dégradée or ═══ */}
-      <div style={{ position: 'absolute', top: 358, right: 12, borderRadius: 14, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 8px 20px rgba(11,61,46,0.16)', zIndex: 4 }}>
+      <div style={{ position: 'absolute', top: 340, right: 12, borderRadius: 14, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 8px 20px rgba(11,61,46,0.16)', zIndex: 4 }}>
         <div style={{ position: 'relative', borderRadius: 12, background: '#ffffff', padding: 4 }}>
           <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
           {/* Mention sur le QR (bande blanche au centre, le code reste scannable) */}
@@ -248,7 +248,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
 
       {/* ═══ Bande verte dégradée du bas (zigzag) — adresse web ═══ */}
       <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: CARTE_SERVICE_W, height: 51 }} />
-      <div style={{ position: 'absolute', bottom: 12, left: 40, right: 40, textAlign: 'center', fontSize: 9.5, fontWeight: 700, letterSpacing: 1.2, color: '#ffffff', textTransform: 'lowercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{siteWeb}</div>
+      <div style={{ position: 'absolute', bottom: 11, left: 40, right: 40, textAlign: 'center', fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#ffffff', textTransform: 'lowercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{siteWeb}</div>
     </div>
   );
 }
