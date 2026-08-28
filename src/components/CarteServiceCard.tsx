@@ -32,7 +32,7 @@ export interface CarteService {
 
 export const CARTE_SERVICE_W = 324; // 54 mm × 6
 export const CARTE_SERVICE_H = 516; // 86 mm × 6
-export const CARTE_SERVICE_QR = 112; // ~19 mm × 19 mm
+export const CARTE_SERVICE_QR = 118; // ~20 mm × 20 mm
 
 // ─── Palette « Prestige » : vert profond + or ─────────────────────────────────
 const GREEN_DEEP = '#0a3529';
@@ -170,7 +170,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       <img src={patternSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 175 }} />
 
       {/* ═══ Logo école ═══ */}
-      <div style={{ position: 'absolute', top: 11, left: 28, width: 46, height: 46, borderRadius: '50%', background: '#ffffff', border: `2px solid ${GOLD}`, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(10,53,41,0.30)' }}>
+      <div style={{ position: 'absolute', top: 6, left: 28, width: 46, height: 46, borderRadius: '50%', background: '#ffffff', border: `2px solid ${GOLD}`, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(10,53,41,0.30)' }}>
         {logoUrl && !logoError ? (
           <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setLogoError(true)} />
         ) : (
@@ -179,7 +179,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* Nom de l'école + titre — pleine largeur (l'année est en bas) */}
-      <div style={{ position: 'absolute', top: 17, left: 86, right: 28 }}>
+      <div style={{ position: 'absolute', top: 11, left: 86, right: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Diamond size={4} color={GOLD_LIGHT} />
           <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: '#ffffff', textTransform: 'uppercase', marginLeft: 7, whiteSpace: 'nowrap' }}>{schoolName}</span>
@@ -251,7 +251,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
 
       {/* ═══ Bande verte dégradée du bas (zigzag) — adresse web ═══ */}
       <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: CARTE_SERVICE_W, height: 51 }} />
-      <div style={{ position: 'absolute', bottom: 11, left: 40, right: 40, textAlign: 'center', fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#ffffff', textTransform: 'lowercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{siteWeb}</div>
+      <div style={{ position: 'absolute', bottom: 10, left: 36, right: 36, textAlign: 'center', fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#ffffff', textTransform: 'lowercase', lineHeight: 1.3 }}>{siteWeb}</div>
     </div>
   );
 }
