@@ -98,7 +98,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
     `<linearGradient id="gv1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN_DEEP}"/><stop offset="0.55" stop-color="${GREEN}"/><stop offset="1" stop-color="${GREEN_LIGHT}"/></linearGradient>` +
     `<linearGradient id="gv2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="${GREEN_DEEP}"/><stop offset="1" stop-color="${GREEN}"/></linearGradient>` +
     `<linearGradient id="gv3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
-    `<linearGradient id="go" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}"/></linearGradient>` +
+    `<linearGradient id="go" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="0.55" stop-color="${GOLD}"/><stop offset="1" stop-color="${GOLD_DARK}"/></linearGradient>` +
     `<linearGradient id="g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6a25c"/><stop offset="1" stop-color="#e8933a"/></linearGradient>` +
     `</defs>` +
     // trapèze vert dominant — frontière oblique (0,60)→(324,150)
@@ -142,15 +142,16 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
   const footerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="51" viewBox="0 0 324 51" preserveAspectRatio="none">` +
     `<defs>` +
-    `<linearGradient id="gz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN_LIGHT}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
+    `<linearGradient id="gz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN_LIGHT}"/><stop offset="0.5" stop-color="${GREEN}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
     `<linearGradient id="gof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}"/></linearGradient>` +
+    `<linearGradient id="gof2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="0.55" stop-color="${GOLD}"/><stop offset="1" stop-color="${GOLD_DARK}"/></linearGradient>` +
     `</defs>` +
     // bande verte avec 3 sommets TRIANGULAIRES (le centre, vert, est le plus grand)
     `<polygon points="0,51 324,51 324,24 257,8 190,24 126,2 62,24 31,8 0,24" fill="url(#gz)"/>` +
-    // TRIANGLE doré à gauche
-    `<polygon points="0,24 31,8 62,24" fill="url(#gof)"/>` +
-    // TRIANGLE doré à droite (le sommet central reste vert)
-    `<polygon points="190,24 257,8 324,24" fill="url(#gof)"/>` +
+    // TRIANGLE doré à gauche (dégradé diagonal clair → foncé)
+    `<polygon points="0,24 31,8 62,24" fill="url(#gof2)"/>` +
+    // TRIANGLE doré à droite (dégradé diagonal inversé, le sommet central reste vert)
+    `<polygon points="190,24 257,8 324,24" fill="url(#gof2)" transform="scale(-1,1) translate(-324,0)"/>` +
     // MOTIFS D'ANGLE : plis dorés aux coins inférieurs
     `<polygon points="0,51 30,51 0,21" fill="url(#gof)"/>` +
     `<polygon points="0,51 18,51 0,33" fill="#f7d774" opacity="0.85"/>` +
