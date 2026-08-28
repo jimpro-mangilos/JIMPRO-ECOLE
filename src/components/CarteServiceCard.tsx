@@ -32,7 +32,7 @@ export interface CarteService {
 
 export const CARTE_SERVICE_W = 324; // 54 mm × 6
 export const CARTE_SERVICE_H = 516; // 86 mm × 6
-export const CARTE_SERVICE_QR = 112; // ~19 mm × 19 mm
+export const CARTE_SERVICE_QR = 128; // ~21 mm × 21 mm
 
 // ─── Palette « Prestige » : vert profond + or ─────────────────────────────────
 const GREEN_DEEP = '#0a3529';
@@ -225,7 +225,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       <div style={{ position: 'absolute', top: 415, left: 14, fontSize: 92, fontWeight: 900, lineHeight: 1, color: NAVY, opacity: 0.02, letterSpacing: -6, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
 
       {/* ═══ Champs d'information — E-mail pleine largeur (une seule ligne) ═══ */}
-      <div style={{ position: 'absolute', top: 268, left: 30, right: 148 }}>
+      <div style={{ position: 'absolute', top: 268, left: 30, right: 156 }}>
         <div style={{ marginBottom: 12 }}>
           <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
         </div>
@@ -242,12 +242,12 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
         <div style={{ borderRadius: 14, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 8px 20px rgba(11,61,46,0.16)' }}>
           <div style={{ borderRadius: 12, background: '#ffffff', overflow: 'hidden' }}>
             {/* JIMPRO intégré au décor du cadre (bandeau or au-dessus du code) */}
-            <div style={{ background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, textAlign: 'center', padding: '3px 0', fontSize: 12, fontWeight: 800, letterSpacing: 4, color: '#06291e', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(6,41,30,0.25)', borderBottom: '1px solid rgba(255,255,255,0.45)' }}>
-              <div style={{ width: 4, height: 4, transform: 'rotate(45deg)', background: '#06291e', marginRight: 8, opacity: 0.7 }} />
+            <div style={{ background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, textAlign: 'center', padding: '3px 0', fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: '#06291e', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(6,41,30,0.25)', borderBottom: '1px solid rgba(255,255,255,0.45)' }}>
+              <div style={{ width: 3, height: 3, transform: 'rotate(45deg)', background: '#06291e', marginRight: 4, opacity: 0.7 }} />
               JIMPRO SCAN
-              <div style={{ width: 4, height: 4, transform: 'rotate(45deg)', background: '#06291e', marginLeft: 8, opacity: 0.7 }} />
+              <div style={{ width: 3, height: 3, transform: 'rotate(45deg)', background: '#06291e', marginLeft: 4, opacity: 0.7 }} />
             </div>
-            <div style={{ padding: 4, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ padding: 4 }}>
               <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
             </div>
           </div>
