@@ -15,7 +15,7 @@ import {
 } from '../lib/hooks/usePersonnel';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { generateCarteService, generateCartesService } from '../utils/carteServiceGenerator';
+import { generateCarteService, generateCartesService8PerSheet } from '../utils/carteServiceGenerator';
 import CameraCapture from '../components/CameraCapture';
 import { compressImage } from '../utils/compressImage';
 import { formatDateTime, calculerAnciennete } from '../utils/calculations';
@@ -78,6 +78,7 @@ export default function Personnel() {
   const [editing, setEditing] = useState<PersonnelRecord | null>(null);
   const [saving, setSaving] = useState(false);
   const [printingAll, setPrintingAll] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const [form, setForm] = useState<PersonnelForm>(EMPTY_FORM);
   const { currentSchoolId } = useAuth();
@@ -149,17 +150,29 @@ export default function Personnel() {
     }
   }
 
-  async function printAllCartes() {
-    if (!filtered.length) return;
-    if (!confirm(`Générer ${filtered.length} carte(s) de service (une par page) ?`)) return;
+  async function printSelectedCartes() {
+    const selected = filtered.filter(p => selectedIds.has(p.id));
+    if (!selected.length) {
+      alert('Sélectionnez au moins un membre à imprimer (cases à cocher).');
+      return;
+    }
+    if (!confirm(`Imprimer ${selected.length} carte(s) de service (8 par feuille A4) ?`)) return;
     setPrintingAll(true);
     try {
-      await generateCartesService(filtered);
+      await generateCartesService8PerSheet(selected);
     } catch {
-      alert('Erreur lors de la génération des cartes en cascade.');
+      alert('Erreur lors de la génération des cartes.');
     } finally {
       setPrintingAll(false);
     }
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   }
 
   const fonctions = useMemo(() => {
@@ -179,6 +192,19 @@ export default function Personnel() {
       return true;
     });
   }, [personnel, search, filterFonction, filterStatut]);
+
+  const allSelected = filtered.length > 0 && filtered.every(p => selectedIds.has(p.id));
+  function toggleSelectAll() {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        filtered.forEach(p => next.delete(p.id));
+      } else {
+        filtered.forEach(p => next.add(p.id));
+      }
+      return next;
+    });
+  }
 
   const stats = useMemo(() => ({
     total: personnel.length,
@@ -317,13 +343,13 @@ export default function Personnel() {
           {Object.entries(STATUT_PERSONNEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         <button
-          onClick={printAllCartes}
+          onClick={printSelectedCartes}
           disabled={printingAll || filtered.length === 0}
           className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 font-semibold disabled:opacity-50 whitespace-nowrap transition-colors"
-          title="Imprimer les cartes de service des membres affichés (en cascade)"
+          title="Imprimer les cartes des membres sélectionnés (8 par feuille A4)"
         >
           {printingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-          Imprimer les cartes ({filtered.length})
+          Imprimer les cartes sélectionnées ({selectedIds.size}) — 8/feuille
         </button>
       </div>
 
@@ -343,6 +369,9 @@ export default function Personnel() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase">
                 <tr>
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} title="Tout sélectionner / désélectionner" className="accent-emerald-600" />
+                  </th>
                   <th className="px-4 py-3">Personnel</th>
                   <th className="px-4 py-3">Fonction</th>
                   <th className="px-4 py-3">Contact</th>
@@ -356,6 +385,9 @@ export default function Personnel() {
               <tbody className="divide-y divide-slate-100">
                 {filtered.map(p => (
                   <tr key={p.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="accent-emerald-600" />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</div>
                       <div className="text-xs text-gray-400">{p.matricule || '—'}{p.sexe ? ` · ${p.sexe}` : ''}</div>

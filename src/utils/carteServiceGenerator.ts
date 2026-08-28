@@ -140,6 +140,42 @@ export async function generateCartesService(list: CarteService[]): Promise<void>
   doc.save(`Cartes-service-${list.length}-membres.pdf`);
 }
 
+/**
+ * Génère les cartes de service des membres SÉLECTIONNÉS en UN SEUL fichier,
+ * 8 cartes par feuille A4 (4 colonnes × 2 rangées), puis "ainsi de suite"
+ * (une nouvelle page toutes les 8 cartes).
+ */
+export async function generateCartesService8PerSheet(list: CarteService[]): Promise<void> {
+  if (!list.length) return;
+  const schoolName = (await loadSchoolName()) || 'ÉTABLISSEMENT';
+  const logo = await loadLogoBase64();
+
+  // A4 portrait : 210 × 297 mm — grille 4 × 2 = 8 cartes / page
+  const PAGE_W = 210;
+  const PAGE_H = 297;
+  const MARGIN = 9;
+  const COLS = 4;
+  const ROWS = 2;
+  const PER_PAGE = COLS * ROWS; // 8
+  const cellW = (PAGE_W - MARGIN * 2) / COLS;
+  const cellH = (PAGE_H - MARGIN * 2) / ROWS;
+  const cardH = cellW * (CARD_H / CARD_W); // proportions 54 × 86 mm conservées
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  for (let i = 0; i < list.length; i++) {
+    if (i > 0 && i % PER_PAGE === 0) doc.addPage('a4', 'portrait');
+    const p = list[i];
+    const qrDataUrl = await buildQrDataUrl(p);
+    const canvas = await renderCarteServiceToCanvas(p, schoolName, logo || null, qrDataUrl);
+    const col = i % COLS;
+    const row = Math.floor((i % PER_PAGE) / COLS);
+    const x = MARGIN + col * cellW;
+    const y = MARGIN + row * cellH + (cellH - cardH) / 2;
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, cellW, cardH);
+  }
+  doc.save(`Cartes-service-${list.length}-membres.pdf`);
+}
+
 async function buildQrDataUrl(p: CarteService): Promise<string> {
   return QRCode.toDataURL(
     `MATRICULE:${p.matricule || ''}|NOM:${asciiFold(`${p.nom} ${p.postnom ? p.postnom + ' ' : ''}${p.prenom}`)}|FONCTION:${asciiFold(p.fonction)}`,
