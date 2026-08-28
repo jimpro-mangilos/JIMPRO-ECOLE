@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import html2canvas from 'html2canvas';
-import { CarteServiceCard, type CarteService } from '../components/CarteServiceCard';
+import { CarteServiceCard, CarteServiceCardLandscape, type CarteService } from '../components/CarteServiceCard';
 import { loadLogoBase64, loadSchoolName } from './pdfTheme';
 import { asciiFold } from './ascii';
 
@@ -94,6 +94,48 @@ async function renderCarteServiceToCanvas(
   }
 }
 
+async function renderCarteServiceLandscapeToCanvas(
+  personnel: CarteService,
+  schoolName: string,
+  logoUrl: string | null,
+  qrDataUrl: string,
+  scale = 3
+): Promise<HTMLCanvasElement> {
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '-10000px';
+  container.style.top = '0';
+  container.style.zIndex = '-1';
+  document.body.appendChild(container);
+  try {
+    const [photoData, logoOk] = await Promise.all([
+      loadPhotoDataUrl(personnel.photo_url),
+      new Promise<boolean>((resolve) => {
+        if (!logoUrl) return resolve(false);
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = logoUrl;
+      }),
+    ]);
+    container.innerHTML = renderToString(
+      createElement(CarteServiceCardLandscape, {
+        personnel: photoData ? { ...personnel, photo_url: photoData } : { ...personnel, photo_url: null },
+        schoolName,
+        logoUrl: logoOk ? logoUrl : null,
+        qrDataUrl,
+      })
+    );
+    await waitForImages(container);
+    await new Promise((r) => setTimeout(r, 60));
+    const cardEl = container.firstElementChild as HTMLElement;
+    if (!cardEl) throw new Error('Carte non rendue');
+    return await html2canvas(cardEl, { scale, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+  } finally {
+    container.remove();
+  }
+}
+
 /**
  * Génère la carte de service d'un membre du personnel (PDF, 54 × 86 mm portrait).
  * Rendu via le composant React + html2canvas — identique à l'aperçu.
@@ -142,36 +184,38 @@ export async function generateCartesService(list: CarteService[]): Promise<void>
 
 /**
  * Génère les cartes de service des membres SÉLECTIONNÉS en UN SEUL fichier,
- * 8 cartes par feuille A4 (4 colonnes × 2 rangées), puis "ainsi de suite"
- * (une nouvelle page toutes les 8 cartes).
+ * ORIENTATION PAYSAGE (86 × 54 mm), 8 cartes par feuille A4 (2 colonnes × 4 rangées),
+ * avec des marges entre les cartes pour faciliter la découpe.
  */
 export async function generateCartesService8PerSheet(list: CarteService[]): Promise<void> {
   if (!list.length) return;
   const schoolName = (await loadSchoolName()) || 'ÉTABLISSEMENT';
   const logo = await loadLogoBase64();
 
-  // A4 portrait : 210 × 297 mm — grille 4 × 2 = 8 cartes / page
+  // A4 portrait : 210 × 297 mm — grille 2 × 4 = 8 cartes paysage / page
   const PAGE_W = 210;
   const PAGE_H = 297;
-  const MARGIN = 9;
-  const COLS = 4;
-  const ROWS = 2;
+  const MARGIN = 9;          // marge extérieure
+  const CARD_W_L = 86;       // carte paysage 86 × 54 mm
+  const CARD_H_L = 54;
+  const COLS = 2;
+  const ROWS = 4;
   const PER_PAGE = COLS * ROWS; // 8
   const cellW = (PAGE_W - MARGIN * 2) / COLS;
   const cellH = (PAGE_H - MARGIN * 2) / ROWS;
-  const cardH = cellW * (CARD_H / CARD_W); // proportions 54 × 86 mm conservées
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   for (let i = 0; i < list.length; i++) {
     if (i > 0 && i % PER_PAGE === 0) doc.addPage('a4', 'portrait');
     const p = list[i];
     const qrDataUrl = await buildQrDataUrl(p);
-    const canvas = await renderCarteServiceToCanvas(p, schoolName, logo || null, qrDataUrl);
+    const canvas = await renderCarteServiceLandscapeToCanvas(p, schoolName, logo || null, qrDataUrl);
     const col = i % COLS;
     const row = Math.floor((i % PER_PAGE) / COLS);
-    const x = MARGIN + col * cellW;
-    const y = MARGIN + row * cellH + (cellH - cardH) / 2;
-    doc.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, cellW, cardH);
+    // Centré dans la cellule → marges égales autour de chaque carte (découpe facile)
+    const x = MARGIN + col * cellW + (cellW - CARD_W_L) / 2;
+    const y = MARGIN + row * cellH + (cellH - CARD_H_L) / 2;
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', x, y, CARD_W_L, CARD_H_L);
   }
   doc.save(`Cartes-service-${list.length}-membres.pdf`);
 }
