@@ -27,17 +27,22 @@ async function waitForImages(container: HTMLElement): Promise<void> {
 }
 
 /** Vérifie qu'une image se charge (sinon le composant affiche le fallback initiales). */
-function imageLoads(url: string | null | undefined): Promise<boolean> {
-  if (!url) return Promise.resolve(false);
-  return new Promise<boolean>((resolve) => {
-    const img = new Image();
-    let done = false;
-    const finish = (ok: boolean) => { if (!done) { done = true; clearTimeout(timer); resolve(ok); } };
-    const timer = setTimeout(() => finish(img.complete && img.naturalWidth > 0), 3000);
-    img.onload = () => finish(true);
-    img.onerror = () => finish(false);
-    img.src = url;
-  });
+/** Charge une image en DATA URL (base64) : html2canvas peut toujours la dessiner (pas de CORS). */
+async function loadPhotoDataUrl(url: string | null | undefined): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return null;
+    const blob = await resp.blob();
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 async function renderCarteServiceToCanvas(
@@ -57,10 +62,20 @@ async function renderCarteServiceToCanvas(
   try {
     // Rendu STATIQUE (react-dom/server) : AUCUN second root React sur le DOM —
     // évite la corruption "Failed to execute 'removeChild'" du root principal.
-    const [photoOk, logoOk] = await Promise.all([imageLoads(personnel.photo_url), imageLoads(logoUrl)]);
+    // La photo est convertie en DATA URL : garantie d'être dessinée par html2canvas (sinon blanc).
+    const [photoData, logoOk] = await Promise.all([
+      loadPhotoDataUrl(personnel.photo_url),
+      new Promise<boolean>((resolve) => {
+        if (!logoUrl) return resolve(false);
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = logoUrl;
+      }),
+    ]);
     container.innerHTML = renderToString(
       createElement(CarteServiceCard, {
-        personnel: photoOk ? personnel : { ...personnel, photo_url: null },
+        personnel: photoData ? { ...personnel, photo_url: photoData } : { ...personnel, photo_url: null },
         schoolName,
         logoUrl: logoOk ? logoUrl : null,
         qrDataUrl,
