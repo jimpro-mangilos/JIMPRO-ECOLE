@@ -199,8 +199,16 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   const motifLabel = data.annee_scolaire ? `${baseMotif} / ${data.annee_scolaire}` : baseMotif;
   const refPaiement = data.numero_recu.substring(0, 8);
 
+  // Limite le motif à 2 lignes dans la cellule (colonne 70 mm) pour que le
+  // reçu tienne TOUJOURS sur une seule page A4 — sinon l'autoTable déborde
+  // sur une 2e page et le reçu se génère « en partie » (suite sans en-tête).
+  const motifLines = doc.splitTextToSize(S(motifLabel), 68);
+  const motifCell = motifLines.length > 2
+    ? motifLines.slice(0, 2).join('\n') + ' …'
+    : motifLines.join('\n');
+
   const tableData = [
-    ['1', S(refPaiement), S(motifLabel), 'CDF', S(`${formatMontant(data.montant_paye)} FC`)]
+    ['1', S(refPaiement), motifCell, 'CDF', S(`${formatMontant(data.montant_paye)} FC`)]
   ];
 
   (doc as any).autoTable({
@@ -251,7 +259,11 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(slate[0], slate[1], slate[2]);
-  doc.text(S(`la somme encaissée est : ${data.montant_en_lettre}`), margin + 6, yPos + 2);
+  // Montant en lettres tronqué si trop long : le texte doit rester dans la page
+  const sommeLettres = S(`la somme encaissée est : ${data.montant_en_lettre}`);
+  const sommeLignes = doc.splitTextToSize(sommeLettres, pageWidth - 2 * margin - 8);
+  const sommeCell = sommeLignes.length > 1 ? sommeLignes[0] + ' …' : sommeLignes[0];
+  doc.text(sommeCell, margin + 6, yPos + 2);
 
   yPos += 14;
 
