@@ -247,7 +247,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
               JIMPRO SCAN
               <div style={{ width: 4, height: 4, transform: 'rotate(45deg)', background: '#06291e', marginLeft: 8, opacity: 0.7 }} />
             </div>
-            <div style={{ padding: 4 }}>
+            <div style={{ padding: 4, display: 'flex', justifyContent: 'center' }}>
               <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
             </div>
           </div>
