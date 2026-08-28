@@ -237,12 +237,14 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       </div>
 
       {/* ═══ QR Code — 20 × 20 mm, bordure dégradée or ═══ */}
-      <div style={{ position: 'absolute', top: 310, right: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 4 }}>
-        {/* Mention JIMPRO SCAN HORS du QR (au-dessus, ne masque rien) */}
-        <div style={{ marginBottom: 3, fontSize: 11, fontWeight: 800, letterSpacing: 2, color: '#0b3d2e', textTransform: 'uppercase', whiteSpace: 'nowrap', background: 'rgba(255,255,255,0.9)', padding: '1px 9px', borderRadius: 4 }}>JIMPRO SCAN</div>
+      <div style={{ position: 'absolute', top: 310, right: 12, zIndex: 4 }}>
         <div style={{ borderRadius: 14, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 8px 20px rgba(11,61,46,0.16)' }}>
-          <div style={{ borderRadius: 12, background: '#ffffff', padding: 4 }}>
-            <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
+          <div style={{ borderRadius: 12, background: '#ffffff', overflow: 'hidden' }}>
+            {/* JIMPRO intégré au décor du cadre (bandeau or au-dessus du code) */}
+            <div style={{ background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, textAlign: 'center', padding: '3px 0', fontSize: 11, fontWeight: 800, letterSpacing: 3, color: '#06291e', textTransform: 'uppercase' }}>JIMPRO</div>
+            <div style={{ padding: 4 }}>
+              <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
+            </div>
           </div>
         </div>
       </div>
