@@ -260,3 +260,90 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
     </div>
   );
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VERSO de la carte de service — mêmes dimensions portrait 54 × 86 mm
+// ═══════════════════════════════════════════════════════════════════════════════
+export function CarteServiceCardBack({ personnel, schoolName, siteWeb }: {
+  personnel: CarteService;
+  schoolName: string;
+  siteWeb?: string | null;
+}) {
+  const web = siteWeb || slugifySchool(schoolName);
+
+  // Entête diagonale
+  const headerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="110" viewBox="0 0 324 110">` +
+    `<defs>` +
+    `<linearGradient id="bh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN_DEEP}"/><stop offset="0.6" stop-color="${GREEN}"/><stop offset="1" stop-color="${GREEN_LIGHT}"/></linearGradient>` +
+    `<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="0.55" stop-color="${GOLD}"/><stop offset="1" stop-color="${GOLD_DARK}"/></linearGradient>` +
+    `</defs>` +
+    `<rect x="0" y="0" width="324" height="110" rx="14" fill="url(#bh)"/>` +
+    `<polygon points="0,0 128,0 140,22 0,28" fill="url(#bg)"/>` +
+    `<polygon points="196,0 224,0 210,32" fill="url(#bg)" opacity="0.9"/>` +
+    `<polygon points="0,100 324,92 324,110 0,110" fill="url(#bg)" opacity="0.9"/>` +
+    `</svg>`
+  )}`;
+
+  // Bande inférieure
+  const footerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="44" viewBox="0 0 324 44" preserveAspectRatio="none">` +
+    `<defs>` +
+    `<linearGradient id="bf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN_LIGHT}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
+    `<linearGradient id="bfo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}"/></linearGradient>` +
+    `</defs>` +
+    `<rect x="0" y="5" width="324" height="39" fill="url(#bf)"/>` +
+    `<rect x="0" y="0" width="324" height="5" fill="url(#bfo)"/>` +
+    `</svg>`
+  )}`;
+
+  const Row = ({ label, value }: { label: string; value: string }) => (
+    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '4px 0', borderBottom: '1px solid #e8e9e2' }}>
+      <div style={{ width: 104, flexShrink: 0, fontSize: 8.5, fontWeight: 700, letterSpacing: 1.2, color: '#8b9187', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: 11.5, fontWeight: 600, color: '#16324a', lineHeight: 1.3 }}>{value}</div>
+    </div>
+  );
+
+  const nomComplet = [personnel.nom, personnel.postnom, personnel.prenom].filter(Boolean).join(' ');
+
+  return (
+    <div style={{ width: CARTE_SERVICE_W, height: CARTE_SERVICE_H, position: 'relative', overflow: 'hidden', fontFamily: FONT, background: '#fcfbf7', borderRadius: 14, color: '#16324a', boxShadow: '0 24px 64px rgba(11,61,46,0.22)' }}>
+      {/* Cadre intérieur */}
+      <div style={{ position: 'absolute', top: 10, left: 10, right: 10, bottom: 10, borderRadius: 10, border: '1px solid rgba(201,162,39,0.30)' }} />
+      <div style={{ position: 'absolute', top: 14, left: 14, right: 14, bottom: 14, borderRadius: 8, border: '1px solid rgba(201,162,39,0.14)' }} />
+
+      {/* Entête */}
+      <img src={headerSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 110 }} />
+      <div style={{ position: 'absolute', top: 20, left: 28, right: 28 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: '#ffffff', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName}</div>
+        <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 3.5, color: GOLD_LIGHT, marginTop: 5, textTransform: 'uppercase' }}>Carte de service — Verso</div>
+      </div>
+
+      {/* Membre */}
+      <div style={{ position: 'absolute', top: 126, left: 30, right: 30 }}>
+        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2.5, color: GOLD_DARK, textTransform: 'uppercase', marginBottom: 4 }}>Membre</div>
+        <Row label="Matricule" value={personnel.matricule || '—'} />
+        <Row label="Nom complet" value={nomComplet} />
+        <Row label="Fonction" value={personnel.fonction} />
+        <Row label="Naissance" value={personnel.date_naissance || '—'} />
+        <Row label="Nationalité" value={personnel.nationalite || '—'} />
+        <Row label="Adresse" value={personnel.adresse || '—'} />
+      </div>
+
+      {/* Établissement */}
+      <div style={{ position: 'absolute', top: 372, left: 30, right: 30 }}>
+        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2.5, color: GOLD_DARK, textTransform: 'uppercase', marginBottom: 4 }}>Établissement</div>
+        <Row label="Téléphone" value={personnel.telephone || '—'} />
+        <Row label="E-mail" value={personnel.email || '—'} />
+        <Row label="Site web" value={web} />
+      </div>
+
+      {/* Bande inférieure */}
+      <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: 324, height: 44 }} />
+      <div style={{ position: 'absolute', bottom: 10, left: 24, right: 24, textAlign: 'center', fontSize: 6.5, fontWeight: 600, letterSpacing: 0.8, color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>
+        Ce document est la propriété de l'établissement. En cas de perte, veuillez le signaler à l'administration.
+      </div>
+    </div>
+  );
+}
+

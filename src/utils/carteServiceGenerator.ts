@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import html2canvas from 'html2canvas';
-import { CarteServiceCard, type CarteService } from '../components/CarteServiceCard';
+import { CarteServiceCard, CarteServiceCardBack, type CarteService } from '../components/CarteServiceCard';
 import { loadLogoBase64, loadSchoolName } from './pdfTheme';
 import { asciiFold } from './ascii';
 
@@ -118,6 +118,38 @@ export async function generateCarteService(p: CarteService): Promise<void> {
   document.body.appendChild(a);
   a.click();
   a.remove();
+}
+
+/**
+ * Génère le VERSO de la carte de service d'un membre (JPG haute résolution).
+ */
+export async function generateCarteServiceBack(p: CarteService): Promise<void> {
+  const schoolName = (await loadSchoolName()) || 'ÉTABLISSEMENT';
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '-10000px';
+  container.style.top = '0';
+  container.style.zIndex = '-1';
+  document.body.appendChild(container);
+  try {
+    container.innerHTML = renderToString(
+      createElement(CarteServiceCardBack, { personnel: p, schoolName, siteWeb: p.siteWeb })
+    );
+    await waitForImages(container);
+    await new Promise((r) => setTimeout(r, 60));
+    const cardEl = container.firstElementChild as HTMLElement;
+    if (!cardEl) throw new Error('Verso non rendu');
+    const canvas = await html2canvas(cardEl, { scale: 3, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+    const dataUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `Carte-service-vers-${(p.matricule || p.nom || 'personnel').replace(/\s+/g, '-')}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    container.remove();
+  }
 }
 
 /**

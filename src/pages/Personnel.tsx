@@ -15,7 +15,7 @@ import {
 } from '../lib/hooks/usePersonnel';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { generateCarteService, generateCartesService8PerSheet } from '../utils/carteServiceGenerator';
+import { generateCarteService, generateCarteServiceBack, generateCartesService8PerSheet } from '../utils/carteServiceGenerator';
 import CameraCapture from '../components/CameraCapture';
 import { compressImage } from '../utils/compressImage';
 import { formatDateTime, calculerAnciennete } from '../utils/calculations';
@@ -147,6 +147,14 @@ export default function Personnel() {
       await generateCarteService(p);
     } catch {
       alert('Erreur lors de la génération de la carte de service.');
+    }
+  }
+
+  async function printCarteBack(p: PersonnelRecord) {
+    try {
+      await generateCarteServiceBack(p);
+    } catch {
+      alert('Erreur lors de la génération du verso de la carte.');
     }
   }
 
@@ -407,7 +415,8 @@ export default function Personnel() {
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <button onClick={() => navigate(`/personnel/${p.id}`)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg" title="Fiche du membre"><Eye className="w-4 h-4" /></button>
-                      <button onClick={() => printCarte(p)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Carte de service"><CreditCard className="w-4 h-4" /></button>
+                      <button onClick={() => printCarte(p)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Carte de service (recto)"><CreditCard className="w-4 h-4" /></button>
+                      <button onClick={() => printCarteBack(p)} className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg" title="Verso de la carte de service"><CreditCard className="w-4 h-4 rotate-180" /></button>
                       <button onClick={() => openEdit(p)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Modifier"><Pencil className="w-4 h-4" /></button>
                       <button onClick={() => handleDelete(p)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Supprimer"><Trash2 className="w-4 h-4" /></button>
                     </td>
