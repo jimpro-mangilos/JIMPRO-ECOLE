@@ -29,10 +29,21 @@ export function clearLogoCache(schoolId: string | null | undefined) {
   }
 }
 
+function readCache(key: string): string {
+  try {
+    return localStorage.getItem(key) || '';
+  } catch {
+    return '';
+  }
+}
+
 export function LogoProvider({ children }: { children: ReactNode }) {
   const { currentSchoolId } = useAuth();
-  const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO);
-  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  // Le logo est initialisé DEPUIS LE CACHE LOCAL : au rafraîchissement, il est
+  // affiché immédiatement (base64 = data URL, jamais de perte), avant même que
+  // l'auth ne soit prête. La query ne fait que rafraîchir ensuite.
+  const [logoUrl, setLogoUrl] = useState<string>(() => readCache('jimpro_logo_current'));
+  const [logoBase64, setLogoBase64] = useState<string | null>(() => readCache('jimpro_logo_b64_current') || null);
 
   const cacheKey = currentSchoolId ? `${LOGO_CACHE_PREFIX}${currentSchoolId}` : null;
 
@@ -53,13 +64,21 @@ export function LogoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshLogo = useCallback(async () => {
-    // Fallback : cache local (permet au logo de "rester en place" au rechargement
-    // même si la query échoue de façon transitoire).
+    // Tant que l'école n'est pas connue (auth en cours), on ne touche à RIEN :
+    // le logo initial (venu du cache) reste affiché — il n'est plus effacé.
+    if (!currentSchoolId) return;
+
+    // Cache local école : le logo reste en place même si la query échoue.
     let cached = '';
     try {
       if (cacheKey) cached = localStorage.getItem(cacheKey) || '';
     } catch {
       /* ignore */
+    }
+    const cachedB64 = readCache(`jimpro_logo_b64_${currentSchoolId}`);
+    if (cachedB64) {
+      setLogoBase64(cachedB64);
+      setUiLogoBase64(cachedB64);
     }
 
     try {
@@ -73,7 +92,7 @@ export function LogoProvider({ children }: { children: ReactNode }) {
       const url = data?.value || cached;
       setLogoUrl(url);
       invalidateLogoCache();
-      const b64 = url ? await loadBase64FromUrl(url) : null;
+      const b64 = url ? await loadBase64FromUrl(url) : cachedB64 || null;
       setLogoBase64(b64);
       setUiLogoBase64(b64);
 
@@ -89,8 +108,9 @@ export function LogoProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
     } catch {
-      setLogoUrl(cached);
-      setLogoBase64(null);
+      setLogoUrl(cached || readCache('jimpro_logo_current'));
+      setLogoBase64(readCache('jimpro_logo_b64_current') || null);
+      setUiLogoBase64(readCache('jimpro_logo_b64_current') || null);
     }
   }, [loadBase64FromUrl, currentSchoolId, cacheKey]);
 

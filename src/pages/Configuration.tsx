@@ -24,7 +24,7 @@ const TABS: { key: TabKey; label: string }[] = [
 // ─── Page Component ───────────────────────────────────────────────────────────
 export default function Configuration() {
   const { canManageConfiguration, currentSchoolId } = useAuth();
-  const { logoUrl, refreshLogo } = useLogo();
+  const { logoUrl, logoBase64, refreshLogo } = useLogo();
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [ptgHeureEntree, setPtgHeureEntree] = useState('08:00');
@@ -227,8 +227,8 @@ export default function Configuration() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-lg font-bold mb-3">Logo de l'établissement</h2>
           <div className="flex items-center gap-4">
-            {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="w-32 h-32 object-cover border rounded-full bg-gray-50" />
+            {logoUrl || logoBase64 ? (
+              <img src={logoBase64 || logoUrl} alt="Logo" className="w-32 h-32 object-cover border rounded-full bg-gray-50" />
             ) : (
               <div className="w-32 h-32 border rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 text-sm text-center px-2">Aucun logo</div>
             )}

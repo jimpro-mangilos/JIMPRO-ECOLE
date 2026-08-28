@@ -36,7 +36,7 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, isItManager, isRevoque, currentSchoolCode } = useAuth();
-  const { logoUrl } = useLogo();
+  const { logoUrl, logoBase64 } = useLogo();
   const { menuItems: menuConfig, loading: menuLoading } = useMenuConfig(profile?.role_id);
   const { canSwitchSchool, switchSchool, resetToHomeSchool } = useActiveSchool();
   const { activeId, activeCode } = useSchoolsList();
@@ -173,9 +173,9 @@ export default function Layout({ children }: LayoutProps) {
         <div className="h-full px-3 py-4 overflow-y-auto">
           {/* Logo */}
           <div className="flex items-center justify-center mb-8 px-3 pt-2">
-            {logoUrl ? (
+            {logoUrl || logoBase64 ? (
               <img
-                src={logoUrl}
+                src={logoBase64 || logoUrl}
                 alt="JIMPRO"
                 className="w-28 h-28 object-cover rounded-full drop-shadow-lg"
               />
