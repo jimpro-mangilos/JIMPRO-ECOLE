@@ -58,12 +58,7 @@ function slugifySchool(name: string): string {
   return `www.${base || 'ecole'}.cd`;
 }
 
-function formatDate(d?: string | null): string {
-  if (!d) return '—';
-  const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-  return d;
-}
+
 
 function Field({ label, value, nowrap, narrow }: { label: string; value: string; nowrap?: boolean; narrow?: boolean }) {
   return (
@@ -231,9 +226,14 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
 
       {/* ═══ Champs d'information — E-mail pleine largeur (une seule ligne) ═══ */}
       <div style={{ position: 'absolute', top: 270, left: 30, right: 30 }}>
-        <Field label="Matricule" value={personnel.matricule || '—'} nowrap narrow />
-        <Field label="Téléphone" value={personnel.telephone || '—'} narrow />
-        <Field label="Date d'embauche" value={formatDate(personnel.date_embauche)} narrow />
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Field label="Téléphone" value={personnel.telephone || '—'} nowrap />
+          </div>
+        </div>
       </div>
 
       {/* ═══ QR Code — 20 × 20 mm, bordure dégradée or ═══ */}
