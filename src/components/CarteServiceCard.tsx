@@ -214,9 +214,9 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
           {personnel.nom.toUpperCase()} <span style={{ fontWeight: 800, color: NAVY }}>{personnel.prenom}</span>
           {personnel.sexe ? <span style={{ fontSize: 14, fontWeight: 700, color: GOLD_DARK, marginLeft: 8 }}>· {personnel.sexe}</span> : null}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4, padding: '0 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4, padding: '0 12px' }}>
           <Diamond size={5} />
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{personnel.fonction}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 12px', lineHeight: 1.35, textAlign: 'center' }}>{personnel.fonction}</span>
           <Diamond size={5} />
         </div>
       </div>
