@@ -241,7 +241,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
         <div style={{ borderRadius: 14, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 8px 20px rgba(11,61,46,0.16)' }}>
           <div style={{ borderRadius: 12, background: '#ffffff', overflow: 'hidden' }}>
             {/* JIMPRO intégré au décor du cadre (bandeau or au-dessus du code) */}
-            <div style={{ background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, textAlign: 'center', padding: '3px 0', fontSize: 11, fontWeight: 800, letterSpacing: 3, color: '#06291e', textTransform: 'uppercase' }}>JIMPRO</div>
+            <div style={{ background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, textAlign: 'center', padding: '3px 0', fontSize: 11, fontWeight: 800, letterSpacing: 3, color: '#06291e', textTransform: 'uppercase' }}>JIMPRO SCAN</div>
             <div style={{ padding: 4 }}>
               <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
             </div>
