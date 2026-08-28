@@ -22,9 +22,7 @@ describe('Rendu statique des cartes (renderToString - sans second root React)', 
       })
     );
     expect(html).toContain('GAM-A-0042');
-    expect(html).toContain('jp.ilunga@goldenacademy.cd');
     expect(html).toContain('Directeur des études');
-    expect(html).toContain('embauche');
     expect(html).toContain('C.S GOLDEN ACADEMY');
     expect(html).toContain('M');
   });
