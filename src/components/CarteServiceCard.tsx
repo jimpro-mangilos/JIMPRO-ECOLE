@@ -65,8 +65,8 @@ function Field({ label, value, nowrap, narrow }: { label: string; value: string;
     <div style={{ display: 'flex', alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid #f0ece3', width: narrow ? 148 : '100%' }}>
       <div style={{ width: 3, height: 26, borderRadius: 2, margin: '2px 10px 0 0', flexShrink: 0, background: `linear-gradient(180deg, ${GOLD}, ${GOLD_LIGHT})` }} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase' }}>{label}</div>
-        <div style={{ fontSize: 11, fontWeight: 600, color: NAVY, marginTop: 2, lineHeight: 1.25, overflowWrap: 'break-word', wordBreak: 'break-word', ...(nowrap ? { whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const } : {}) }}>{value}</div>
+        <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase' }}>{label}</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: NAVY, marginTop: 2, lineHeight: 1.25, overflowWrap: 'break-word', wordBreak: 'break-word', ...(nowrap ? { whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const } : {}) }}>{value}</div>
       </div>
     </div>
   );
@@ -210,13 +210,13 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
 
       {/* ═══ Identité — NOM + prénom + sexe, fonction ═══ */}
       <div style={{ position: 'absolute', top: 214, left: 0, right: 0, textAlign: 'center' }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: NAVY, letterSpacing: 0.4, lineHeight: 1.15, padding: '0 12px' }}>
+        <div style={{ fontSize: 23, fontWeight: 800, color: NAVY, letterSpacing: 0.4, lineHeight: 1.15, padding: '0 10px' }}>
           {personnel.nom.toUpperCase()} <span style={{ fontWeight: 800, color: NAVY }}>{personnel.prenom}</span>
           {personnel.sexe ? <span style={{ fontSize: 14, fontWeight: 700, color: GOLD_DARK, marginLeft: 8 }}>· {personnel.sexe}</span> : null}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4, padding: '0 12px' }}>
           <Diamond size={5} />
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 12px', lineHeight: 1.35, textAlign: 'center' }}>{personnel.fonction}</span>
+          <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: 1.2, color: GOLD_DARK, textTransform: 'uppercase', margin: '0 12px', lineHeight: 1.3, textAlign: 'center' }}>{personnel.fonction}</span>
           <Diamond size={5} />
         </div>
       </div>
@@ -225,7 +225,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       <div style={{ position: 'absolute', top: 415, left: 14, fontSize: 92, fontWeight: 900, lineHeight: 1, color: NAVY, opacity: 0.02, letterSpacing: -6, userSelect: 'none' }}>{getSchoolInitials(schoolName).charAt(0)}</div>
 
       {/* ═══ Champs d'information — E-mail pleine largeur (une seule ligne) ═══ */}
-      <div style={{ position: 'absolute', top: 270, left: 30, right: 30 }}>
+      <div style={{ position: 'absolute', top: 268, left: 30, right: 148 }}>
         <div style={{ marginBottom: 12 }}>
           <Field label="Matricule" value={personnel.matricule || '—'} />
         </div>
@@ -242,7 +242,7 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
         <div style={{ position: 'relative', borderRadius: 12, background: '#ffffff', padding: 4 }}>
           <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
           {/* Mention sur le QR (bande blanche au centre, le code reste scannable) */}
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(255,255,255,0.94)', padding: '1px 7px', borderRadius: 3, fontSize: 6, fontWeight: 700, letterSpacing: 1.4, color: '#0b3d2e', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>JIMPRO SCAN</div>
+          <div style={{ position: 'absolute', top: 3, left: 3, right: 3, textAlign: 'center', background: 'rgba(255,255,255,0.96)', padding: '1px 2px', borderRadius: 3, fontSize: 11, fontWeight: 800, letterSpacing: 2, color: '#0b3d2e', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>JIMPRO SCAN</div>
         </div>
       </div>
 
