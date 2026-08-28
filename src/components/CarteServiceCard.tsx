@@ -232,7 +232,6 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       {/* ═══ Champs d'information — E-mail pleine largeur (une seule ligne) ═══ */}
       <div style={{ position: 'absolute', top: 270, left: 30, right: 30 }}>
         <Field label="Matricule" value={personnel.matricule || '—'} nowrap narrow />
-        <Field label="E-mail" value={personnel.email || '—'} nowrap />
         <Field label="Téléphone" value={personnel.telephone || '—'} narrow />
         <Field label="Date d'embauche" value={formatDate(personnel.date_embauche)} narrow />
       </div>
