@@ -243,8 +243,8 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
 
       {/* ═══ Bande verte dégradée du bas (zigzag) — adresse web ═══ */}
       <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: CARTE_SERVICE_W, height: 51 }} />
-      <div style={{ position: 'absolute', bottom: 11, left: 34, fontSize: 8.5, fontWeight: 600, letterSpacing: 1.5, color: 'rgba(255,255,255,0.85)' }}>{annee}</div>
-      <div style={{ position: 'absolute', bottom: 11, left: 0, right: 0, textAlign: 'center', fontSize: 9.5, fontWeight: 700, letterSpacing: 1.5, color: '#ffffff', textTransform: 'lowercase' }}>{siteWeb}</div>
+      <div style={{ position: 'absolute', bottom: 12, left: 34, fontSize: 8.5, fontWeight: 600, letterSpacing: 1.5, color: 'rgba(255,255,255,0.85)' }}>{annee}</div>
+      <div style={{ position: 'absolute', bottom: 12, right: 36, textAlign: 'right', fontSize: 9.5, fontWeight: 700, letterSpacing: 1.2, color: '#ffffff', textTransform: 'lowercase' }}>{siteWeb}</div>
     </div>
   );
 }
