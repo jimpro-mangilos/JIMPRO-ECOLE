@@ -239,9 +239,10 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
 
       {/* ═══ QR Code — 20 × 20 mm, bordure dégradée or ═══ */}
       <div style={{ position: 'absolute', top: 358, right: 12, borderRadius: 14, background: `linear-gradient(140deg, ${GOLD_LIGHT}, ${GOLD}, ${GOLD_DARK})`, padding: 2, boxShadow: '0 8px 20px rgba(11,61,46,0.16)', zIndex: 4 }}>
-        <div style={{ borderRadius: 12, background: '#ffffff', padding: '4px 4px 3px', textAlign: 'center' }}>
+        <div style={{ position: 'relative', borderRadius: 12, background: '#ffffff', padding: 4 }}>
           <img src={qrDataUrl} alt="" style={{ width: CARTE_SERVICE_QR, height: CARTE_SERVICE_QR, display: 'block' }} />
-          <div style={{ fontSize: 5.5, fontWeight: 700, letterSpacing: 1.2, color: '#7a6a3a', marginTop: 2, textTransform: 'uppercase' }}>JIMPRO SCAN</div>
+          {/* Mention sur le QR (bande blanche au centre, le code reste scannable) */}
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(255,255,255,0.94)', padding: '1px 7px', borderRadius: 3, fontSize: 6, fontWeight: 700, letterSpacing: 1.4, color: '#0b3d2e', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>JIMPRO SCAN</div>
         </div>
       </div>
 
