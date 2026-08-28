@@ -227,10 +227,10 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
       {/* ═══ Champs d'information — E-mail pleine largeur (une seule ligne) ═══ */}
       <div style={{ position: 'absolute', top: 270, left: 30, right: 30 }}>
         <div style={{ marginBottom: 12 }}>
-          <Field label="Matricule" value={personnel.matricule || '—'} nowrap />
+          <Field label="Matricule" value={personnel.matricule || '—'} />
         </div>
         <div style={{ marginBottom: 12 }}>
-          <Field label="Téléphone" value={personnel.telephone || '—'} nowrap />
+          <Field label="Téléphone" value={personnel.telephone || '—'} />
         </div>
       </div>
 
