@@ -59,7 +59,7 @@ export default function PortailRecouvrement() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-recouvrement';
-  const { schoolId, loading: schoolLoading } = usePublicSchool();
+  const { schoolId, schoolName, loading: schoolLoading } = usePublicSchool();
 
   // Load motifs and annees on mount (scoped by school)
   useEffect(() => {
@@ -140,16 +140,27 @@ export default function PortailRecouvrement() {
         section: eleve.section, classe: (eleve as any).classe || null, photo_url: (eleve as any).photo_url || null,
       };
 
-      // Check payment for selected month, motif and année (scoped by school)
+      // Check payment for selected month, motif and année.
+      // L'élève peut avoir été retrouvé via le repli dans une AUTRE école que celle résolue
+      // par le portail (ex : portail sur CSES, élève de CSGA) → on filtre par l'école RÉELLE
+      // de l'élève (eleve.ecole_id), sinon son paiement ne serait jamais trouvé.
+      const eleveEcoleId = (eleve as any).ecole_id || schoolId;
       let query = supabase.from('paiements')
         .select('*')
-        .eq('ecole_id', schoolId)
+        .eq('ecole_id', eleveEcoleId)
         .eq('eleve_id', eleve.id)
         .eq('mois_minerval', moisActuel)
-        .eq('statut', 'encaisse')
+        // Un paiement « en_attente » est déjà effectué (seuls les paiements annulés
+        // ne comptent pas) — cohérent avec PaymentFormModal.fetchPaidMonths.
+        .neq('statut', 'annule')
         .order('created_at', { ascending: false });
       query = query.eq('annee_scolaire', anneeScolaireDepuis(moisActuel, year));
-      if (motifId) query = query.eq('motif_id', motifId);
+      if (motifId) {
+        // Les paiements de minerval ont motif_id NULL (le mois est dans mois_minerval) :
+        // le filtre par motif doit donc se faire sur le LIBELLÉ (motif_libelle), pas sur motif_id.
+        const motif = motifs.find(m => m.id === motifId);
+        if (motif) query = query.eq('motif_libelle', motif.libelle.trim());
+      }
       const { data: paiement } = await query.maybeSingle();
 
       if (paiement) {
@@ -178,7 +189,7 @@ export default function PortailRecouvrement() {
             <QrCode className="w-4 h-4" />
             Portail de Recouvrement
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">GOLDEN ACADEMY</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">{schoolName || 'GOLDEN ACADEMY'}</h1>
           <p className="text-white/60 text-sm">Scannez une carte étudiant pour vérifier le statut de paiement</p>
         </div>
 
