@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { CalendarDays, UserCheck, Clock, CheckCircle2, XCircle, Search, FileDown, Settings2, ShieldCheck, ShieldX } from 'lucide-react';
+import { CalendarDays, UserCheck, Clock, CheckCircle2, XCircle, Search, FileDown, Settings2, ShieldCheck, ShieldX, CalendarRange, User } from 'lucide-react';
 import { usePersonnel } from '../lib/hooks/usePersonnel';
 import { STATUT_POINTAGE, type PointageRecord, type PointageConfig, loadPointageConfig, compareHeures, formatDatePointage } from '../lib/hooks/usePointage';
 import { supabase } from '../lib/supabase';
@@ -32,6 +32,18 @@ interface Permission {
   paye: boolean | null;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Statut « effectif » d'un membre pour une date — SOURCE UNIQUE de vérité.
+// Retourne toujours le statut affiché + son origine (saisi ou déduit auto),
+// pour que grille, bilan, salaires et PDF soient parfaitement cohérents.
+// ─────────────────────────────────────────────────────────────────────────────
+interface StatutEffectif {
+  statut: string;      // '' | 'present' | 'retard' | 'absent' | 'permission'
+  auto: boolean;       // true si déduit automatiquement (absent sans pointage, retard par l'heure, permission approuvée)
+  rec: PointageRecord | null;
+  permissionPayee: boolean; // vrai si c'est une permission approuvée PAYÉE (comptée présente pour le salaire)
+}
+
 export default function PointagePersonnel() {
   const { currentSchoolId, user, isAdmin, isItManager, isPromoteur } = useAuth();
   const isApprover = isAdmin() || isItManager() || isPromoteur();
@@ -43,6 +55,7 @@ export default function PointagePersonnel() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [permBusy, setPermBusy] = useState<string | null>(null);
   const [paiementsSalaires, setPaiementsSalaires] = useState<Record<string, { montant_fc: number; montant_usd: number; paye_le: string }>>({});
 
@@ -81,7 +94,7 @@ export default function PointagePersonnel() {
     return map;
   }, [records]);
 
-  // Permissions approuvées couvrant une date (affichage grille)
+  // Permissions approuvées couvrant une date
   const permDates = useMemo(() => {
     const set = new Set<string>();
     for (const p of permissions) {
@@ -109,19 +122,27 @@ export default function PointagePersonnel() {
     return set;
   }, [permissions]);
 
-  // Statut d'un membre pour une date (dérivé : absent si pas de pointage un jour ouvrable passé/présent)
-  function cellStatus(pId: string, date: string): { statut: string; implied: boolean } {
+  // ═══ SOURCE UNIQUE : statut effectif d'un membre pour une date ═══
+  function getStatutEffectif(pId: string, date: string): StatutEffectif {
     const rec = recByKey.get(`${pId}_${date}`);
     if (rec) {
       // Retard automatique si arrivée après l'heure d'entrée configurée
       if (rec.statut === 'present' && rec.heure_arrivee && compareHeures(rec.heure_arrivee.slice(0, 5), config.heureEntree) > 0) {
-        return { statut: 'retard', implied: true };
+        return { statut: 'retard', auto: true, rec, permissionPayee: false };
       }
-      return { statut: rec.statut, implied: false };
+      return { statut: rec.statut, auto: false, rec, permissionPayee: false };
     }
-    if (permDates.has(`${pId}_${date}`)) return { statut: 'permission', implied: true };
-    if (date <= today) return { statut: 'absent', implied: true };
-    return { statut: '', implied: true };
+    if (permDates.has(`${pId}_${date}`)) {
+      return { statut: 'permission', auto: true, rec: null, permissionPayee: permPayeesDates.has(`${pId}_${date}`) };
+    }
+    if (date <= today) return { statut: 'absent', auto: true, rec: null, permissionPayee: false };
+    return { statut: '', auto: true, rec: null, permissionPayee: false };
+  }
+
+  // Compatibilité exports PDF (ancienne signature)
+  function cellStatus(pId: string, date: string): { statut: string; implied: boolean } {
+    const s = getStatutEffectif(pId, date);
+    return { statut: s.statut, implied: s.auto };
   }
 
   const q = search.trim().toLowerCase();
@@ -130,22 +151,42 @@ export default function PointagePersonnel() {
     return `${p.nom} ${p.postnom || ''} ${p.prenom} ${p.fonction}`.toLowerCase().includes(q);
   });
 
-  // Statistiques (sur les jours ouvrables écoulés)
+  // ═══ Bilan par membre : compteurs du mois + taux de présence ═══
+  interface BilanMembre {
+    p: typeof personnel[number];
+    present: number; retard: number; absent: number;
+    permissionPayee: number; permissionNonPayee: number;
+    joursEcoules: number; tauxPresence: number | null;
+  }
+  const bilans = useMemo<BilanMembre[]>(() => {
+    const pastWorkDays = workDays.filter(d => d <= today);
+    return list.map(p => {
+      let present = 0, retard = 0, absent = 0, permPayee = 0, permNonPayee = 0;
+      for (const d of pastWorkDays) {
+        const s = getStatutEffectif(p.id, d);
+        if (s.statut === 'present') present++;
+        else if (s.statut === 'retard') retard++;
+        else if (s.statut === 'absent') absent++;
+        else if (s.statut === 'permission') { if (s.permissionPayee) permPayee++; else permNonPayee++; }
+      }
+      const joursEcoules = pastWorkDays.length;
+      const tauxPresence = joursEcoules > 0 ? Math.round(((present + retard + permPayee) / joursEcoules) * 100) : null;
+      return { p, present, retard, absent, permissionPayee: permPayee, permissionNonPayee: permNonPayee, joursEcoules, tauxPresence };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, workDays, recByKey, permDates, permPayeesDates, config, today]);
+
+  // Statistiques globales (dérivées du bilan — cohérence garantie)
   const stats = useMemo(() => {
     const s = { present: 0, retard: 0, absent: 0, permission: 0 };
-    const pastWorkDays = workDays.filter(d => d <= today);
-    for (const p of list) {
-      for (const d of pastWorkDays) {
-        const st = cellStatus(p.id, d).statut;
-        if (st === 'present') s.present++;
-        else if (st === 'retard') s.retard++;
-        else if (st === 'absent') s.absent++;
-        else if (st === 'permission') s.permission++;
-      }
+    for (const b of bilans) {
+      s.present += b.present;
+      s.retard += b.retard;
+      s.absent += b.absent;
+      s.permission += b.permissionPayee + b.permissionNonPayee;
     }
     return s;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workDays, list, recByKey, permDates, config, today]);
+  }, [bilans]);
 
   // Marquage rapide d'un statut pour le jour sélectionné
   async function mark(pId: string, statut: string) {
@@ -269,7 +310,7 @@ export default function PointagePersonnel() {
   }
 
   // ─── Salaires du mois : jours présents × salaire journalier ─────────────
-  // salaire journalier = salaire mensuel ÷ jours ouvrables du mois
+  // Cohérent avec getStatutEffectif : présent + retard + permission payée = jours présents.
   const salaires = useMemo(() => {
     const nbJours = workDays.length;
     return list.map(p => {
@@ -278,17 +319,10 @@ export default function PointagePersonnel() {
       let joursPermissionPayee = 0;
       let joursPermissionNonPayee = 0;
       for (const d of workDays) {
-        const rec = recByKey.get(`${p.id}_${d}`);
-        if (!rec) {
-          if (permPayeesDates.has(`${p.id}_${d}`)) { joursPermissionPayee++; joursPresent++; }
-          else if (permDates.has(`${p.id}_${d}`)) { joursPermissionNonPayee++; }
-          else if (d <= today) { joursAbsent++; }
-          continue;
-        }
-        const st = (rec.statut === 'present' && rec.heure_arrivee && compareHeures(rec.heure_arrivee.slice(0, 5), config.heureEntree) > 0) ? 'retard' : rec.statut;
-        if (st === 'present' || st === 'retard') joursPresent++;
-        else if (st === 'absent') joursAbsent++;
-        else if (st === 'permission') joursPermissionNonPayee++;
+        const s = getStatutEffectif(p.id, d);
+        if (s.statut === 'present' || s.statut === 'retard') joursPresent++;
+        else if (s.statut === 'absent') joursAbsent++;
+        else if (s.statut === 'permission') { if (s.permissionPayee) { joursPermissionPayee++; joursPresent++; } else joursPermissionNonPayee++; }
       }
       const salaireMensuel = p.salaire ?? null;
       const salaireJournalier = salaireMensuel != null && nbJours > 0 ? salaireMensuel / nbJours : null;
@@ -303,21 +337,9 @@ export default function PointagePersonnel() {
   const totalPayeUSD = Object.values(paiementsSalaires).reduce((acc, p) => acc + p.montant_usd, 0);
 
   // ─── Alertes retards récurrents ─────────────────────────────────────────
-  const retardsParMembre = useMemo(() => {
-    const map = new Map<string, { nom: string; prenom: string; retards: number }>();
-    const pastDays = workDays.filter(d => d <= today);
-    for (const p of list) {
-      let retards = 0;
-      for (const d of pastDays) {
-        if (cellStatus(p.id, d).statut === 'retard') retards++;
-      }
-      if (retards > 0) map.set(p.id, { nom: p.nom, prenom: p.prenom, retards });
-    }
-    return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list, workDays, recByKey, permDates, config, today]);
-
-  const membresAlerte = [...retardsParMembre.values()].filter(m => m.retards >= config.seuilRetards);
+  const membresAlerte = useMemo(() => {
+    return bilans.filter(b => b.retard >= config.seuilRetards).map(b => ({ nom: b.p.nom, prenom: b.p.prenom, retards: b.retard }));
+  }, [bilans, config.seuilRetards]);
 
   const pendingPerms = permissions.filter(p => p.statut === 'en_attente');
   const permById = useMemo(() => {
@@ -338,6 +360,26 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
   return `${(n / taux).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
 }
 
+// Rendu d'une pastille de statut dans la grille / bilan
+function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: string; auto?: boolean; permissionPayee?: boolean; size?: 'sm' | 'md' }) {
+  if (!statut) return <span className={`${size === 'md' ? 'w-7 h-7' : 'w-5 h-5'} inline-flex items-center justify-center rounded-full bg-slate-100 text-slate-300`}>·</span>;
+  const meta = STATUT_POINTAGE[statut] || { label: statut, color: 'bg-gray-100 text-gray-600' };
+  const isPerm = statut === 'permission';
+  const isPermPayee = isPerm && permissionPayee;
+  const cls = meta.color.split(' ');
+  return (
+    <span
+      title={`${meta.label}${auto ? ' (auto)' : ''}${isPerm ? (isPermPayee ? ' — payée' : ' — non payée') : ''}`}
+      className={`${size === 'md' ? 'w-7 h-7 text-[10px]' : 'w-5 h-5 text-[9px]'} inline-flex items-center justify-center rounded-full font-bold ${cls[0]} ${cls[1]} ${auto ? 'ring-1 ring-inset ring-current/30 border border-current/40' : ''} ${isPerm && isPermPayee ? 'ring-2 ring-emerald-300' : ''}`}
+    >
+      {statut === 'present' && <CheckCircle2 className={`${size === 'md' ? 'w-4 h-4' : 'w-3 h-3'}`} />}
+      {statut === 'retard' && <Clock className={`${size === 'md' ? 'w-4 h-4' : 'w-3 h-3'}`} />}
+      {statut === 'absent' && <XCircle className={`${size === 'md' ? 'w-4 h-4' : 'w-3 h-3'}`} />}
+      {statut === 'permission' && <UserCheck className={`${size === 'md' ? 'w-4 h-4' : 'w-3 h-3'}`} />}
+    </span>
+  );
+}
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -347,8 +389,7 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
             <UserCheck className="w-7 h-7 text-blue-600" /> Pointage du Personnel
           </h1>
           <p className="text-gray-500 mt-1">
-            Jours ouvrables (lun–ven) : toute absence de pointage = <span className="font-semibold text-red-600">absent</span>.
-            Entrée {config.heureEntree} · Sortie {config.heureSortie}
+            Jours ouvrables (lun–ven) · Entrée {config.heureEntree} · Sortie {config.heureSortie}
             <a href="/configuration" className="inline-flex items-center gap-1 ml-2 text-blue-600 hover:underline text-sm"><Settings2 className="w-3.5 h-3.5" /> Configurer</a>
           </p>
         </div>
@@ -367,9 +408,9 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Présents', value: stats.present, cls: 'text-green-600', bg: 'bg-green-50' },
+          { label: 'Présences', value: stats.present, cls: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Retards', value: stats.retard, cls: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Absents (sans pointage)', value: stats.absent, cls: 'text-red-600', bg: 'bg-red-50' },
+          { label: 'Absences (dont auto)', value: stats.absent, cls: 'text-red-600', bg: 'bg-red-50' },
           { label: 'Permissions', value: stats.permission, cls: 'text-blue-600', bg: 'bg-blue-50' },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-xl border border-slate-100 p-4`}>
@@ -437,13 +478,86 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un membre..." className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
       </div>
 
-      {/* Grille mensuelle */}
+      {/* ═══ BILAN PAR MEMBRE — vue synthétique et lisible ═══ */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-6">
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-800">Grille du mois — jours ouvrables (lun–ven)</h3>
-          {selectedDay && (
-            <button onClick={() => setSelectedDay(null)} className="text-xs text-blue-600 hover:underline">← Fermer le détail du jour</button>
-          )}
+          <h3 className="font-bold text-gray-800 flex items-center gap-2"><CalendarRange className="w-5 h-5 text-blue-600" /> Bilan du mois — {month}</h3>
+          <span className="text-xs text-gray-500">{workDays.length} jours ouvrables · statuts en italique = déduits automatiquement</span>
+        </div>
+        {loading || loadingPersonnel ? (
+          <div className="flex items-center justify-center py-16 text-gray-400"><Clock className="w-6 h-6 animate-spin mr-2" /> Chargement...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase">
+                <tr>
+                  <th className="px-4 py-3 sticky left-0 bg-gray-50">Personnel</th>
+                  <th className="px-3 py-3 text-center">Présences</th>
+                  <th className="px-3 py-3 text-center">Retards</th>
+                  <th className="px-3 py-3 text-center">Absences</th>
+                  <th className="px-3 py-3 text-center">Perm. payées</th>
+                  <th className="px-3 py-3 text-center">Perm. non payées</th>
+                  <th className="px-3 py-3 w-48">Taux de présence</th>
+                  <th className="px-3 py-3 text-right">Salaire du mois</th>
+                  <th className="px-3 py-3 text-center">Fiche</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {bilans.map(b => {
+                  const paie = paiementsSalaires[b.p.id];
+                  const sal = salaires.find(x => x.p.id === b.p.id);
+                  return (
+                    <tr key={b.p.id} className={`hover:bg-slate-50 cursor-pointer ${selectedMember === b.p.id ? 'bg-blue-50/50' : ''}`} onClick={() => { setSelectedMember(selectedMember === b.p.id ? null : b.p.id); setSelectedDay(null); }}>
+                      <td className="px-4 py-2.5 sticky left-0 bg-white">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span className="font-semibold text-gray-900">{b.p.nom} {b.p.postnom ? b.p.postnom + ' ' : ''}{b.p.prenom}</span>
+                          {membresAlerte.some(x => x.nom === b.p.nom && x.prenom === b.p.prenom) && <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold" title="Retards récurrents">⚠</span>}
+                        </div>
+                        <div className="text-[11px] text-gray-400">{b.p.fonction}{paie ? ' · ' : ''}{paie ? <span className="text-green-600 font-medium">✓ payé</span> : null}</div>
+                      </td>
+                      <td className="px-3 py-2.5 text-center"><span className="px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-bold">{b.present}</span></td>
+                      <td className="px-3 py-2.5 text-center"><span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">{b.retard}</span></td>
+                      <td className="px-3 py-2.5 text-center"><span className="px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-xs font-bold">{b.absent}</span></td>
+                      <td className="px-3 py-2.5 text-center"><span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">{b.permissionPayee}</span></td>
+                      <td className="px-3 py-2.5 text-center"><span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">{b.permissionNonPayee}</span></td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
+                            <div className={`h-full rounded-full ${b.tauxPresence != null && b.tauxPresence >= 80 ? 'bg-green-500' : b.tauxPresence != null && b.tauxPresence >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${b.tauxPresence ?? 0}%` }} />
+                          </div>
+                          <span className="text-xs font-semibold text-gray-600 w-10 text-right">{b.tauxPresence != null ? `${b.tauxPresence}%` : '—'}</span>
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">{b.joursEcoules} jour(s) écoulé(s) — présence = P + R + perm. payée</div>
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-semibold text-blue-700 whitespace-nowrap">{sal ? formatMontant(sal.salaireMois) : '—'}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        <button onClick={(e) => { e.stopPropagation(); exporterFichePresence(b.p); }} className="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 text-xs font-semibold hover:bg-teal-100 border border-teal-200" title="Fiche de présence PDF du mois">Fiche PDF</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              {bilans.length === 0 && <tbody><tr><td colSpan={9} className="text-center py-10 text-gray-400">Aucun personnel.</td></tr></tbody>}
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ Détail jour par jour du membre sélectionné (ou grille complète) ═══ */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-6">
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-800">
+            {selectedMember ? (() => { const p = personnel.find(x => x.id === selectedMember); return p ? `Présence de ${p.nom} ${p.prenom} — ${month}` : 'Présence du mois'; })() : 'Grille du mois — tous les membres'}
+          </h3>
+          <div className="flex items-center gap-3">
+            {selectedDay && (
+              <button onClick={() => setSelectedDay(null)} className="text-xs text-blue-600 hover:underline">← Fermer le détail du jour</button>
+            )}
+            {selectedMember && (
+              <button onClick={() => setSelectedMember(null)} className="text-xs text-blue-600 hover:underline">← Voir tous les membres</button>
+            )}
+          </div>
         </div>
         {loading || loadingPersonnel ? (
           <div className="flex items-center justify-center py-16 text-gray-400"><Clock className="w-6 h-6 animate-spin mr-2" /> Chargement...</div>
@@ -454,7 +568,7 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
                 <tr>
                   <th className="px-3 py-2 sticky left-0 bg-gray-50">Personnel</th>
                   {workDays.map(d => (
-                    <th key={d} className={`px-1.5 py-2 text-center min-w-[64px] ${selectedDay === d ? 'bg-blue-50 text-blue-700' : ''}`}>
+                    <th key={d} className={`px-1.5 py-2 text-center min-w-[52px] ${selectedDay === d ? 'bg-blue-50 text-blue-700' : ''}`}>
                       <button onClick={() => setSelectedDay(selectedDay === d ? null : d)} className="hover:text-blue-600">
                         {formatDatePointage(d).split(' ')[0]}<br /><span className="text-[10px] font-normal">{formatDatePointage(d).split(' ').slice(1).join(' ')}</span>
                       </button>
@@ -463,42 +577,98 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {list.map(p => (
+                {(selectedMember ? list.filter(p => p.id === selectedMember) : list).map(p => (
                   <tr key={p.id} className="hover:bg-slate-50">
                     <td className="px-3 py-2 sticky left-0 bg-white">
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</span>
-                        {(() => { const r = retardsParMembre.get(p.id); return r && r.retards >= config.seuilRetards ? <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold" title="Retards récurrents">⚠ {r.retards}</span> : null; })()}
                       </div>
                       <div className="text-[11px] text-gray-400">{p.fonction}</div>
                     </td>
                     {workDays.map(d => {
-                      const st = cellStatus(p.id, d);
-                      const rec = recByKey.get(`${p.id}_${d}`);
-                      const dot = st.statut ? STATUT_POINTAGE[st.statut]?.color.split(' ')[0] || 'bg-gray-200' : 'bg-transparent';
+                      const s = getStatutEffectif(p.id, d);
+                      const rec = s.rec;
                       return (
                         <td key={d} className={`px-1.5 py-2 text-center border-l border-slate-50 ${selectedDay === d ? 'bg-blue-50/60' : ''}`}>
                           <button
                             onClick={() => setSelectedDay(selectedDay === d ? null : d)}
-                            title={`${d} — ${st.statut ? STATUT_POINTAGE[st.statut]?.label : ''}${rec && rec.heure_arrivee ? ` (${rec.heure_arrivee}→${rec.heure_depart || '…'})` : ''}`}
-                            className={`w-7 h-7 rounded-full inline-flex items-center justify-center ${dot} ${st.implied ? 'opacity-40' : ''} ${st.statut ? 'ring-1 ring-black/5' : ''}`}
+                            title={`${d} — ${s.statut ? (STATUT_POINTAGE[s.statut]?.label || s.statut) + (s.auto ? ' (auto)' : '') + (s.statut === 'permission' ? (s.permissionPayee ? ' — payée' : ' — non payée') : '') : '—'}${rec && rec.heure_arrivee ? ` · ${rec.heure_arrivee.slice(0,5)}→${rec.heure_depart ? rec.heure_depart.slice(0,5) : '…'}` : ''}`}
+                            className="inline-block"
                           >
-                            {st.statut === 'present' && <CheckCircle2 className="w-4 h-4 text-white" />}
-                            {st.statut === 'retard' && <Clock className="w-4 h-4 text-white" />}
-                            {st.statut === 'absent' && <XCircle className="w-4 h-4 text-white" />}
-                            {st.statut === 'permission' && <UserCheck className="w-4 h-4 text-white" />}
+                            <StatutChip statut={s.statut} auto={s.auto} permissionPayee={s.permissionPayee} />
                           </button>
+                          {rec && rec.heure_arrivee && (
+                            <div className="text-[9px] text-gray-400 mt-0.5 leading-none">{rec.heure_arrivee.slice(0, 5)}→{rec.heure_depart ? rec.heure_depart.slice(0, 5) : '…'}</div>
+                          )}
                         </td>
                       );
                     })}
                   </tr>
                 ))}
               </tbody>
+              {(selectedMember ? list.filter(p => p.id === selectedMember) : list).length === 0 && <tbody><tr><td colSpan={workDays.length + 1} className="text-center py-10 text-gray-400">Aucun personnel.</td></tr></tbody>}
             </table>
-            {list.length === 0 && <div className="text-center py-12 text-gray-400">Aucun personnel.</div>}
           </div>
         )}
       </div>
+
+      {/* Détail du jour sélectionné */}
+      {selectedDay && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-6">
+          <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+            <h3 className="font-bold text-gray-800">Détail — {formatDatePointage(selectedDay)}</h3>
+            <p className="text-xs text-gray-500">Marquez le statut ou ajustez les heures. Un jour ouvrable passé sans pointage = <span className="font-semibold text-red-600">absent (auto)</span> ; un retard est déduit de l'heure d'arrivée si elle dépasse {config.heureEntree}.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase">
+                <tr>
+                  <th className="px-4 py-3">Personnel</th>
+                  <th className="px-4 py-3">Statut</th>
+                  <th className="px-4 py-3">Arrivée</th>
+                  <th className="px-4 py-3">Départ</th>
+                  <th className="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {list.map(p => {
+                  const s = getStatutEffectif(p.id, selectedDay);
+                  const rec = s.rec;
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</div>
+                        <div className="text-xs text-gray-400">{p.matricule || '—'}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {s.statut ? (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUT_POINTAGE[s.statut]?.color || 'bg-gray-100 text-gray-600'}`}>
+                            {STATUT_POINTAGE[s.statut]?.label}{s.auto ? ' (auto)' : ''}{s.statut === 'permission' && s.permissionPayee ? ' — payée' : ''}
+                          </span>
+                        ) : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <input type="time" className={timeInput} value={rec?.heure_arrivee || ''} onChange={e => setTime(p.id, 'heure_arrivee', e.target.value)} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input type="time" className={timeInput} value={rec?.heure_depart || ''} onChange={e => setTime(p.id, 'heure_depart', e.target.value)} />
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => mark(p.id, 'present')} title="Présent" className={`p-1.5 rounded-lg ${s.statut === 'present' && !s.auto ? 'bg-green-600 text-white' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}><CheckCircle2 className="w-4 h-4" /></button>
+                          <button onClick={() => mark(p.id, 'retard')} title="Retard" className={`p-1.5 rounded-lg ${s.statut === 'retard' && !s.auto ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'}`}><Clock className="w-4 h-4" /></button>
+                          <button onClick={() => mark(p.id, 'absent')} title="Absent" className={`p-1.5 rounded-lg ${s.statut === 'absent' && !s.auto ? 'bg-red-600 text-white' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}><XCircle className="w-4 h-4" /></button>
+                          <button onClick={() => mark(p.id, 'permission')} title="Permission" className={`p-1.5 rounded-lg ${s.statut === 'permission' && !s.auto ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}><UserCheck className="w-4 h-4" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ═══ Salaires du mois — jours présents × salaire journalier ═══ */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-6">
@@ -585,70 +755,12 @@ function formatUSD(n: number | null | undefined, taux: number | null): string {
         </div>
       )}
 
-      {/* Détail du jour sélectionné */}
-      {selectedDay && (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
-            <h3 className="font-bold text-gray-800">Détail — {formatDatePointage(selectedDay)}</h3>
-            <p className="text-xs text-gray-500">Marquez le statut ou ajustez les heures. L'absence de pointage sur un jour ouvrable passé/présent est comptée « absent ».</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase">
-                <tr>
-                  <th className="px-4 py-3">Personnel</th>
-                  <th className="px-4 py-3">Statut</th>
-                  <th className="px-4 py-3">Arrivée</th>
-                  <th className="px-4 py-3">Départ</th>
-                  <th className="px-4 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {list.map(p => {
-                  const st = cellStatus(p.id, selectedDay);
-                  const rec = recByKey.get(`${p.id}_${selectedDay}`);
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</div>
-                        <div className="text-xs text-gray-400">{p.matricule || '—'}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {st.statut ? (
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUT_POINTAGE[st.statut]?.color || 'bg-gray-100 text-gray-600'}`}>
-                            {STATUT_POINTAGE[st.statut]?.label}{st.implied ? ' (auto)' : ''}
-                          </span>
-                        ) : <span className="text-gray-300">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <input type="time" className={timeInput} value={rec?.heure_arrivee || ''} onChange={e => setTime(p.id, 'heure_arrivee', e.target.value)} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input type="time" className={timeInput} value={rec?.heure_depart || ''} onChange={e => setTime(p.id, 'heure_depart', e.target.value)} />
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <button onClick={() => mark(p.id, 'present')} title="Présent" className={`p-1.5 rounded-lg ${st.statut === 'present' && !st.implied ? 'bg-green-600 text-white' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}><CheckCircle2 className="w-4 h-4" /></button>
-                          <button onClick={() => mark(p.id, 'retard')} title="Retard" className={`p-1.5 rounded-lg ${st.statut === 'retard' && !st.implied ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'}`}><Clock className="w-4 h-4" /></button>
-                          <button onClick={() => mark(p.id, 'absent')} title="Absent" className={`p-1.5 rounded-lg ${st.statut === 'absent' && !st.implied ? 'bg-red-600 text-white' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}><XCircle className="w-4 h-4" /></button>
-                          <button onClick={() => mark(p.id, 'permission')} title="Permission" className={`p-1.5 rounded-lg ${st.statut === 'permission' && !st.implied ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}><UserCheck className="w-4 h-4" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {/* Légende */}
       <div className="mt-4 flex flex-wrap gap-3 text-xs text-gray-500">
         {(Object.entries(STATUT_POINTAGE)).map(([k, v]) => (
           <span key={k} className="flex items-center gap-1.5"><span className={`w-2.5 h-2.5 rounded-full ${v.color.split(' ')[0]}`} /> {v.label}</span>
         ))}
-        <span className="text-gray-400">— Pastilles estompées = statut automatique (absent sans pointage, retard selon l'heure d'entrée, permission approuvée).</span>
+        <span className="text-gray-400">— Anneau = statut déduit automatiquement (absent sans pointage, retard selon l'heure d'entrée, permission approuvée). Permissions payées = comptées comme présentes.</span>
       </div>
     </div>
   );
