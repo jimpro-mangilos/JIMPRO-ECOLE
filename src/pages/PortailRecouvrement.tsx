@@ -10,7 +10,9 @@ import { formatDateTime } from '../utils/calculations';
 const MOIS = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'];
 const CALENDRIER = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const _idxMoisCourant = MOIS.indexOf(CALENDRIER[new Date().getMonth()]);
-const currentMonthIdx = _idxMoisCourant >= 0 ? _idxMoisCourant : MOIS.length - 1; // Juillet par défaut hors période scolaire (ex : août)
+// Hors période scolaire (ex : août) → premier mois de la nouvelle année scolaire (Septembre),
+// sinon les élèves déjà à jour (année N-1/N) seraient affichés « PAS EN ORDRE ».
+const currentMonthIdx = _idxMoisCourant >= 0 ? _idxMoisCourant : 0;
 const MOIS_DEBUT_ANNEE = ['Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const anneeCourante = new Date().getFullYear();
 const ANNEES = Array.from({ length: 8 }, (_, i) => anneeCourante - 1 + i); // 2025 → 2032
@@ -91,7 +93,14 @@ export default function PortailRecouvrement() {
       ).then(() => { scannerRunning.current = true; }).catch(() => setScanError("Erreur d'accès caméra."));
     }
     return () => {
-      if (scannerRef.current) { scannerRef.current.stop().catch(() => {}); scannerRef.current = null; }
+      // stop() lève une erreur synchrone si le scanner n'a jamais démarré (ex : caméra refusée) —
+      // on ne l'appelle donc que si le scan a réellement démarré, et on protège l'appel.
+      const s = scannerRef.current;
+      scannerRef.current = null;
+      if (s && scannerRunning.current) {
+        scannerRunning.current = false;
+        try { s.stop().catch(() => {}); } catch { /* scanner non démarré */ }
+      }
     };
   }, [showScanner, month]);
 

@@ -113,7 +113,8 @@ export default function FournituresEleves() {
       const s = scannerRef.current;
       scannerRef.current = null;
       if (s) {
-        s.stop().catch(() => {});
+        // stop() lève une erreur synchrone si le scanner n'a jamais démarré
+        try { s.stop().catch(() => {}); } catch { /* scanner non démarré */ }
       }
     };
   }, [showScanner]);
