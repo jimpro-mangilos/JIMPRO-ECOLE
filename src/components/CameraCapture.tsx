@@ -15,8 +15,16 @@ export default function CameraCapture({ onCapture, compact = false }: { onCaptur
   async function startCamera() {
     setCameraError('');
     setMode('camera');
+    const base = { width: { ideal: 640 }, height: { ideal: 480 } };
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+      // Caméra ARRIÈRE par défaut (photographier une personne/carte), avec repli
+      // sur la caméra avant si l'appareil n'en a pas.
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { ...base, facingMode: 'environment' }, audio: false });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { ...base, facingMode: 'user' }, audio: false });
+      }
       streamRef.current = stream;
       // attendre que le flux soit prêt
       setTimeout(() => {
