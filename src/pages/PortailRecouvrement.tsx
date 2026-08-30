@@ -56,6 +56,7 @@ export default function PortailRecouvrement() {
   const [motifs, setMotifs] = useState<{ id: string; libelle: string }[]>([]);
   const [resultat, setResultat] = useState<Resultat>(null);
   const [loading, setLoading] = useState(false);
+  const [matriculeInput, setMatriculeInput] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-recouvrement';
@@ -112,6 +113,9 @@ export default function PortailRecouvrement() {
       setScanError('Aucune école trouvée. Contactez l\'administrateur.');
       return;
     }
+    // Réinitialise la barre de recherche après chaque scan/saisie :
+    // permet des vérifications continues et rapides (scanne → vide → scanne).
+    setMatriculeInput('');
     setLoading(true);
     setResultat({ type: 'loading' });
 
@@ -250,14 +254,16 @@ export default function PortailRecouvrement() {
           <Search className="w-5 h-5 text-white/40" />
           <input
             type="text"
+            value={matriculeInput}
+            onChange={e => setMatriculeInput(e.target.value)}
             placeholder="Ou entrez un matricule (GA...)"
             className="flex-1 bg-transparent text-white placeholder-white/30 outline-none text-sm"
             onKeyDown={async (e) => {
-              if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
+              if (e.key === 'Enter' && matriculeInput.trim()) {
                 // Même traitement que le scan QR : si plusieurs types de caractères sont
                 // saisis (QR complet collé, texte, espaces, accents…), on n'extrait que
                 // le matricule (A-Z, 0-9, tirets).
-                const matricule = parseScannedMatricule((e.target as HTMLInputElement).value);
+                const matricule = parseScannedMatricule(matriculeInput);
                 if (matricule) await verifierMatricule(matricule);
                 else setScanError('Aucun matricule valide trouvé.');
               }
@@ -335,7 +341,7 @@ export default function PortailRecouvrement() {
             )}
 
             <button
-              onClick={() => { setResultat(null); setScanError(''); }}
+              onClick={() => { setResultat(null); setScanError(''); setMatriculeInput(''); }}
               className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
