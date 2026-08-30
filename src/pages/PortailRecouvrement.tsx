@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { QrCode, X, Search, Loader2, CheckCircle, XCircle, Calendar, RefreshCw } from 'lucide-react';
+import { QrCode, X, Search, Loader2, CheckCircle, XCircle, Calendar, RefreshCw, ArrowRightLeft } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { parseScannedMatricule } from '../utils/ascii';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 import { formatDateTime } from '../utils/calculations';
+
+// Préfixes de matricules du personnel (carte de service → portail de POINTAGE)
+const PREFIXES_PERSONNEL = ['PGA', 'STF', 'PER'];
+
+/** Détermine si un matricule appartient au personnel (carte de service). */
+function estMatriculePersonnel(matricule: string): boolean {
+  return PREFIXES_PERSONNEL.some(p => matricule.toUpperCase().startsWith(p));
+}
 
 // Mois scolaires (conformes au calendrier des paiements : Septembre → Juillet)
 const MOIS = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'];
@@ -60,7 +68,53 @@ export default function PortailRecouvrement() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-recouvrement';
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scanBuffer = useRef('');
+  const scanLastKey = useRef(0);
   const { schoolId, schoolName, loading: schoolLoading } = usePublicSchool();
+
+  // Écouteur global : le lecteur de codes-barres physique agit comme un clavier
+  // qui « tape » le contenu du QR très vite puis Entrée. On capture ces frappes
+  // où que soit le focus dans la page (pas seulement dans le champ de recherche),
+  // pour que le scan fonctionne de façon fiable et rapide.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      // Ignore si l'utilisateur tape réellement dans un champ (comportement normal)
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      const now = Date.now();
+      // Une rafale du lecteur : touches séparées de moins de 60 ms
+      if (now - scanLastKey.current > 60) scanBuffer.current = '';
+      scanLastKey.current = now;
+
+      if (e.key === 'Enter') {
+        const raw = scanBuffer.current;
+        scanBuffer.current = '';
+        if (!raw.trim()) return;
+        const matricule = parseScannedMatricule(raw);
+        if (matricule) {
+          e.preventDefault();
+          if (estMatriculePersonnel(matricule)) {
+            // Carte de service (personnel) → le bon portail est le POINTAGE
+            window.location.href = '/portail-pointage';
+            return;
+          }
+          verifierMatricule(matricule);
+        }
+        return;
+      }
+
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        scanBuffer.current += e.key;
+        // Limite de sécurité si ce n'est pas un lecteur (saisie clavier normale)
+        if (scanBuffer.current.length > 120) scanBuffer.current = '';
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schoolId, schoolLoading]);
 
   // Load motifs and annees on mount (scoped by school)
   useEffect(() => {
@@ -111,6 +165,12 @@ export default function PortailRecouvrement() {
     if (schoolLoading) return; // attente résolution école
     if (!schoolId) {
       setScanError('Aucune école trouvée. Contactez l\'administrateur.');
+      return;
+    }
+    // Carte de SERVICE (personnel) scannée sur le mauvais portail →
+    // on redirige automatiquement vers le portail de pointage.
+    if (estMatriculePersonnel(matricule)) {
+      window.location.href = '/portail-pointage';
       return;
     }
     // Réinitialise la barre de recherche après chaque scan/saisie :
@@ -253,10 +313,12 @@ export default function PortailRecouvrement() {
         <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 mt-4">
           <Search className="w-5 h-5 text-white/40" />
           <input
+            ref={inputRef}
             type="text"
             value={matriculeInput}
             onChange={e => setMatriculeInput(e.target.value)}
-            placeholder="Ou entrez un matricule (GA...)"
+            placeholder="Scannez ou entrez un matricule (GA...)"
+            autoFocus
             className="flex-1 bg-transparent text-white placeholder-white/30 outline-none text-sm"
             onKeyDown={async (e) => {
               if (e.key === 'Enter' && matriculeInput.trim()) {
@@ -270,6 +332,10 @@ export default function PortailRecouvrement() {
             }}
           />
         </div>
+        <p className="text-white/40 text-xs mt-2 flex items-center gap-1">
+          <ArrowRightLeft className="w-3.5 h-3.5" />
+          Carte de service (personnel) ? Vous serez redirigé automatiquement vers le portail de pointage.
+        </p>
 
         {/* Loading */}
         {loading && (

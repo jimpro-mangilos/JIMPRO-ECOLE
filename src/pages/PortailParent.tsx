@@ -111,6 +111,12 @@ export default function PortailParent() {
       setError('Veuillez entrer un matricule valide');
       return;
     }
+    // Carte de SERVICE (personnel) scannée sur le mauvais portail →
+    // on redirige automatiquement vers le portail de pointage.
+    if (/^(PGA|STF|PER)-/i.test(cleanTerm)) {
+      window.location.href = '/portail-pointage';
+      return;
+    }
     setLoading(true);
     setError('');
     setEleve(null);
