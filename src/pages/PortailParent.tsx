@@ -104,9 +104,11 @@ export default function PortailParent() {
       setError('Aucune école trouvée. Contactez l\'administrateur.');
       return;
     }
-    const cleanTerm = term.trim().toUpperCase();
+    // Même traitement que le scan QR : si plusieurs types de caractères sont saisis
+    // (QR complet collé, nom, texte, espaces, accents…), on n'extrait que le matricule.
+    const cleanTerm = parseScannedMatricule(term);
     if (!cleanTerm) {
-      setError('Veuillez entrer un matricule');
+      setError('Veuillez entrer un matricule valide');
       return;
     }
     setLoading(true);

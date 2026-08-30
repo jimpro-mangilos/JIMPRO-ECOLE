@@ -254,7 +254,12 @@ export default function PortailRecouvrement() {
             className="flex-1 bg-transparent text-white placeholder-white/30 outline-none text-sm"
             onKeyDown={async (e) => {
               if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
-                await verifierMatricule((e.target as HTMLInputElement).value.trim().toUpperCase());
+                // Même traitement que le scan QR : si plusieurs types de caractères sont
+                // saisis (QR complet collé, texte, espaces, accents…), on n'extrait que
+                // le matricule (A-Z, 0-9, tirets).
+                const matricule = parseScannedMatricule((e.target as HTMLInputElement).value);
+                if (matricule) await verifierMatricule(matricule);
+                else setScanError('Aucun matricule valide trouvé.');
               }
             }}
           />
