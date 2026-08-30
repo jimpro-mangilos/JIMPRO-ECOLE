@@ -3,7 +3,7 @@ import { QrCode, X, Loader2, CheckCircle2, LogIn, LogOut, UserCheck, CalendarClo
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
-import { loadPointageConfig, statutAuto, type PointageConfig } from '../lib/hooks/usePointage';
+import { loadPointageConfig, loadFonctionsHeures, heuresPourFonction, statutAuto, type PointageConfig, type FonctionHeures } from '../lib/hooks/usePointage';
 import { parseScannedMatricule, isMatriculePlausible } from '../utils/ascii';
 
 interface PersonnelInfo {
@@ -39,6 +39,7 @@ export default function PortailPointage() {
   const scannerDivId = 'qr-pointage';
   const { schoolId, loading: schoolLoading } = usePublicSchool();
   const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null, seuilRetards: 3 });
+  const [fonctHeures, setFonctHeures] = useState<Map<string, FonctionHeures>>(new Map());
   const [showPerm, setShowPerm] = useState(false);
   const [permMatricule, setPermMatricule] = useState('');
   const [permDebut, setPermDebut] = useState('');
@@ -48,7 +49,10 @@ export default function PortailPointage() {
   const [permLoading, setPermLoading] = useState(false);
 
   useEffect(() => {
-    if (schoolId) { loadPointageConfig(schoolId).then(setConfig).catch(() => {}); }
+    if (schoolId) {
+      loadPointageConfig(schoolId).then(setConfig).catch(() => {});
+      loadFonctionsHeures(schoolId).then(setFonctHeures).catch(() => {});
+    }
   }, [schoolId]);
 
   useEffect(() => {
@@ -129,9 +133,12 @@ export default function PortailPointage() {
 
       if (!existing) {
         const heureArrivee = heureActuelle();
+        // Heures de service de la FONCTION du membre (repli sur heures globales de l'école)
+        const h = heuresPourFonction(personne.fonction, fonctHeures, config);
+        const configFonction = { ...config, heureEntree: h.heureEntree, heureSortie: h.heureSortie };
         await supabase.from('pointages_personnel').insert({
           ecole_id: schoolId, personnel_id: personne.id, date_pointage: today,
-          heure_arrivee: heureArrivee, statut: statutAuto(heureArrivee, config),
+          heure_arrivee: heureArrivee, statut: statutAuto(heureArrivee, configFonction),
         });
         setResultat({ type: 'arrivee', personne: info, heure: heureActuelle() });
       } else if (!existing.heure_depart) {
@@ -203,7 +210,11 @@ export default function PortailPointage() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">GOLDEN ACADEMY</h1>
           <p className="text-white/60 text-sm">Scannez votre carte de service pour pointer</p>
-          <p className="text-white/40 text-xs mt-1">Heure d'entrée : <span className="text-emerald-300 font-semibold">{config.heureEntree}</span> · après cette heure = Retard</p>
+          <p className="text-white/40 text-xs mt-1">
+            Heure d'entrée : <span className="text-emerald-300 font-semibold">{config.heureEntree}</span>
+            {fonctHeures.size > 0 && <span className="text-white/30"> · selon la fonction du membre</span>}
+            {' '}· après cette heure = Retard
+          </p>
         </div>
 
         {/* Bouton scan */}

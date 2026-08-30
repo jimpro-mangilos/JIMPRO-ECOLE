@@ -40,6 +40,92 @@ export interface PointageConfig {
 
 export const POINTAGE_DEFAUT: PointageConfig = { heureEntree: '08:00', heureSortie: '16:30', tauxChange: null, seuilRetards: 3 };
 
+/** Heures de service d'une fonction du personnel (nullable si non définies). */
+export interface FonctionHeures {
+  id: string;
+  libelle: string;
+  heureEntree: string | null; // ex. '07:15'
+  heureSortie: string | null; // ex. '15:00'
+  is_active: boolean;
+}
+
+/**
+ * Normalise une fonction pour la correspondance (minuscules, sans accents,
+ * sans espaces superflus). Ex : "INSTITUTRICE " → "institutrice".
+ */
+export function normaliserFonction(fonction: string | null | undefined): string {
+  return (fonction || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/s+/g, ' ');
+}
+
+/**
+ * Charge les heures de service par fonction de l'école.
+ * Retourne un Map clé = fonction normalisée → FonctionHeures.
+ */
+export async function loadFonctionsHeures(schoolId: string | null): Promise<Map<string, FonctionHeures>> {
+  const map = new Map<string, FonctionHeures>();
+  if (!schoolId) return map;
+  try {
+    const { data } = await (supabase as any)
+      .from('fonctions_personnel')
+      .select('id, libelle, heure_entree, heure_sortie, is_active')
+      .eq('ecole_id', schoolId);
+    for (const r of (data || []) as any[]) {
+      const f: FonctionHeures = {
+        id: r.id,
+        libelle: r.libelle,
+        heureEntree: r.heure_entree || null,
+        heureSortie: r.heure_sortie || null,
+        is_active: r.is_active,
+      };
+      map.set(normaliserFonction(r.libelle), f);
+    }
+  } catch {
+    /* table absente ou RLS → retourne un Map vide (heures globales) */
+  }
+  return map;
+}
+
+/**
+ * Trouve la fonction configurée la plus proche :
+ *  1. correspondance exacte du libellé normalisé ;
+ *  2. sinon correspondance sur le premier mot (ex : « directrice » → « directeur »,
+ *     « institutrice » → « enseignant » n'a pas de racine commune, mais « directrice » ≈ « directeur »).
+ */
+export function trouverFonctionHeures(fonction: string | null | undefined, fonctHeures: Map<string, FonctionHeures>): FonctionHeures | undefined {
+  const norm = normaliserFonction(fonction);
+  if (!norm) return undefined;
+  const exact = fonctHeures.get(norm);
+  if (exact) return exact;
+  // Repli : premier mot (racine) — « directrice » → « directeur », « institutrice » → « instituteur »
+  const premierMot = norm.split(' ')[0];
+  if (premierMot.length >= 4) {
+    for (const [cle, f] of fonctHeures) {
+      const motCle = cle.split(' ')[0];
+      // racine commune d'au moins 5 caractères
+      if (motCle.length >= 5 && (premierMot.startsWith(motCle.slice(0, 5)) || motCle.startsWith(premierMot.slice(0, 5)))) {
+        return f;
+      }
+    }
+  }
+  return undefined;
+}
+
+/** Heures d'entrée/sortie effectives d'une fonction, avec repli sur les heures globales. */
+export function heuresPourFonction(fonction: string | null | undefined, fonctHeures: Map<string, FonctionHeures>, config: PointageConfig): { heureEntree: string; heureSortie: string } {
+  const f = trouverFonctionHeures(fonction, fonctHeures);
+  return {
+    heureEntree: f?.heureEntree || config.heureEntree,
+    heureSortie: f?.heureSortie || config.heureSortie,
+  };
+}
+
 /** Charge la configuration du pointage (heures d'entrée/sortie) de l'école. */
 export async function loadPointageConfig(schoolId: string | null): Promise<PointageConfig> {
   if (!schoolId) return POINTAGE_DEFAUT;

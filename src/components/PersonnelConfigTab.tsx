@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Pencil, Trash2, Check, X, Save, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Save, Loader2, Clock } from 'lucide-react';
 
 type Item = { id: string; libelle: string; ordre: number; is_active: boolean };
+type FonctionHeure = { id: string; libelle: string; heure_entree: string | null; heure_sortie: string | null };
 
 export default function PersonnelConfigTab() {
   const { currentSchoolId } = useAuth();
   const [fonctions, setFonctions] = useState<Item[]>([]);
   const [domaines, setDomaines] = useState<Item[]>([]);
   const [niveaux, setNiveaux] = useState<Item[]>([]);
+  const [fonctionHeures, setFonctionHeures] = useState<Record<string, FonctionHeure>>({});
+  const [heuresSaving, setHeuresSaving] = useState(false);
   const [prefix, setPrefix] = useState('');
   const [prefixSaving, setPrefixSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -44,6 +47,12 @@ export default function PersonnelConfigTab() {
       setFonctions((f.data as Item[]) || []);
       setDomaines((d.data as Item[]) || []);
       setNiveaux((n.data as Item[]) || []);
+      // Heures de service par fonction
+      const heuresMap: Record<string, FonctionHeure> = {};
+      for (const fn of (f.data as any[]) || []) {
+        heuresMap[fn.id] = { id: fn.id, libelle: fn.libelle, heure_entree: fn.heure_entree || null, heure_sortie: fn.heure_sortie || null };
+      }
+      setFonctionHeures(heuresMap);
       setPrefix((p.data as any)?.value || '');
       setLoadError('');
     } catch (err) {
@@ -100,6 +109,29 @@ export default function PersonnelConfigTab() {
     await load();
   }
 
+  async function saveFonctionHeures() {
+    setHeuresSaving(true);
+    let erreur = '';
+    for (const f of Object.values(fonctionHeures)) {
+      const { error } = await supabase
+        .from('fonctions_personnel')
+        .update({ heure_entree: f.heure_entree || null, heure_sortie: f.heure_sortie || null })
+        .eq('id', f.id);
+      if (error) { erreur = error.message; break; }
+    }
+    setHeuresSaving(false);
+    if (erreur) {
+      // Cas fréquent : migration SQL non appliquée (colonnes heure_entree/heure_sortie absentes)
+      alert(
+        /does not exist|column/.test(erreur)
+          ? "Heures non enregistrées : la mise à jour de la base n'est pas appliquée. Exécutez la migration « ajouter_heures_fonctions » dans Supabase (SQL Editor), puis réessayez."
+          : 'Erreur enregistrement : ' + erreur
+      );
+    } else {
+      alert('Heures de service enregistrées');
+    }
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="w-6 h-6 animate-spin mr-2" /> Chargement...</div>;
   }
@@ -127,6 +159,68 @@ export default function PersonnelConfigTab() {
             {prefixSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Enregistrer
           </button>
         </div>
+      </div>
+
+      {/* Heures de service par fonction */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-bold flex items-center gap-2"><Clock className="w-5 h-5 text-blue-600" /> Heures de service par fonction</h2>
+          <button onClick={saveFonctionHeures} disabled={heuresSaving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            {heuresSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Enregistrer
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-3">
+          Fixez l'heure d'entrée et de sortie de chaque fonction. Ces heures sont utilisées par le portail de
+          pointage pour déterminer les <b>retards</b> (arrivée après l'heure d'entrée) et les <b>absences</b>.
+          Une fonction sans heure utilise les heures globales de l'école (Configuration → pointage).
+        </p>
+        {fonctions.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4">Ajoutez d'abord des fonctions ci-dessous.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase">
+                <tr>
+                  <th className="px-3 py-2">Fonction</th>
+                  <th className="px-3 py-2">Heure d'entrée</th>
+                  <th className="px-3 py-2">Heure de sortie</th>
+                  <th className="px-3 py-2 text-gray-400 font-normal normal-case">(vide = heures globales)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {fonctions.map(f => {
+                  const h = fonctionHeures[f.id];
+                  return (
+                    <tr key={f.id} className={f.is_active ? '' : 'opacity-50'}>
+                      <td className="px-3 py-2 font-medium text-gray-800">{f.libelle}</td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="time"
+                          value={h?.heure_entree || ''}
+                          onChange={e => setFonctionHeures(prev => ({ ...prev, [f.id]: { ...prev[f.id], id: f.id, libelle: f.libelle, heure_entree: e.target.value || null } }))}
+                          className="px-2 py-1.5 border border-slate-200 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="time"
+                          value={h?.heure_sortie || ''}
+                          onChange={e => setFonctionHeures(prev => ({ ...prev, [f.id]: { ...prev[f.id], id: f.id, libelle: f.libelle, heure_sortie: e.target.value || null } }))}
+                          className="px-2 py-1.5 border border-slate-200 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-400">
+                        {h?.heure_entree || h?.heure_sortie ? (
+                          <span className="text-emerald-600 font-medium">{h.heure_entree || '—'} → {h.heure_sortie || '—'}</span>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Fonctions */}

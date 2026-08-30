@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { CalendarDays, UserCheck, Clock, CheckCircle2, XCircle, Search, FileDown, Settings2, ShieldCheck, ShieldX, CalendarRange, User } from 'lucide-react';
 import { usePersonnel } from '../lib/hooks/usePersonnel';
-import { STATUT_POINTAGE, type PointageRecord, type PointageConfig, loadPointageConfig, compareHeures, formatDatePointage } from '../lib/hooks/usePointage';
+import { STATUT_POINTAGE, type PointageRecord, type PointageConfig, type FonctionHeures, loadPointageConfig, loadFonctionsHeures, heuresPourFonction, compareHeures, formatDatePointage } from '../lib/hooks/usePointage';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generatePointageReport } from '../utils/pointageReportGenerator';
@@ -51,6 +51,7 @@ export default function PointagePersonnel() {
   const [search, setSearch] = useState('');
   const [month, setMonth] = useState(todayStr().slice(0, 7));
   const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null, seuilRetards: 3 });
+  const [fonctHeures, setFonctHeures] = useState<Map<string, FonctionHeures>>(new Map());
   const [records, setRecords] = useState<PointageRecord[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,13 +71,15 @@ export default function PointagePersonnel() {
     const start = `${y}-${String(mo).padStart(2, '0')}-01`;
     const lastDay = new Date(y, mo, 0).getDate();
     const end = `${y}-${String(mo).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    const [cfg, r, p, ps] = await Promise.all([
+    const [cfg, fh, r, p, ps] = await Promise.all([
       loadPointageConfig(currentSchoolId),
+      loadFonctionsHeures(currentSchoolId),
       supabase.from('pointages_personnel').select('*').eq('ecole_id', currentSchoolId).gte('date_pointage', start).lte('date_pointage', end),
       supabase.from('permissions_personnel').select('*').eq('ecole_id', currentSchoolId),
       supabase.from('paiements_salaires').select('*').eq('ecole_id', currentSchoolId).eq('mois', month),
     ]);
     setConfig(cfg);
+    setFonctHeures(fh);
     setRecords((r.data as PointageRecord[]) || []);
     setPermissions((p.data as Permission[]) || []);
     const psMap: Record<string, { montant_fc: number; montant_usd: number; paye_le: string }> = {};
@@ -122,12 +125,20 @@ export default function PointagePersonnel() {
     return set;
   }, [permissions]);
 
+  // Heure d'entrée effective d'un membre : celle de sa FONCTION si définie,
+  // sinon l'heure globale de l'école.
+  function heureEntreeMembre(p: typeof personnel[number]): string {
+    return heuresPourFonction(p.fonction, fonctHeures, config).heureEntree;
+  }
+
   // ═══ SOURCE UNIQUE : statut effectif d'un membre pour une date ═══
   function getStatutEffectif(pId: string, date: string): StatutEffectif {
+    const membre = personnel.find(x => x.id === pId);
+    const heureEntree = membre ? heureEntreeMembre(membre) : config.heureEntree;
     const rec = recByKey.get(`${pId}_${date}`);
     if (rec) {
-      // Retard automatique si arrivée après l'heure d'entrée configurée
-      if (rec.statut === 'present' && rec.heure_arrivee && compareHeures(rec.heure_arrivee.slice(0, 5), config.heureEntree) > 0) {
+      // Retard automatique si arrivée après l'heure d'entrée de la FONCTION du membre
+      if (rec.statut === 'present' && rec.heure_arrivee && compareHeures(rec.heure_arrivee.slice(0, 5), heureEntree) > 0) {
         return { statut: 'retard', auto: true, rec, permissionPayee: false };
       }
       return { statut: rec.statut, auto: false, rec, permissionPayee: false };
@@ -207,10 +218,12 @@ export default function PointagePersonnel() {
 
   async function setTime(pId: string, field: 'heure_arrivee' | 'heure_depart', value: string) {
     if (!selectedDay) return;
+    const membre = personnel.find(x => x.id === pId);
+    const heureEntree = membre ? heureEntreeMembre(membre) : config.heureEntree;
     const rec = recByKey.get(`${pId}_${selectedDay}`);
     let statut = rec?.statut || 'present';
     const heureArrivee = field === 'heure_arrivee' ? (value || null) : (rec?.heure_arrivee || null);
-    if (heureArrivee && statut === 'present' && compareHeures(heureArrivee.slice(0, 5), config.heureEntree) > 0) statut = 'retard';
+    if (heureArrivee && statut === 'present' && compareHeures(heureArrivee.slice(0, 5), heureEntree) > 0) statut = 'retard';
     const { error } = await supabase.from('pointages_personnel').upsert(
       {
         ecole_id: currentSchoolId, personnel_id: pId, date_pointage: selectedDay,
@@ -390,6 +403,7 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
           </h1>
           <p className="text-gray-500 mt-1">
             Jours ouvrables (lun–ven) · Entrée {config.heureEntree} · Sortie {config.heureSortie}
+            {fonctHeures.size > 0 && <span className="text-gray-400"> · heures par fonction activées</span>}
             <a href="/configuration" className="inline-flex items-center gap-1 ml-2 text-blue-600 hover:underline text-sm"><Settings2 className="w-3.5 h-3.5" /> Configurer</a>
           </p>
         </div>
@@ -617,7 +631,7 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-6">
           <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
             <h3 className="font-bold text-gray-800">Détail — {formatDatePointage(selectedDay)}</h3>
-            <p className="text-xs text-gray-500">Marquez le statut ou ajustez les heures. Un jour ouvrable passé sans pointage = <span className="font-semibold text-red-600">absent (auto)</span> ; un retard est déduit de l'heure d'arrivée si elle dépasse {config.heureEntree}.</p>
+            <p className="text-xs text-gray-500">Marquez le statut ou ajustez les heures. Un jour ouvrable passé sans pointage = <span className="font-semibold text-red-600">absent (auto)</span> ; un retard est déduit de l'heure d'arrivée si elle dépasse l'heure d'entrée de la fonction du membre (repli : {config.heureEntree}).</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
