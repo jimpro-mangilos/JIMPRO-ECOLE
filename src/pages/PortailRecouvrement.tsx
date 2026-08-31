@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { QrCode, X, Search, Loader2, CheckCircle, XCircle, Calendar, RefreshCw, ArrowRightLeft, UserCheck, LogOut, ShieldCheck } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
-import { parseScannedMatricule } from '../utils/ascii';
+import { parseScannedMatricule, isMatriculePlausible } from '../utils/ascii';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 import { formatDateTime } from '../utils/calculations';
 import { jouerSonEnOrdre, jouerSonPasEnOrdre, jouerSonIntrouvable } from '../utils/sons';
@@ -106,10 +106,12 @@ export default function PortailRecouvrement() {
           if (!agentScannerRunning.current) return;
           agentScannerRunning.current = false;
           const m = parseScannedMatricule(decodedText);
-          if (m) {
+          if (m && isMatriculePlausible(m)) {
             setShowAgentScanner(false);
             setAgentMatricule('');
             await identifierAgent(m);
+          } else if (m) {
+            setAgentError('Scan illisible (encodage). Configurez le lecteur en ASCII ou vérifiez le matricule.');
           } else {
             setAgentError('Aucun matricule valide trouvé.');
           }
@@ -235,6 +237,19 @@ export default function PortailRecouvrement() {
   const moisActuel = MOIS[month];
 
   // ── Identification de l'agent de recouvrement ──
+  // Saisie manuelle : comme le portail de pointage, on extrait le matricule
+  // même si plusieurs informations sont collées (QR complet, texte, espaces…)
+  // via parseScannedMatricule, puis on valide le format avec isMatriculePlausible.
+  async function soumettreMatriculeAgent() {
+    const m = parseScannedMatricule(agentMatricule);
+    if (!m) { setAgentError('Matricule invalide.'); return; }
+    if (!isMatriculePlausible(m)) {
+      setAgentError('Scan illisible (encodage). Configurez le lecteur en ASCII ou vérifiez le matricule.');
+      return;
+    }
+    await identifierAgent(m);
+  }
+
   async function identifierAgent(matricule: string) {
     setAgentError('');
     setAgentLoading(true);
@@ -409,14 +424,15 @@ export default function PortailRecouvrement() {
           )}
 
           <form
-            onSubmit={async (e) => { e.preventDefault(); if (agentMatricule.trim()) await identifierAgent(agentMatricule.trim().toUpperCase()); }}
+            onSubmit={async (e) => { e.preventDefault(); await soumettreMatriculeAgent(); }}
             className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-4"
           >
-            <p className="text-white/50 text-xs mb-2">Ou saisissez votre matricule</p>
+            <p className="text-white/50 text-xs mb-2">Ou saisissez / collez votre matricule (même avec d'autres informations, seul le matricule est reconnu)</p>
             <div className="flex gap-2">
               <input
                 value={agentMatricule}
                 onChange={e => setAgentMatricule(e.target.value)}
+                onKeyDown={async (e) => { if (e.key === 'Enter') { e.preventDefault(); await soumettreMatriculeAgent(); } }}
                 placeholder="Matricule (ex : PGA-...)"
                 autoFocus
                 className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 text-sm outline-none focus:border-emerald-400"
