@@ -98,11 +98,13 @@ function sectionWatermark(section?: string | null): string {
 // Composant carte — layout 100% absolu/inline-block (compatible html2canvas)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
+export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl, pointageUrl }: {
   eleve: CarteEleve;
   schoolName: string;
   logoUrl: string | null;
   qrDataUrl: string;
+  /** URL du portail de pointage (affichée discrètement sur la carte) */
+  pointageUrl?: string;
 }) {
   const initials = (eleve.nom.charAt(0) + eleve.prenom.charAt(0)).toUpperCase();
   const annee = '2026-2027';
@@ -205,6 +207,13 @@ export function CarteEleveCard({ eleve, schoolName, logoUrl, qrDataUrl }: {
         <div style={{ ...label }}>Sexe</div>
         <div style={{ fontSize: 14, fontWeight: 700, marginTop: 3, color: t.accentDark }}>{eleve.sexe}</div>
       </div>
+
+      {/* ═══ Mention Pointage (carte utilisée pour le pointage) ═══ */}
+      {pointageUrl && (
+        <div style={{ position: 'absolute', top: 263, left: 26, maxWidth: 280, fontSize: 7, fontWeight: 600, color: MUTED, letterSpacing: 0.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          POINTAGE — SCANNEZ CETTE CARTE AU PORTAIL : {pointageUrl}
+        </div>
+      )}
 
       {/* ═══ Pied : matricule + naissance ═══ */}
       <div style={{ position: 'absolute', bottom: 20, left: 26 }}>

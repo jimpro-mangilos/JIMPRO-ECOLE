@@ -84,7 +84,7 @@ export default function CarteEtudiant() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4 gap-6">
       <div ref={cardRef}>
-        <CarteEleveCard eleve={eleve} schoolName={schoolName} logoUrl={logoUrl} qrDataUrl={qrDataUrl} />
+        <CarteEleveCard eleve={eleve} schoolName={schoolName} logoUrl={logoUrl} qrDataUrl={qrDataUrl} pointageUrl={window.location.origin + '/portail-pointage-eleves'} />
       </div>
       <div className="flex flex-wrap justify-center gap-3">
         <a href={'/portail-pointage-eleves?ecole=' + ecoleCode + '&matricule=' + encodeURIComponent(eleve.matricule)} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 font-semibold shadow-lg">
