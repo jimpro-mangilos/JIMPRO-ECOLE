@@ -302,6 +302,10 @@ export default function PortailRecouvrement() {
     // Réinitialise la barre de recherche après chaque scan/saisie :
     // permet des vérifications continues et rapides (scanne → vide → scanne).
     setMatriculeInput('');
+    // Vide aussi le buffer de l'écouteur global : des caractères résiduels du
+    // lecteur barcode (suffixe) ne doivent pas être rejoués à la prochaine saisie.
+    scanBuffer.current = '';
+    scanLastKey.current = 0;
     setLoading(true);
     setResultat({ type: 'loading' });
 
@@ -525,11 +529,15 @@ export default function PortailRecouvrement() {
             autoFocus
             className="flex-1 bg-transparent text-white placeholder-white/30 outline-none text-sm"
             onKeyDown={async (e) => {
-              if (e.key === 'Enter' && matriculeInput.trim()) {
+              // Lit la valeur DOM RÉELLE (pas le state) : avec un lecteur barcode qui
+              // tape très vite, l'événement Entrée peut arriver avant que React n'ait
+              // traité tous les onChange → matriculeInput serait vide/incomplet.
+              const valeur = (e.target as HTMLInputElement).value;
+              if (e.key === 'Enter' && valeur.trim()) {
                 // Même traitement que le scan QR : si plusieurs types de caractères sont
                 // saisis (QR complet collé, texte, espaces, accents…), on n'extrait que
                 // le matricule (A-Z, 0-9, tirets).
-                const matricule = parseScannedMatricule(matriculeInput);
+                const matricule = parseScannedMatricule(valeur);
                 if (matricule) await verifierMatricule(matricule);
                 else setScanError('Aucun matricule valide trouvé.');
               }
@@ -611,7 +619,16 @@ export default function PortailRecouvrement() {
             )}
 
             <button
-              onClick={() => { setResultat(null); setScanError(''); setMatriculeInput(''); }}
+              onClick={() => {
+                setResultat(null);
+                setScanError('');
+                setMatriculeInput('');
+                // Purge le buffer global du lecteur : le scan suivant repart de zéro
+                scanBuffer.current = '';
+                scanLastKey.current = 0;
+                // Remet le focus sur le champ pour un scan immédiat
+                setTimeout(() => inputRef.current?.focus(), 50);
+              }}
               className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
