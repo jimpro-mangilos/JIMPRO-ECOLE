@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X, BookOpen, Upload } from 'lucide-react';
+import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X, BookOpen, Upload, CalendarClock, CalendarPlus, ShieldCheck, ShieldX } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { parseScannedMatricule } from '../utils/ascii';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/calculations';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
+import { isTableMissingError } from '../lib/hooks/usePointage';
 
 interface EleveInfo {
+  id: string;
   matricule: string;
   nom: string;
   postnom: string;
@@ -41,6 +43,16 @@ interface PaiementInfo {
 
 interface CoursInfo { id: string; titre: string; description: string; fichier_url: string | null; fichier_nom: string | null; created_at: string; }
 interface DevoirInfo { id: string; titre: string; description: string; date_limite: string | null; fichier_url: string | null; fichier_nom: string | null; created_at: string; }
+interface PermissionInfo {
+  id: string;
+  date_debut: string;
+  date_fin: string;
+  motif: string | null;
+  statut: string;
+  decision_note: string | null;
+  decided_at: string | null;
+  created_at: string | null;
+}
 
 export default function PortailParent() {
   const [matricule, setMatricule] = useState('');
@@ -53,6 +65,13 @@ export default function PortailParent() {
   const [devoirs, setDevoirs] = useState<DevoirInfo[]>([]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
+  const [permissions, setPermissions] = useState<PermissionInfo[]>([]);
+  const [permDebut, setPermDebut] = useState('');
+  const [permFin, setPermFin] = useState('');
+  const [permMotif, setPermMotif] = useState('');
+  const [permSaving, setPermSaving] = useState(false);
+  const [permError, setPermError] = useState('');
+  const [permTableMissing, setPermTableMissing] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-scanner-reader';
@@ -121,6 +140,8 @@ export default function PortailParent() {
     setError('');
     setEleve(null);
     setPaiements([]);
+    setPermissions([]);
+    setPermTableMissing(false);
 
     try {
       const { data: eleveData, error: eleveError } = await supabase
@@ -162,6 +183,20 @@ export default function PortailParent() {
         setCours((coursData || []) as CoursInfo[]);
         setDevoirs((devoirsData || []) as DevoirInfo[]);
       }
+
+      // Permissions & justificatifs d'absence de l'élève (table tolérée si migration pas exécutée)
+      const permsRes = await supabase
+        .from('permissions_eleves')
+        .select('id, date_debut, date_fin, motif, statut, decision_note, decided_at, created_at')
+        .eq('eleve_id', eleveData.id)
+        .order('created_at', { ascending: false });
+      if (permsRes.error) {
+        setPermTableMissing(isTableMissingError(permsRes.error));
+        setPermissions([]);
+      } else {
+        setPermTableMissing(false);
+        setPermissions((permsRes.data || []) as PermissionInfo[]);
+      }
     } catch (err: any) {
       console.error('Erreur recherche:', err);
       setError('Une erreur est survenue. Veuillez reessayer.');
@@ -173,6 +208,37 @@ export default function PortailParent() {
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     handleSearchWithMatricule(matricule, e);
+  };
+
+  // Soumettre une demande de permission depuis le portail parent (portail anon)
+  const demandePermissionParent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schoolId || !eleve || !permDebut || !permFin) return;
+    if (permFin < permDebut) { setPermError('La date de fin doit être après la date de début.'); return; }
+    setPermError('');
+    setPermSaving(true);
+    const { error } = await supabase.from('permissions_eleves').insert({
+      ecole_id: schoolId,
+      eleve_id: eleve.id,
+      date_debut: permDebut,
+      date_fin: permFin,
+      motif: permMotif || null,
+      statut: 'en_attente',
+      demande_par: null,
+    });
+    setPermSaving(false);
+    if (error) {
+      setPermError(error.message || 'Erreur lors de la soumission.');
+      return;
+    }
+    setPermDebut(''); setPermFin(''); setPermMotif('');
+    // Recharger la liste
+    const permsRes = await supabase
+      .from('permissions_eleves')
+      .select('id, date_debut, date_fin, motif, statut, decision_note, decided_at, created_at')
+      .eq('eleve_id', eleve.id)
+      .order('created_at', { ascending: false });
+    if (!permsRes.error) setPermissions((permsRes.data || []) as PermissionInfo[]);
   };
 
   return (
@@ -282,7 +348,7 @@ export default function PortailParent() {
           <div className="space-y-4 animate-fadeIn">
             {/* Back button */}
             <button
-              onClick={() => { setEleve(null); setMatricule(''); setError(''); }}
+              onClick={() => { setEleve(null); setMatricule(''); setError(''); setPermissions([]); setPermTableMissing(false); }}
               className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
               <ChevronRight className="w-4 h-4 rotate-180" />
@@ -502,6 +568,84 @@ export default function PortailParent() {
                   </>
                 )}
               </div>
+            </div>
+
+            {/* ═══ Permissions & justificatifs d'absence ═══ */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                  <CalendarClock className="w-5 h-5 text-blue-600" />
+                  Permissions d'absence
+                </h3>
+                <span className="text-xs text-gray-500">{permissions.length} demande{permissions.length !== 1 ? 's' : ''}</span>
+              </div>
+
+              {permTableMissing ? (
+                <div className="px-5 py-8 text-center text-gray-400 text-sm">
+                  La gestion des permissions sera disponible prochainement (migration à exécuter par l'école).
+                </div>
+              ) : (
+                <div className="p-4 space-y-4">
+                  {/* Liste des demandes */}
+                  {permissions.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-3">Aucune demande de permission enregistrée.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {permissions.map(p => {
+                        const badge = p.statut === 'approuvee'
+                          ? 'bg-green-100 text-green-700'
+                          : p.statut === 'refusee'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-amber-100 text-amber-700';
+                        const label = p.statut === 'approuvee' ? 'Approuvée' : p.statut === 'refusee' ? 'Refusée' : 'En attente';
+                        return (
+                          <div key={p.id} className="bg-gray-50/70 rounded-lg border border-gray-100 p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {new Date(p.date_debut + 'T00:00:00').toLocaleDateString('fr-FR')} → {new Date(p.date_fin + 'T00:00:00').toLocaleDateString('fr-FR')}
+                                </p>
+                                {p.motif && <p className="text-xs text-gray-500 mt-0.5">{p.motif}</p>}
+                              </div>
+                              <span className={'px-2 py-0.5 text-xs font-medium rounded-full shrink-0 ' + badge}>{label}</span>
+                            </div>
+                            {p.statut === 'approuvee' && (
+                              <p className="text-[11px] text-green-700 mt-1.5 flex items-center gap-1">
+                                <ShieldCheck className="w-3 h-3" /> Jours comptés comme « Permission » au pointage.
+                              </p>
+                            )}
+                            {p.statut === 'refusee' && (
+                              <p className="text-[11px] text-red-600 mt-1.5 flex items-center gap-1">
+                                <ShieldX className="w-3 h-3" /> Demande refusée{p.decision_note ? ' — ' + p.decision_note : ''}.
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Formulaire de demande */}
+                  <form onSubmit={demandePermissionParent} className="bg-blue-50/60 border border-blue-100 rounded-xl p-4">
+                    <h4 className="font-semibold text-gray-800 flex items-center gap-2 mb-3">
+                      <CalendarPlus className="w-4 h-4 text-blue-600" /> Soumettre un justificatif d'absence
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <input type="date" value={permDebut} onChange={e => setPermDebut(e.target.value)} required className="px-3 py-2 border border-gray-200 rounded-lg text-sm" title="Du" />
+                      <input type="date" value={permFin} onChange={e => setPermFin(e.target.value)} required className="px-3 py-2 border border-gray-200 rounded-lg text-sm" title="Au" />
+                      <input value={permMotif} onChange={e => setPermMotif(e.target.value)} placeholder="Motif (ex : maladie, deuil...)" className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    </div>
+                    {permError && <p className="text-xs text-red-600 mt-2">⚠ {permError}</p>}
+                    <div className="mt-3 flex justify-end">
+                      <button type="submit" disabled={permSaving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">
+                        {permSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarPlus className="w-4 h-4" />}
+                        {permSaving ? 'Envoi...' : 'Envoyer la demande'}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-2">La demande sera examinée par l'école (promoteur, IT Manager ou admin).</p>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         )}

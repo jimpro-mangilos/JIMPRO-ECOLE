@@ -42,3 +42,24 @@ DROP POLICY IF EXISTS "permissions_eleves_update" ON public.permissions_eleves;
 CREATE POLICY "permissions_eleves_update" ON public.permissions_eleves FOR UPDATE TO authenticated
   USING ((ecole_id = get_current_ecole_id() OR get_current_ecole_id() IS NULL) AND public.is_permission_approver())
   WITH CHECK ((ecole_id = get_current_ecole_id() OR get_current_ecole_id() IS NULL) AND public.is_permission_approver());
+-- ============================================================
+-- Accès anon (portail parent) : consultation + demande de permission
+-- ============================================================
+-- Vérifie que l'élève appartient bien à l'école (empêche d'insérer
+-- des permissions pour des élèves d'autres écoles via le portail)
+CREATE OR REPLACE FUNCTION public.is_valid_permission_eleve(p_ecole uuid, p_eleve uuid)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.eleves e WHERE e.id = p_eleve AND e.ecole_id = p_ecole
+  );
+$$;
+GRANT EXECUTE ON FUNCTION public.is_valid_permission_eleve(uuid, uuid) TO anon, authenticated;
+
+DROP POLICY IF EXISTS "permissions_eleves_select_anon" ON public.permissions_eleves;
+CREATE POLICY "permissions_eleves_select_anon" ON public.permissions_eleves FOR SELECT TO anon USING (true);
+
+DROP POLICY IF EXISTS "permissions_eleves_insert_anon" ON public.permissions_eleves;
+CREATE POLICY "permissions_eleves_insert_anon" ON public.permissions_eleves FOR INSERT TO anon
+  WITH CHECK (statut = 'en_attente' AND public.is_valid_permission_eleve(ecole_id, eleve_id));
+
