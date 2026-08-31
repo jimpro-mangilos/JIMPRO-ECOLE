@@ -83,11 +83,14 @@ export default function PortailPointage() {
       ).then(() => { scannerRunning.current = true; }).catch(() => setScanError("Erreur d'accès caméra."));
     }
     return () => {
-      // stop() lève une erreur synchrone si le scanner n'a jamais démarré (ex : caméra refusée)
+      // Toujours arrêter la caméra au nettoyage, MÊME après un scan réussi :
+      // le callback passe scannerRunning.current à false avant setShowScanner(false),
+      // donc le garde « scannerRunning.current » laisserait la caméra ouverte.
+      // stop() lève une erreur synchrone si le scanner n'a jamais démarré → try/catch.
       const s = scannerRef.current;
       scannerRef.current = null;
-      if (s && scannerRunning.current) {
-        scannerRunning.current = false;
+      scannerRunning.current = false;
+      if (s) {
         try { s.stop().catch(() => {}); } catch { /* scanner non démarré */ }
       }
     };

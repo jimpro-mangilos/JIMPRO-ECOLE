@@ -118,10 +118,11 @@ export default function PortailRecouvrement() {
       ).then(() => { agentScannerRunning.current = true; }).catch(() => setAgentError("Erreur d'accès caméra."));
     }
     return () => {
+      // Toujours arrêter la caméra au nettoyage (même après un scan réussi)
       const s = agentScannerRef.current;
       agentScannerRef.current = null;
-      if (s && agentScannerRunning.current) {
-        agentScannerRunning.current = false;
+      agentScannerRunning.current = false;
+      if (s) {
         try { s.stop().catch(() => {}); } catch { /* scanner non démarré */ }
       }
     };
@@ -208,12 +209,16 @@ export default function PortailRecouvrement() {
       ).then(() => { scannerRunning.current = true; }).catch(() => setScanError("Erreur d'accès caméra."));
     }
     return () => {
-      // stop() lève une erreur synchrone si le scanner n'a jamais démarré (ex : caméra refusée) —
-      // on ne l'appelle donc que si le scan a réellement démarré, et on protège l'appel.
+      // Toujours arrêter la caméra au nettoyage, MÊME après un scan réussi :
+      // le callback passe scannerRunning.current à false avant setShowScanner(false),
+      // donc le garde « scannerRunning.current » laisserait la caméra ouverte →
+      // le QR précédent serait re-scanné à la réouverture (« Vérifier un autre »).
+      // stop() lève une erreur synchrone si le scanner n'a jamais démarré (caméra refusée) →
+      // on protège l'appel par try/catch.
       const s = scannerRef.current;
       scannerRef.current = null;
-      if (s && scannerRunning.current) {
-        scannerRunning.current = false;
+      scannerRunning.current = false;
+      if (s) {
         try { s.stop().catch(() => {}); } catch { /* scanner non démarré */ }
       }
     };
