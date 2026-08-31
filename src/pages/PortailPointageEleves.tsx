@@ -135,9 +135,13 @@ export default function PortailPointageEleves() {
       } else {
         setResultat({ type: 'deja_complet', eleve: info });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setScanError('Erreur lors du pointage.');
+      if (err && err.message && err.message.includes('does not exist')) {
+        setScanError('La table de pointage des élèves n\'existe pas encore. L\'administrateur doit exécuter la migration SQL « pointage_eleves » dans Supabase.');
+      } else {
+        setScanError('Erreur lors du pointage.');
+      }
     } finally {
       setLoading(false);
     }

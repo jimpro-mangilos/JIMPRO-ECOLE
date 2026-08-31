@@ -50,6 +50,7 @@ export default function PointageEleves() {
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [migrationMissing, setMigrationMissing] = useState(false);
 
   const today = todayStr();
   const [year, m] = month.split('-').map(Number);
@@ -74,7 +75,12 @@ export default function PointageEleves() {
         supabase.from('pointages_eleves').select('*').eq('ecole_id', currentSchoolId).gte('date_pointage', start).lte('date_pointage', end),
       ]);
       setConfig(cfg);
-      setRecords((r.data as PointageEleveRecord[]) || []);
+      if (r.error && r.error.message && r.error.message.includes('does not exist')) {
+        setMigrationMissing(true);
+      } else {
+        setMigrationMissing(false);
+        setRecords((r.data as PointageEleveRecord[]) || []);
+      }
       // Élèves (pagination 1000)
       const all: EleveLigne[] = [];
       let from = 0;
@@ -225,6 +231,18 @@ export default function PointageEleves() {
           </button>
         </div>
       </div>
+
+      {/* Migration manquante */}
+      {migrationMissing && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <h3 className="font-bold text-amber-800 mb-1">⚠ Table « pointages_eleves » absente</h3>
+          <p className="text-sm text-amber-700">
+            L'administrateur doit exécuter la migration SQL{' '}
+            <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">20260901120000_pointage_eleves.sql</code>{' '}
+            dans l'éditeur SQL de Supabase pour activer le pointage des élèves.
+          </p>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
