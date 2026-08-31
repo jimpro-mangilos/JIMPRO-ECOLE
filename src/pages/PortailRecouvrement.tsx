@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { parseScannedMatricule } from '../utils/ascii';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
 import { formatDateTime } from '../utils/calculations';
+import { jouerSonEnOrdre, jouerSonPasEnOrdre, jouerSonIntrouvable } from '../utils/sons';
 
 // Préfixes de matricules du personnel (carte de service → portail de POINTAGE)
 const PREFIXES_PERSONNEL = ['PGA', 'STF', 'PER'];
@@ -158,6 +159,14 @@ export default function PortailRecouvrement() {
       }
     };
   }, [showScanner, month]);
+
+  // Son de retour selon le statut de la recherche (EN ORDRE / PAS EN ORDRE / introuvable)
+  useEffect(() => {
+    if (!resultat || loading) return;
+    if (resultat.type === 'en_ordre') jouerSonEnOrdre();
+    else if (resultat.type === 'pas_en_ordre') jouerSonPasEnOrdre();
+    else if (resultat.type === 'introuvable') jouerSonIntrouvable();
+  }, [resultat, loading]);
 
   const moisActuel = MOIS[month];
 
