@@ -57,6 +57,7 @@ const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>>
   'chat': MessageCircle,
   'personnel': UserCog,
   'pointage': UserCheck,
+  'pointage-eleves': UserCheck,
   'recouvrement': Wallet,
   'portail-professeur': BookOpen,
   'gestion-cours': BookOpen,
@@ -82,6 +83,7 @@ const DEFAULT_MENU_ITEMS = [
   { menu_key: 'portail-professeur', label: 'Portail Professeur', ordre: 16 },
   { menu_key: 'gestion-cours', label: 'Gestion Cours', ordre: 17 },
   { menu_key: 'gestion-devoirs', label: 'Gestion Devoirs', ordre: 18 },
+  { menu_key: 'pointage-eleves', label: 'Pointage Eleves', ordre: 19 },
 ];
 
 export default function MenuConfigTab() {

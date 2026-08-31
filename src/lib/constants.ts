@@ -34,6 +34,7 @@ export const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: str
   'gestion-devoirs': FileText,
   'personnel': UserCog,
   'pointage': UserCheck,
+  'pointage-eleves': UserCheck,
   'recouvrement': UserCheck,
 };
 
@@ -55,6 +56,7 @@ export const MENU_PATH_MAP: Record<string, string> = {
   'gestion-devoirs': '/gestion-devoirs',
   'personnel': '/personnel',
   'pointage': '/pointage',
+  'pointage-eleves': '/pointage-eleves',
   'recouvrement': '/recouvrement',
 };
 

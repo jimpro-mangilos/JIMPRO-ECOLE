@@ -47,6 +47,8 @@ const VerifierFacture = lazy(() => import('./pages/VerifierFacture'));
 const Personnel = lazy(() => import('./pages/Personnel'));
 const PersonnelDetail = lazy(() => import('./pages/PersonnelDetail'));
 const PointagePersonnel = lazy(() => import('./pages/PointagePersonnel'));
+const PointageEleves = lazy(() => import('./pages/PointageEleves'));
+const PortailPointageEleves = lazy(() => import('./pages/PortailPointageEleves'));
 const Recouvrement = lazy(() => import('./pages/Recouvrement'));
 
 function LoadingFallback() {
@@ -157,6 +159,16 @@ function App() {
               }
             />
             <Route
+              path="/portail-pointage-eleves"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <PortailPointageEleves />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
               path="/login"
               element={
                 <Suspense fallback={<LoadingFallback />}>
@@ -235,6 +247,17 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <LazyPage><PointagePersonnel /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/pointage-eleves"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LazyPage><PointageEleves /></LazyPage>
                   </Layout>
                 </ProtectedRoute>
               }
