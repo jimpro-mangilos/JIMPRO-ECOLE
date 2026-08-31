@@ -83,7 +83,7 @@ export default function Personnel() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const [form, setForm] = useState<PersonnelForm>(EMPTY_FORM);
-  const { currentSchoolId } = useAuth();
+  const { currentSchoolId, isItManager } = useAuth();
   const [niveaux, setNiveaux] = useState<{ id: string; libelle: string }[]>([]);
   const [configFonctions, setConfigFonctions] = useState<string[]>([]);
   const [configDomaines, setConfigDomaines] = useState<string[]>([]);
@@ -284,7 +284,11 @@ export default function Personnel() {
       adresse: form.adresse.trim() || null,
       domaine: form.domaine.trim() || null,
       statut: form.statut || 'actif',
-      est_agent_recouvrement: form.est_agent_recouvrement,
+      // Droit « agent de recouvrement » réservé à l'IT Manager :
+      // les autres rôles ne peuvent ni l'attribuer ni le retirer.
+      est_agent_recouvrement: isItManager()
+        ? form.est_agent_recouvrement
+        : (editing ? !!editing.est_agent_recouvrement : false),
     };
     const ok = editing ? await update(editing.id, payload) : await create(payload);
     setSaving(false);
@@ -577,10 +581,11 @@ export default function Personnel() {
               </div>
               <div>
                 <label className={labelClass}>Agent de recouvrement</label>
-                <label className="flex items-center gap-2 mt-1 cursor-pointer select-none">
+                <label className={`flex items-center gap-2 mt-1 ${isItManager() ? 'cursor-pointer select-none' : 'cursor-not-allowed opacity-70'}`} title={isItManager() ? '' : 'Réservé à l\'IT Manager'}>
                   <input
                     type="checkbox"
                     checked={form.est_agent_recouvrement}
+                    disabled={!isItManager()}
                     onChange={e => set('est_agent_recouvrement', e.target.checked)}
                     className="w-4 h-4 accent-blue-600"
                   />
@@ -590,7 +595,11 @@ export default function Personnel() {
                       : 'Accès au portail de recouvrement désactivé'}
                   </span>
                 </label>
-                <p className="text-[10px] text-gray-400 mt-1">L'agent s'identifiera par scan QR ou matricule (comme le pointage).</p>
+                {isItManager() ? (
+                  <p className="text-[10px] text-gray-400 mt-1">L'agent s'identifiera par scan QR ou matricule (comme le pointage).</p>
+                ) : (
+                  <p className="text-[10px] text-amber-600 mt-1">Seul l'IT Manager peut attribuer ce droit.</p>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <label className={labelClass}>Adresse</label>

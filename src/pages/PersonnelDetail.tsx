@@ -173,6 +173,9 @@ export default function PersonnelDetail() {
             <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-2">
               <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold border border-amber-200 uppercase tracking-wide">{member.fonction}</span>
               <span className={`px-3 py-1 rounded-full text-xs font-medium ${statutColor}`}>{STATUT_PERSONNEL_LABELS[member.statut] || member.statut}</span>
+              {(member as any).est_agent_recouvrement && (
+                <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200" title="Peut utiliser le portail de recouvrement">Agent de recouvrement</span>
+              )}
             </div>
             <div className="mt-2 text-sm text-gray-400">{member.matricule || '—'}</div>
           </div>
