@@ -14,6 +14,15 @@ export interface PointageEleveRecord {
   note: string | null;
 }
 
+export interface PermissionEleve {
+  id: string;
+  eleve_id: string;
+  date_debut: string;
+  date_fin: string;
+  statut: string;
+  motif?: string | null;
+}
+
 interface EleveLigne {
   id: string;
   matricule: string;
@@ -29,16 +38,28 @@ export async function generatePointageElevesReport(opts: {
   year: number;
   eleves: EleveLigne[];
   pointages: PointageEleveRecord[];
+  permissions?: PermissionEleve[];
   heureEntree: string;
 }): Promise<void> {
-  const { month, year, eleves, pointages, heureEntree } = opts;
+  const { month, year, eleves, pointages, permissions, heureEntree } = opts;
   const schoolName = sanitizePdfText(await loadSchoolName()) || 'ÉTABLISSEMENT';
   const logo = await loadLogoBase64();
   const c = PDF_THEME.colors;
 
   // Agrégation par élève (jours ouvrés passés inclus dans le mois)
-  const byId = new Map<string, { present: number; retard: number; absent: number }>();
-  for (const e of eleves) byId.set(e.id, { present: 0, retard: 0, absent: 0 });
+  const byId = new Map<string, { present: number; retard: number; absent: number; permission: number }>();
+  for (const e of eleves) byId.set(e.id, { present: 0, retard: 0, absent: 0, permission: 0 });
+
+  // Dates couvertes par des permissions approuvées
+  const permDates = new Set<string>();
+  for (const p of permissions || []) {
+    if (p.statut !== 'approuvee') continue;
+    const start = new Date(p.date_debut + 'T00:00:00');
+    const end = new Date(p.date_fin + 'T00:00:00');
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      permDates.add(p.eleve_id + '_' + d.toISOString().slice(0, 10));
+    }
+  }
 
   const lastDay = new Date(year, month, 0).getDate();
   const workDays: string[] = [];
@@ -58,20 +79,27 @@ export async function generatePointageElevesReport(opts: {
     const a = byId.get(e.id)!;
     for (const d of pastWorkDays) {
       const rec = byKey.get(e.id + '_' + d);
-      if (!rec) { a.absent++; continue; }
-      if (rec.statut === 'retard') { a.retard++; continue; }
-      if (rec.statut === 'absent') { a.absent++; continue; }
-      // présent — retard automatique si arrivée après l'heure d'entrée
-      if (rec.heure_arrivee && rec.heure_arrivee.slice(0, 5) > heureEntree) { a.retard++; }
-      else { a.present++; }
+      if (rec) {
+        if (rec.statut === 'retard') { a.retard++; continue; }
+        if (rec.statut === 'absent') { a.absent++; continue; }
+        if (rec.statut === 'permission') { a.permission++; continue; }
+        // présent — retard automatique si arrivée après l'heure d'entrée
+        if (rec.heure_arrivee && rec.heure_arrivee.slice(0, 5) > heureEntree) { a.retard++; }
+        else { a.present++; }
+      } else if (permDates.has(e.id + '_' + d)) {
+        a.permission++;
+      } else {
+        a.absent++;
+      }
     }
   }
 
-  const totals = { present: 0, retard: 0, absent: 0 };
+  const totals = { present: 0, retard: 0, absent: 0, permission: 0 };
   for (const a of byId.values()) {
     totals.present += a.present;
     totals.retard += a.retard;
     totals.absent += a.absent;
+    totals.permission += a.permission;
   }
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -101,33 +129,34 @@ export async function generatePointageElevesReport(opts: {
   doc.roundedRect(PDF_THEME.pageMargin, y0, pw - PDF_THEME.pageMargin * 2, 16, 2, 2, 'F');
   doc.setTextColor(c.slate[0], c.slate[1], c.slate[2]);
   doc.setFontSize(9);
-  doc.text('Présences : ' + totals.present + '    Retards : ' + totals.retard + '    Absences : ' + totals.absent + '    Élèves : ' + nbEleves, pw / 2, y0 + 10, { align: 'center' });
+  doc.text('Présences : ' + totals.present + '    Retards : ' + totals.retard + '    Absences : ' + totals.absent + '    Permissions : ' + totals.permission + '    Élèves : ' + nbEleves, pw / 2, y0 + 10, { align: 'center' });
 
   // Tableau bilan par élève
   const rows = eleves.map(e => {
     const a = byId.get(e.id)!;
     const joursEcoules = pastWorkDays.length;
-    const taux = joursEcoules > 0 ? Math.round(((a.present + a.retard) / joursEcoules) * 100) + '%' : '-';
+    const taux = joursEcoules > 0 ? Math.round(((a.present + a.retard + a.permission) / joursEcoules) * 100) + '%' : '-';
     const nomComplet = [e.nom, e.postnom, e.prenom].filter(Boolean).join(' ');
-    return [sanitizePdfText(e.matricule), sanitizePdfText(nomComplet), sanitizePdfText(e.section), sanitizePdfText(e.classe || ''), String(a.present), String(a.retard), String(a.absent), taux];
+    return [sanitizePdfText(e.matricule), sanitizePdfText(nomComplet), sanitizePdfText(e.section), sanitizePdfText(e.classe || ''), String(a.present), String(a.retard), String(a.absent), String(a.permission), taux];
   });
 
   doc.autoTable({
     startY: y0 + 22,
-    head: [['Matricule', 'Nom complet', 'Section', 'Classe', 'Présent', 'Retard', 'Absent', 'Taux']],
+    head: [['Matricule', 'Nom complet', 'Section', 'Classe', 'Présent', 'Retard', 'Absent', 'Permiss.', 'Taux']],
     body: rows,
     styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2.5, textColor: c.slate, lineColor: c.border, lineWidth: 0.2 },
     headStyles: { fillColor: c.primary, textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: c.slateSoft },
     columnStyles: {
-      0: { cellWidth: 32 },
+      0: { cellWidth: 30 },
       1: { cellWidth: 'auto' },
-      2: { cellWidth: 30 },
-      3: { cellWidth: 28 },
-      4: { cellWidth: 18, halign: 'center' },
-      5: { cellWidth: 18, halign: 'center' },
-      6: { cellWidth: 18, halign: 'center' },
-      7: { cellWidth: 20, halign: 'center' },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 26 },
+      4: { cellWidth: 16, halign: 'center' },
+      5: { cellWidth: 16, halign: 'center' },
+      6: { cellWidth: 16, halign: 'center' },
+      7: { cellWidth: 18, halign: 'center' },
+      8: { cellWidth: 18, halign: 'center' },
     },
     didDrawPage: () => {
       doc.setFontSize(8);

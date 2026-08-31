@@ -86,7 +86,10 @@ export default function CarteEtudiant() {
       <div ref={cardRef}>
         <CarteEleveCard eleve={eleve} schoolName={schoolName} logoUrl={logoUrl} qrDataUrl={qrDataUrl} />
       </div>
-      <div className="flex gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
+        <a href={'/portail-pointage-eleves?ecole=' + ecoleCode + '&matricule=' + encodeURIComponent(eleve.matricule)} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 font-semibold shadow-lg">
+          📌 Portail de pointage — {eleve.matricule}
+        </a>
         <button onClick={handleDownload} disabled={downloading} className="flex items-center gap-2 bg-teal-600 text-white px-6 py-3 rounded-xl hover:bg-teal-700 font-semibold shadow-lg disabled:opacity-50">
           {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}Télécharger PNG
         </button>

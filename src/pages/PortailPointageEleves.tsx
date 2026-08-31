@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { QrCode, X, Loader2, CheckCircle2, LogIn, LogOut, UserCheck, Clock } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
-import { loadPointageConfig, statutAuto, type PointageConfig } from '../lib/hooks/usePointage';
+import { loadPointageConfig, statutAuto, isTableMissingError, type PointageConfig } from '../lib/hooks/usePointage';
 import { parseScannedMatricule, isMatriculePlausible } from '../utils/ascii';
 
 interface EleveInfo {
@@ -30,6 +31,9 @@ function heureActuelle(): string {
 }
 
 export default function PortailPointageEleves() {
+  const [searchParams] = useSearchParams();
+  const qrMatricule = searchParams.get('matricule') || '';
+  const autoSubmitted = useRef(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const [matriculeManuel, setMatriculeManuel] = useState('');
@@ -44,6 +48,16 @@ export default function PortailPointageEleves() {
   useEffect(() => {
     if (schoolId) { loadPointageConfig(schoolId).then(setConfig).catch(() => {}); }
   }, [schoolId]);
+
+  // Lien QR carte élève : ?matricule= → préremplir + pointer automatiquement
+  useEffect(() => {
+    if (!schoolLoading && schoolId && qrMatricule && !autoSubmitted.current) {
+      autoSubmitted.current = true;
+      setMatriculeManuel(qrMatricule);
+      pointerEleve(qrMatricule);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schoolLoading, schoolId]);
 
   useEffect(() => {
     if (showScanner) {
@@ -115,29 +129,54 @@ export default function PortailPointageEleves() {
       };
 
       const today = new Date().toISOString().slice(0, 10);
-      const { data: existing } = await supabase
+      const { data: existing, error: selectErr } = await supabase
         .from('pointages_eleves')
         .select('id, heure_arrivee, heure_depart')
         .eq('eleve_id', eleve.id)
         .eq('date_pointage', today)
         .maybeSingle();
 
+      if (selectErr) {
+        if (isTableMissingError(selectErr)) {
+          setScanError('La table de pointage des élèves n\'existe pas encore. L\'administrateur doit exécuter la migration SQL « pointage_eleves » dans Supabase.');
+        } else {
+          setScanError('Erreur lors du pointage.');
+        }
+        return;
+      }
+
       if (!existing) {
         const heureArrivee = heureActuelle();
-        await supabase.from('pointages_eleves').insert({
+        const { error: insErr } = await supabase.from('pointages_eleves').insert({
           ecole_id: schoolId, eleve_id: eleve.id, date_pointage: today,
           heure_arrivee: heureArrivee, statut: statutAuto(heureArrivee, config),
         });
+        if (insErr) {
+          if (isTableMissingError(insErr)) {
+            setScanError('La table de pointage des élèves n\'existe pas encore. L\'administrateur doit exécuter la migration SQL « pointage_eleves » dans Supabase.');
+          } else {
+            setScanError('Erreur lors de l\'enregistrement de l\'arrivée.');
+          }
+          return;
+        }
         setResultat({ type: 'arrivee', eleve: info, heure: heureActuelle() });
       } else if (!existing.heure_depart) {
-        await supabase.from('pointages_eleves').update({ heure_depart: heureActuelle() }).eq('id', existing.id);
+        const { error: updErr } = await supabase.from('pointages_eleves').update({ heure_depart: heureActuelle() }).eq('id', existing.id);
+        if (updErr) {
+          if (isTableMissingError(updErr)) {
+            setScanError('La table de pointage des élèves n\'existe pas encore. L\'administrateur doit exécuter la migration SQL « pointage_eleves » dans Supabase.');
+          } else {
+            setScanError('Erreur lors de l\'enregistrement du départ.');
+          }
+          return;
+        }
         setResultat({ type: 'depart', eleve: info, heure: heureActuelle() });
       } else {
         setResultat({ type: 'deja_complet', eleve: info });
       }
     } catch (err: any) {
       console.error(err);
-      if (err && err.message && err.message.includes('does not exist')) {
+      if (isTableMissingError(err)) {
         setScanError('La table de pointage des élèves n\'existe pas encore. L\'administrateur doit exécuter la migration SQL « pointage_eleves » dans Supabase.');
       } else {
         setScanError('Erreur lors du pointage.');

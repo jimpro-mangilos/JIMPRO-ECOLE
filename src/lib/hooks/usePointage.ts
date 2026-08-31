@@ -171,6 +171,16 @@ export function statutAuto(heureArrivee: string | null, config: PointageConfig):
   return 'present';
 }
 
+/**
+ * Vrai si l'erreur indique une table absente (migration pas encore exécutée).
+ * Couvre PGRST205 (« Could not find the table ... in the schema cache »)
+ * et les erreurs SQL « relation ... does not exist ».
+ */
+export function isTableMissingError(err: any): boolean {
+  const msg = (err && err.message ? String(err.message) : '') + ' ' + (err && err.code ? String(err.code) : '');
+  return msg.includes('does not exist') || msg.includes('Could not find the table') || msg.includes('PGRST205') || msg.includes('42P01');
+}
+
 export function formatDatePointage(date: string): string {
   const d = new Date(date + 'T00:00:00');
   return d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' });

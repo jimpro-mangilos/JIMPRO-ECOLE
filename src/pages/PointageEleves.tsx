@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { UserCheck, Clock, Search, FileDown, CalendarDays, CalendarRange, Users } from 'lucide-react';
+import { UserCheck, Clock, Search, FileDown, CalendarDays, CalendarRange, Users, ShieldCheck, ShieldX, CalendarPlus, CalendarClock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { loadPointageConfig, compareHeures, formatDatePointage, type PointageConfig } from '../lib/hooks/usePointage';
-import { generatePointageElevesReport, type PointageEleveRecord } from '../utils/pointageElevesReportGenerator';
+import { loadPointageConfig, compareHeures, formatDatePointage, isTableMissingError, type PointageConfig } from '../lib/hooks/usePointage';
+import { generatePointageElevesReport, type PointageEleveRecord, type PermissionEleve } from '../utils/pointageElevesReportGenerator';
 
 interface EleveLigne {
   id: string;
@@ -16,7 +16,7 @@ interface EleveLigne {
 }
 
 interface StatutJour {
-  statut: string;   // '' | 'present' | 'retard' | 'absent'
+  statut: string;   // '' | 'present' | 'retard' | 'absent' | 'permission'
   auto: boolean;
   rec: PointageEleveRecord | null;
 }
@@ -38,10 +38,11 @@ function workingDaysOfMonth(year: number, month: number): string[] {
   return days;
 }
 
-const STATUT_LABEL: Record<string, string> = { present: 'Présent', retard: 'Retard', absent: 'Absent' };
+const STATUT_LABEL: Record<string, string> = { present: 'Présent', retard: 'Retard', absent: 'Absent', permission: 'Permission' };
 
 export default function PointageEleves() {
-  const { currentSchoolId } = useAuth();
+  const { currentSchoolId, user, isAdmin, isItManager, isPromoteur } = useAuth();
+  const isApprover = isAdmin() || isItManager() || isPromoteur();
   const [search, setSearch] = useState('');
   const [month, setMonth] = useState(todayStr().slice(0, 7));
   const [config, setConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null, seuilRetards: 3 });
@@ -51,6 +52,13 @@ export default function PointageEleves() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [migrationMissing, setMigrationMissing] = useState(false);
+  const [permissions, setPermissions] = useState<PermissionEleve[]>([]);
+  const [permBusy, setPermBusy] = useState<string | null>(null);
+  const [permEleveId, setPermEleveId] = useState('');
+  const [permDebut, setPermDebut] = useState('');
+  const [permFin, setPermFin] = useState('');
+  const [permMotif, setPermMotif] = useState('');
+  const [permSaving, setPermSaving] = useState(false);
 
   const today = todayStr();
   const [year, m] = month.split('-').map(Number);
@@ -62,6 +70,20 @@ export default function PointageEleves() {
     return map;
   }, [records]);
 
+  // Dates couvertes par des permissions APPROUVÉES (comptent comme permission)
+  const permDates = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of permissions) {
+      if (p.statut !== 'approuvee') continue;
+      const start = new Date(p.date_debut + 'T00:00:00');
+      const end = new Date(p.date_fin + 'T00:00:00');
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        set.add(p.eleve_id + '_' + d.toISOString().slice(0, 10));
+      }
+    }
+    return set;
+  }, [permissions]);
+
   const reload = useCallback(async () => {
     if (!currentSchoolId) return;
     setLoading(true);
@@ -70,17 +92,17 @@ export default function PointageEleves() {
       const start = y + '-' + String(mo).padStart(2, '0') + '-01';
       const lastDay = new Date(y, mo, 0).getDate();
       const end = y + '-' + String(mo).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
-      const [cfg, r] = await Promise.all([
+      const [cfg, r, permsRes] = await Promise.all([
         loadPointageConfig(currentSchoolId),
         supabase.from('pointages_eleves').select('*').eq('ecole_id', currentSchoolId).gte('date_pointage', start).lte('date_pointage', end),
+        supabase.from('permissions_eleves').select('*').eq('ecole_id', currentSchoolId),
       ]);
       setConfig(cfg);
-      if (r.error && r.error.message && r.error.message.includes('does not exist')) {
-        setMigrationMissing(true);
-      } else {
-        setMigrationMissing(false);
-        setRecords((r.data as PointageEleveRecord[]) || []);
-      }
+      if (!permsRes.error) setPermissions((permsRes.data as PermissionEleve[]) || []);
+      const missingPointages = !!isTableMissingError(r.error);
+      const missingPerms = !!isTableMissingError(permsRes.error);
+      setMigrationMissing(missingPointages || missingPerms);
+      if (!missingPointages) setRecords((r.data as PointageEleveRecord[]) || []);
       // Élèves (pagination 1000)
       const all: EleveLigne[] = [];
       let from = 0;
@@ -117,6 +139,7 @@ export default function PointageEleves() {
       }
       return { statut: rec.statut, auto: false, rec };
     }
+    if (permDates.has(eleveId + '_' + date)) return { statut: 'permission', auto: true, rec: null };
     if (date <= today) return { statut: 'absent', auto: true, rec: null };
     return { statut: '', auto: true, rec: null };
   }
@@ -133,32 +156,35 @@ export default function PointageEleves() {
     present: number;
     retard: number;
     absent: number;
+    permission: number;
     joursEcoules: number;
     tauxPresence: number | null;
   }
   const bilans = useMemo<Bilan[]>(() => {
     const pastWorkDays = workDays.filter(d => d <= today);
     return list.map(e => {
-      let present = 0, retard = 0, absent = 0;
+      let present = 0, retard = 0, absent = 0, permission = 0;
       for (const d of pastWorkDays) {
         const s = getStatutJour(e.id, d);
         if (s.statut === 'present') present++;
         else if (s.statut === 'retard') retard++;
         else if (s.statut === 'absent') absent++;
+        else if (s.statut === 'permission') permission++;
       }
       const joursEcoules = pastWorkDays.length;
-      const tauxPresence = joursEcoules > 0 ? Math.round(((present + retard) / joursEcoules) * 100) : null;
-      return { e, present, retard, absent, joursEcoules, tauxPresence };
+      const tauxPresence = joursEcoules > 0 ? Math.round(((present + retard + permission) / joursEcoules) * 100) : null;
+      return { e, present, retard, absent, permission, joursEcoules, tauxPresence };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list, workDays, recByKey, config, today]);
+  }, [list, workDays, recByKey, permDates, config, today]);
 
   const stats = useMemo(() => {
-    const s = { present: 0, retard: 0, absent: 0 };
+    const s = { present: 0, retard: 0, absent: 0, permission: 0 };
     for (const b of bilans) {
       s.present += b.present;
       s.retard += b.retard;
       s.absent += b.absent;
+      s.permission += b.permission;
     }
     return s;
   }, [bilans]);
@@ -200,13 +226,47 @@ export default function PointageEleves() {
 
   async function exportMonthly() {
     if (!currentSchoolId) return;
-    await generatePointageElevesReport({ month: m, year, eleves: list, pointages: records, heureEntree: config.heureEntree });
+    await generatePointageElevesReport({ month: m, year, eleves: list, pointages: records, permissions, heureEntree: config.heureEntree });
+  }
+
+  // Approuver / refuser une permission (approbateur uniquement — RLS)
+  async function decidePermission(p: PermissionEleve, approuve: boolean) {
+    if (!user) return;
+    setPermBusy(p.id);
+    const { error } = await supabase.from('permissions_eleves').update({
+      statut: approuve ? 'approuvee' : 'refusee',
+      decide_par: user.id,
+      decided_at: new Date().toISOString(),
+    }).eq('id', p.id);
+    if (error) console.error(error);
+    setPermBusy(null);
+    reload();
+  }
+
+  // Demander une permission (le statut reste « en_attente » jusqu'à l'approbation)
+  async function demandePermission(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSchoolId || !user || !permEleveId || !permDebut || !permFin) return;
+    if (permFin < permDebut) { alert('La date de fin doit être après la date de début.'); return; }
+    setPermSaving(true);
+    const { error } = await supabase.from('permissions_eleves').insert({
+      ecole_id: currentSchoolId, eleve_id: permEleveId,
+      date_debut: permDebut, date_fin: permFin,
+      motif: permMotif || null,
+      statut: 'en_attente',
+      demande_par: user.id,
+    });
+    if (error) console.error(error);
+    setPermSaving(false);
+    setPermEleveId(''); setPermDebut(''); setPermFin(''); setPermMotif('');
+    reload();
   }
 
   function cellBadge(s: StatutJour) {
     if (s.statut === 'present') return <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 text-[10px] font-bold">P</span>;
     if (s.statut === 'retard') return <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold">R</span>;
     if (s.statut === 'absent') return <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold">A</span>;
+    if (s.statut === 'permission') return <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold">Perm</span>;
     return <span className="text-gray-300 text-[10px]">·</span>;
   }
 
@@ -232,14 +292,16 @@ export default function PointageEleves() {
         </div>
       </div>
 
-      {/* Migration manquante */}
+      {/* Migrations manquantes */}
       {migrationMissing && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-          <h3 className="font-bold text-amber-800 mb-1">⚠ Table « pointages_eleves » absente</h3>
+          <h3 className="font-bold text-amber-800 mb-1">⚠ Tables de pointage absentes</h3>
           <p className="text-sm text-amber-700">
-            L'administrateur doit exécuter la migration SQL{' '}
+            L'administrateur doit exécuter les migrations SQL{' '}
             <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">20260901120000_pointage_eleves.sql</code>{' '}
-            dans l'éditeur SQL de Supabase pour activer le pointage des élèves.
+            (pointages) et{' '}
+            <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">20260901130000_permissions_eleves.sql</code>{' '}
+            (permissions) dans l'éditeur SQL de Supabase pour activer le pointage des élèves.
           </p>
         </div>
       )}
@@ -250,7 +312,8 @@ export default function PointageEleves() {
           { label: 'Présences', value: stats.present, cls: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Retards', value: stats.retard, cls: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Absences (dont auto)', value: stats.absent, cls: 'text-red-600', bg: 'bg-red-50' },
-          { label: 'Élèves', value: eleves.length, cls: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Permissions', value: stats.permission, cls: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Élèves', value: eleves.length, cls: 'text-indigo-600', bg: 'bg-indigo-50' },
         ].map(s => (
           <div key={s.label} className={s.bg + ' rounded-xl border border-slate-100 p-4'}>
             <div className="text-sm text-gray-500">{s.label}</div>
@@ -263,6 +326,77 @@ export default function PointageEleves() {
       <div className="relative mb-4 max-w-sm">
         <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un élève (nom, matricule, section)..." className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      {/* ═══ PERMISSIONS — demandes + approbation ═══ */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-6">
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-bold text-gray-800 flex items-center gap-2"><CalendarClock className="w-5 h-5 text-blue-600" /> Permissions & justificatifs d'absence</h3>
+          <span className="text-xs text-gray-500">Les permissions approuvées comptent comme « Permission » (P bleu) au pointage</span>
+        </div>
+        <div className="p-4 space-y-4">
+          {/* Demandes en attente (approbation) */}
+          {(() => {
+            const pending = permissions.filter(p => p.statut === 'en_attente');
+            if (!isApprover || pending.length === 0) return null;
+            return (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <h4 className="font-bold text-amber-800 flex items-center gap-2 mb-2">
+                  <ShieldCheck className="w-4 h-4" /> Approbations en attente ({pending.length})
+                </h4>
+                <div className="space-y-2">
+                  {pending.map(p => {
+                    const e = eleves.find(x => x.id === p.eleve_id);
+                    return (
+                      <div key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2 bg-white rounded-lg border border-amber-200 px-3 py-2">
+                        <div className="flex-1">
+                          <span className="font-semibold text-gray-900">{e ? e.nom + ' ' + (e.postnom || '') + ' ' + e.prenom : 'Élève'}</span>
+                          <span className="text-sm text-gray-500 ml-2">
+                            {formatDatePointage(p.date_debut)} → {formatDatePointage(p.date_fin)}{p.motif ? ' — ' + p.motif : ''}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button onClick={() => decidePermission(p, true)} disabled={permBusy === p.id} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50">
+                            <ShieldCheck className="w-3.5 h-3.5" /> Approuver
+                          </button>
+                          <button onClick={() => decidePermission(p, false)} disabled={permBusy === p.id} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-50">
+                            <ShieldX className="w-3.5 h-3.5" /> Refuser
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Formulaire de demande */}
+          <form onSubmit={demandePermission} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <h4 className="font-bold text-gray-700 flex items-center gap-2 mb-3">
+              <CalendarPlus className="w-4 h-4 text-blue-600" /> Demander une permission
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <select value={permEleveId} onChange={e => setPermEleveId(e.target.value)} required className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+                <option value="">Élève...</option>
+                {eleves.map(e => (
+                  <option key={e.id} value={e.id}>{e.nom} {e.postnom ? e.postnom + ' ' : ''}{e.prenom} — {e.matricule}</option>
+                ))}
+              </select>
+              <input type="date" value={permDebut} onChange={e => setPermDebut(e.target.value)} required className="px-3 py-2 border border-slate-200 rounded-lg text-sm" title="Du" />
+              <input type="date" value={permFin} onChange={e => setPermFin(e.target.value)} required className="px-3 py-2 border border-slate-200 rounded-lg text-sm" title="Au" />
+              <input value={permMotif} onChange={e => setPermMotif(e.target.value)} placeholder="Motif (ex : maladie, deuil...)" className="px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button type="submit" disabled={permSaving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">
+                <CalendarPlus className="w-4 h-4" /> {permSaving ? 'Enregistrement...' : 'Soumettre la demande'}
+              </button>
+            </div>
+            {!isApprover && (
+              <p className="text-[11px] text-gray-400 mt-2">La demande restera « en attente » jusqu'à l'approbation par un promoteur, IT Manager ou admin.</p>
+            )}
+          </form>
+        </div>
       </div>
 
       {/* ═══ BILAN PAR ÉLÈVE ═══ */}
@@ -282,6 +416,7 @@ export default function PointageEleves() {
                   <th className="px-3 py-3 text-center">Présences</th>
                   <th className="px-3 py-3 text-center">Retards</th>
                   <th className="px-3 py-3 text-center">Absences</th>
+                  <th className="px-3 py-3 text-center">Permiss.</th>
                   <th className="px-3 py-3 w-56">Taux de présence</th>
                 </tr>
               </thead>
@@ -298,6 +433,7 @@ export default function PointageEleves() {
                     <td className="px-3 py-2.5 text-center"><span className="px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-bold">{b.present}</span></td>
                     <td className="px-3 py-2.5 text-center"><span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">{b.retard}</span></td>
                     <td className="px-3 py-2.5 text-center"><span className="px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-xs font-bold">{b.absent}</span></td>
+                    <td className="px-3 py-2.5 text-center"><span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">{b.permission}</span></td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
@@ -305,12 +441,12 @@ export default function PointageEleves() {
                         </div>
                         <span className="text-xs font-semibold text-gray-600 w-10 text-right">{b.tauxPresence != null ? b.tauxPresence + '%' : '—'}</span>
                       </div>
-                      <div className="text-[10px] text-gray-400 mt-0.5">{b.joursEcoules} jour(s) écoulé(s) — présence = P + R</div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">{b.joursEcoules} jour(s) écoulé(s) — présence = P + R + Perm.</div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-              {bilans.length === 0 && <tbody><tr><td colSpan={5} className="text-center py-10 text-gray-400">Aucun élève.</td></tr></tbody>}
+              {bilans.length === 0 && <tbody><tr><td colSpan={6} className="text-center py-10 text-gray-400">Aucun élève.</td></tr></tbody>}
             </table>
           </div>
         )}
@@ -398,10 +534,12 @@ export default function PointageEleves() {
                       </td>
                       <td className="px-3 py-2 text-center">
                         {s.rec ? (
-                          <span className={'px-2 py-0.5 rounded-full text-xs font-bold ' + (s.statut === 'present' ? 'bg-green-100 text-green-700' : s.statut === 'retard' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700')}>
+                          <span className={'px-2 py-0.5 rounded-full text-xs font-bold ' + (s.statut === 'present' ? 'bg-green-100 text-green-700' : s.statut === 'retard' ? 'bg-amber-100 text-amber-700' : s.statut === 'permission' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700')}>
                             {STATUT_LABEL[s.statut] || s.statut}
                             {s.auto && <em className="text-[10px] opacity-70 ml-1">(auto)</em>}
                           </span>
+                        ) : s.statut === 'permission' ? (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs italic">Permission (auto)</span>
                         ) : s.statut === 'absent' ? (
                           <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-400 text-xs italic">Absent (auto)</span>
                         ) : (
@@ -416,7 +554,7 @@ export default function PointageEleves() {
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center justify-center gap-1.5">
-                          {(['present', 'retard', 'absent'] as const).map(st => (
+                          {(['present', 'retard', 'permission', 'absent'] as const).map(st => (
                             <button key={st} onClick={() => mark(e.id, st, selectedDay)} disabled={busy === e.id + '_' + selectedDay} className={'px-2 py-1 rounded-lg text-[11px] font-semibold border disabled:opacity-40 ' + (s.statut === st ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-slate-200 hover:bg-slate-50')}>
                               {STATUT_LABEL[st]}
                             </button>
