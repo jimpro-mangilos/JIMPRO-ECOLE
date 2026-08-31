@@ -52,6 +52,8 @@ interface PermissionInfo {
   decision_note: string | null;
   decided_at: string | null;
   created_at: string | null;
+  justificatif_url: string | null;
+  justificatif_nom: string | null;
 }
 
 export default function PortailParent() {
@@ -72,6 +74,8 @@ export default function PortailParent() {
   const [permSaving, setPermSaving] = useState(false);
   const [permError, setPermError] = useState('');
   const [permTableMissing, setPermTableMissing] = useState(false);
+  const [permFichier, setPermFichier] = useState<File | null>(null);
+  const [permFileResetKey, setPermFileResetKey] = useState(0);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-scanner-reader';
@@ -187,7 +191,7 @@ export default function PortailParent() {
       // Permissions & justificatifs d'absence de l'élève (table tolérée si migration pas exécutée)
       const permsRes = await supabase
         .from('permissions_eleves')
-        .select('id, date_debut, date_fin, motif, statut, decision_note, decided_at, created_at')
+        .select('id, date_debut, date_fin, motif, statut, decision_note, decided_at, created_at, justificatif_url, justificatif_nom')
         .eq('eleve_id', eleveData.id)
         .order('created_at', { ascending: false });
       if (permsRes.error) {
@@ -217,6 +221,23 @@ export default function PortailParent() {
     if (permFin < permDebut) { setPermError('La date de fin doit être après la date de début.'); return; }
     setPermError('');
     setPermSaving(true);
+
+    // Upload du justificatif (image ou PDF) si fourni
+    let justificatifUrl: string | null = null;
+    let justificatifNom: string | null = null;
+    if (permFichier) {
+      const safeName = (permFichier.name || 'justificatif').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = schoolId + '/' + eleve.id + '/' + Date.now() + '-' + safeName;
+      const { error: upErr } = await supabase.storage.from('justificatifs-eleves').upload(path, permFichier, { contentType: permFichier.type || 'application/octet-stream' });
+      if (upErr) {
+        setPermSaving(false);
+        setPermError("Erreur lors de l'envoi du justificatif : " + upErr.message);
+        return;
+      }
+      justificatifUrl = supabase.storage.from('justificatifs-eleves').getPublicUrl(path).data.publicUrl;
+      justificatifNom = permFichier.name;
+    }
+
     const { error } = await supabase.from('permissions_eleves').insert({
       ecole_id: schoolId,
       eleve_id: eleve.id,
@@ -225,6 +246,8 @@ export default function PortailParent() {
       motif: permMotif || null,
       statut: 'en_attente',
       demande_par: null,
+      justificatif_url: justificatifUrl,
+      justificatif_nom: justificatifNom,
     });
     setPermSaving(false);
     if (error) {
@@ -232,10 +255,12 @@ export default function PortailParent() {
       return;
     }
     setPermDebut(''); setPermFin(''); setPermMotif('');
+    setPermFichier(null);
+    setPermFileResetKey(k => k + 1);
     // Recharger la liste
     const permsRes = await supabase
       .from('permissions_eleves')
-      .select('id, date_debut, date_fin, motif, statut, decision_note, decided_at, created_at')
+      .select('id, date_debut, date_fin, motif, statut, decision_note, decided_at, created_at, justificatif_url, justificatif_nom')
       .eq('eleve_id', eleve.id)
       .order('created_at', { ascending: false });
     if (!permsRes.error) setPermissions((permsRes.data || []) as PermissionInfo[]);
@@ -606,6 +631,11 @@ export default function PortailParent() {
                                   {new Date(p.date_debut + 'T00:00:00').toLocaleDateString('fr-FR')} → {new Date(p.date_fin + 'T00:00:00').toLocaleDateString('fr-FR')}
                                 </p>
                                 {p.motif && <p className="text-xs text-gray-500 mt-0.5">{p.motif}</p>}
+                                {p.justificatif_url && (
+                                  <a href={p.justificatif_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline mt-1">
+                                    <Upload className="w-3 h-3" /> {p.justificatif_nom || 'Voir le justificatif'}
+                                  </a>
+                                )}
                               </div>
                               <span className={'px-2 py-0.5 text-xs font-medium rounded-full shrink-0 ' + badge}>{label}</span>
                             </div>
@@ -634,6 +664,19 @@ export default function PortailParent() {
                       <input type="date" value={permDebut} onChange={e => setPermDebut(e.target.value)} required className="px-3 py-2 border border-gray-200 rounded-lg text-sm" title="Du" />
                       <input type="date" value={permFin} onChange={e => setPermFin(e.target.value)} required className="px-3 py-2 border border-gray-200 rounded-lg text-sm" title="Au" />
                       <input value={permMotif} onChange={e => setPermMotif(e.target.value)} placeholder="Motif (ex : maladie, deuil...)" className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    </div>
+                    <div className="mt-3">
+                      <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/40 cursor-pointer transition-all">
+                        <Upload className="w-4 h-4" />
+                        <span>{permFichier ? permFichier.name + ' (' + Math.max(1, Math.round(permFichier.size / 1024)) + ' Ko)' : 'Joindre un justificatif (photo du certificat, PDF) — optionnel'}</span>
+                        <input
+                          type="file"
+                          key={permFileResetKey}
+                          accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
+                          className="hidden"
+                          onChange={e => { setPermFichier(e.target.files?.[0] || null); setPermError(''); }}
+                        />
+                      </label>
                     </div>
                     {permError && <p className="text-xs text-red-600 mt-2">⚠ {permError}</p>}
                     <div className="mt-3 flex justify-end">

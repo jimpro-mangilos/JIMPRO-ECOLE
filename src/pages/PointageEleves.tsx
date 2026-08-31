@@ -354,6 +354,11 @@ export default function PointageEleves() {
                           <span className="text-sm text-gray-500 ml-2">
                             {formatDatePointage(p.date_debut)} → {formatDatePointage(p.date_fin)}{p.motif ? ' — ' + p.motif : ''}
                           </span>
+                          {p.justificatif_url && (
+                            <a href={p.justificatif_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline ml-2">
+                              <ShieldCheck className="w-3 h-3" /> Justificatif {p.justificatif_nom ? '— ' + p.justificatif_nom : ''}
+                            </a>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <button onClick={() => decidePermission(p, true)} disabled={permBusy === p.id} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50">

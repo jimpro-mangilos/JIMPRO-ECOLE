@@ -21,6 +21,8 @@ export interface PermissionEleve {
   date_fin: string;
   statut: string;
   motif?: string | null;
+  justificatif_url?: string | null;
+  justificatif_nom?: string | null;
 }
 
 interface EleveLigne {
