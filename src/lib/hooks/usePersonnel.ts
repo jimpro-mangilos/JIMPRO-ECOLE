@@ -29,6 +29,7 @@ export interface PersonnelRecord {
   adresse: string | null;
   domaine: string | null;
   statut: string;
+  est_agent_recouvrement?: boolean;
   created_at: string;
   updated_at: string;
 }

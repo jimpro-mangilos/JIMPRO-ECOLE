@@ -43,6 +43,7 @@ interface PersonnelForm {
   adresse: string;
   domaine: string;
   statut: string;
+  est_agent_recouvrement: boolean;
 }
 
 const EMPTY_FORM: PersonnelForm = {
@@ -50,6 +51,7 @@ const EMPTY_FORM: PersonnelForm = {
   etat_civil: '', nombre_enfants: '', niveau_etude_id: '', piece_etude: '', photo_url: '',
   nationalite: '', date_naissance: '', intitule_compte: '', num_compte: '',
   telephone: '', email: '', date_embauche: '', salaire: '', adresse: '', domaine: '', statut: 'actif',
+  est_agent_recouvrement: false,
 };
 
 // Repli si l'école n'a pas encore défini ses listes dans Configuration → Personnel
@@ -239,6 +241,7 @@ export default function Personnel() {
       telephone: p.telephone || '', email: p.email || '',
       date_embauche: p.date_embauche || '', salaire: p.salaire != null ? String(p.salaire) : '',
       adresse: p.adresse || '', domaine: p.domaine || '', statut: p.statut || 'actif',
+      est_agent_recouvrement: !!p.est_agent_recouvrement,
     });
     setShowModal(true);
   }
@@ -281,6 +284,7 @@ export default function Personnel() {
       adresse: form.adresse.trim() || null,
       domaine: form.domaine.trim() || null,
       statut: form.statut || 'actif',
+      est_agent_recouvrement: form.est_agent_recouvrement,
     };
     const ok = editing ? await update(editing.id, payload) : await create(payload);
     setSaving(false);
@@ -400,7 +404,12 @@ export default function Personnel() {
                       <div className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</div>
                       <div className="text-xs text-gray-400">{p.matricule || '—'}{p.sexe ? ` · ${p.sexe}` : ''}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-700">{p.fonction}</td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {p.fonction}
+                      {p.est_agent_recouvrement && (
+                        <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold" title="Agent de recouvrement — peut utiliser le portail de recouvrement">Agent</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       {p.telephone && <div className="flex items-center gap-1 text-gray-600"><Phone className="w-3 h-3" /> {p.telephone}</div>}
                       {p.email && <div className="flex items-center gap-1 text-gray-600"><Mail className="w-3 h-3" /> {p.email}</div>}
@@ -565,6 +574,23 @@ export default function Personnel() {
                 <select className={inputClass} value={form.statut} onChange={e => set('statut', e.target.value)}>
                   {Object.entries(STATUT_PERSONNEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className={labelClass}>Agent de recouvrement</label>
+                <label className="flex items-center gap-2 mt-1 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={form.est_agent_recouvrement}
+                    onChange={e => set('est_agent_recouvrement', e.target.checked)}
+                    className="w-4 h-4 accent-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">
+                    {form.est_agent_recouvrement
+                      ? <span className="text-blue-700 font-medium">Peut utiliser le portail de recouvrement</span>
+                      : 'Accès au portail de recouvrement désactivé'}
+                  </span>
+                </label>
+                <p className="text-[10px] text-gray-400 mt-1">L'agent s'identifiera par scan QR ou matricule (comme le pointage).</p>
               </div>
               <div className="sm:col-span-2">
                 <label className={labelClass}>Adresse</label>

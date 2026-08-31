@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { QrCode, X, Search, Loader2, CheckCircle, XCircle, Calendar, RefreshCw, ArrowRightLeft } from 'lucide-react';
+import { QrCode, X, Search, Loader2, CheckCircle, XCircle, Calendar, RefreshCw, ArrowRightLeft, UserCheck, LogOut, ShieldCheck } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { parseScannedMatricule } from '../utils/ascii';
@@ -66,6 +66,20 @@ export default function PortailRecouvrement() {
   const [resultat, setResultat] = useState<Resultat>(null);
   const [loading, setLoading] = useState(false);
   const [matriculeInput, setMatriculeInput] = useState('');
+  // ── Session agent de recouvrement ──
+  const [agent, setAgent] = useState<{ id: string; matricule: string; nom: string; postnom: string | null; prenom: string; fonction: string } | null>(() => {
+    try {
+      const raw = sessionStorage.getItem('jimpro_agent_recouvrement');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  const [agentStep, setAgentStep] = useState<'identify' | 'work'>('identify');
+  const [showAgentScanner, setShowAgentScanner] = useState(false);
+  const [agentMatricule, setAgentMatricule] = useState('');
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [agentError, setAgentError] = useState('');
+  const agentScannerRef = useRef<Html5Qrcode | null>(null);
+  const agentScannerRunning = useRef(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-recouvrement';
@@ -73,6 +87,46 @@ export default function PortailRecouvrement() {
   const scanBuffer = useRef('');
   const scanLastKey = useRef(0);
   const { schoolId, schoolName, loading: schoolLoading } = usePublicSchool();
+
+  // Bascule entre l'écran d'identification et l'écran de travail selon la session
+  useEffect(() => {
+    setAgentStep(agent ? 'work' : 'identify');
+  }, [agent]);
+
+  // Scanner QR de l'identification agent (carte de service)
+  useEffect(() => {
+    if (showAgentScanner) {
+      const scanner = new Html5Qrcode('qr-agent-recouvrement');
+      agentScannerRef.current = scanner;
+      agentScannerRunning.current = false;
+      scanner.start(
+        { facingMode: 'environment' },
+        { fps: 15, qrbox: { width: 300, height: 300 }, aspectRatio: 1 },
+        async (decodedText) => {
+          if (!agentScannerRunning.current) return;
+          agentScannerRunning.current = false;
+          const m = parseScannedMatricule(decodedText);
+          if (m) {
+            setShowAgentScanner(false);
+            setAgentMatricule('');
+            await identifierAgent(m);
+          } else {
+            setAgentError('Aucun matricule valide trouvé.');
+          }
+        },
+        () => {}
+      ).then(() => { agentScannerRunning.current = true; }).catch(() => setAgentError("Erreur d'accès caméra."));
+    }
+    return () => {
+      const s = agentScannerRef.current;
+      agentScannerRef.current = null;
+      if (s && agentScannerRunning.current) {
+        agentScannerRunning.current = false;
+        try { s.stop().catch(() => {}); } catch { /* scanner non démarré */ }
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAgentScanner]);
 
   // Écouteur global : le lecteur de codes-barres physique agit comme un clavier
   // qui « tape » le contenu du QR très vite puis Entrée. On capture ces frappes
@@ -96,6 +150,11 @@ export default function PortailRecouvrement() {
         const matricule = parseScannedMatricule(raw);
         if (matricule) {
           e.preventDefault();
+          // Sur l'écran d'identification, le scan = matricule de l'AGENT
+          if (agentStep === 'identify') {
+            identifierAgent(matricule);
+            return;
+          }
           if (estMatriculePersonnel(matricule)) {
             // Carte de service (personnel) → le bon portail est le POINTAGE
             window.location.href = '/portail-pointage';
@@ -115,7 +174,7 @@ export default function PortailRecouvrement() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schoolId, schoolLoading]);
+  }, [schoolId, schoolLoading, agentStep]);
 
   // Load motifs and annees on mount (scoped by school)
   useEffect(() => {
@@ -169,6 +228,64 @@ export default function PortailRecouvrement() {
   }, [resultat, loading]);
 
   const moisActuel = MOIS[month];
+
+  // ── Identification de l'agent de recouvrement ──
+  async function identifierAgent(matricule: string) {
+    setAgentError('');
+    setAgentLoading(true);
+    try {
+      const m = matricule.trim();
+      // Recherche dans le personnel : école résolue, puis repli global (comme le pointage)
+      let { data: personne } = await supabase
+        .from('personnel')
+        .select('id, matricule, nom, postnom, prenom, fonction, est_agent_recouvrement, statut')
+        .eq('ecole_id', schoolId)
+        .ilike('matricule', m)
+        .maybeSingle();
+      if (!personne) {
+        const { data: fb } = await supabase
+          .from('personnel')
+          .select('id, matricule, nom, postnom, prenom, fonction, est_agent_recouvrement, statut')
+          .ilike('matricule', m)
+          .maybeSingle();
+        personne = fb;
+      }
+      if (!personne) {
+        setAgentError('Matricule inconnu. Vérifiez la carte de service.');
+        return;
+      }
+      if (personne.statut !== 'actif') {
+        setAgentError('Accès refusé : ce membre est inactif.');
+        return;
+      }
+      if (!personne.est_agent_recouvrement) {
+        setAgentError('Accès refusé : ce membre n\'est pas agent de recouvrement. Contactez l\'administrateur.');
+        return;
+      }
+      const info = {
+        id: personne.id, matricule: personne.matricule, nom: personne.nom,
+        postnom: personne.postnom, prenom: personne.prenom, fonction: personne.fonction,
+      };
+      setAgent(info);
+      try { sessionStorage.setItem('jimpro_agent_recouvrement', JSON.stringify(info)); } catch { /* ignore */ }
+      setAgentMatricule('');
+      setShowAgentScanner(false);
+    } catch (err) {
+      console.error(err);
+      setAgentError('Erreur lors de l\'identification.');
+    } finally {
+      setAgentLoading(false);
+    }
+  }
+
+  function deconnecterAgent() {
+    setAgent(null);
+    setAgentStep('identify');
+    setResultat(null);
+    setScanError('');
+    setMatriculeInput('');
+    try { sessionStorage.removeItem('jimpro_agent_recouvrement'); } catch { /* ignore */ }
+  }
 
   async function verifierMatricule(matricule: string) {
     if (schoolLoading) return; // attente résolution école
@@ -253,6 +370,62 @@ export default function PortailRecouvrement() {
     }
   }
 
+  // ── Écran d'identification de l'agent de recouvrement ──
+  if (agentStep === 'identify') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-blue-950 flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-5 py-2 text-white/80 text-sm mb-4">
+              <ShieldCheck className="w-4 h-4" />
+              Contrôle d'accès
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">{schoolName || 'GOLDEN ACADEMY'}</h1>
+            <p className="text-white/60 text-sm">Portail de Recouvrement — réservé aux agents autorisés</p>
+            <p className="text-white/40 text-xs mt-2">Identifiez-vous par scan de votre carte de service ou par matricule.</p>
+          </div>
+
+          <button
+            onClick={() => { setShowAgentScanner(!showAgentScanner); setAgentError(''); }}
+            className={'w-full flex items-center justify-center gap-3 font-semibold py-4 rounded-xl mb-4 shadow-lg transition-colors ' + (showAgentScanner ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-emerald-500 hover:bg-emerald-400 text-white')}
+          >
+            {showAgentScanner ? <X className="w-6 h-6" /> : <QrCode className="w-6 h-6" />}
+            {showAgentScanner ? 'Fermer le scanner' : 'Scanner ma carte de service'}
+          </button>
+
+          {showAgentScanner && (
+            <div className="bg-black rounded-xl overflow-hidden mb-4 shadow-2xl">
+              <div id="qr-agent-recouvrement" className="w-full" style={{ minHeight: 280 }} />
+            </div>
+          )}
+
+          <form
+            onSubmit={async (e) => { e.preventDefault(); if (agentMatricule.trim()) await identifierAgent(agentMatricule.trim().toUpperCase()); }}
+            className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-4"
+          >
+            <p className="text-white/50 text-xs mb-2">Ou saisissez votre matricule</p>
+            <div className="flex gap-2">
+              <input
+                value={agentMatricule}
+                onChange={e => setAgentMatricule(e.target.value)}
+                placeholder="Matricule (ex : PGA-...)"
+                autoFocus
+                className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 text-sm outline-none focus:border-emerald-400"
+              />
+              <button type="submit" disabled={agentLoading} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg disabled:opacity-50">
+                {agentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Valider'}
+              </button>
+            </div>
+          </form>
+
+          {agentError && (
+            <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-4 py-3 rounded-xl text-sm mb-4">{agentError}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-blue-950 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md">
@@ -264,6 +437,28 @@ export default function PortailRecouvrement() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">{schoolName || 'GOLDEN ACADEMY'}</h1>
           <p className="text-white/60 text-sm">Scannez une carte étudiant pour vérifier le statut de paiement</p>
+        {/* Bandeau agent connecté */}
+        {agent && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <UserCheck className="w-5 h-5 text-emerald-300" />
+              </div>
+              <div>
+                <div className="text-white text-sm font-semibold">{agent.nom} {agent.postnom ? agent.postnom + ' ' : ''}{agent.prenom}</div>
+                <div className="text-white/40 text-xs">{agent.fonction} · {agent.matricule}</div>
+              </div>
+            </div>
+            <button
+              onClick={deconnecterAgent}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 text-xs font-medium"
+              title="Se déconnecter"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Quitter
+            </button>
+          </div>
+        )}
+
         </div>
 
         {/* Filters */}
