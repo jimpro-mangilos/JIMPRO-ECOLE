@@ -28,6 +28,7 @@ export default function Configuration() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [ptgHeureEntree, setPtgHeureEntree] = useState('08:00');
+  const [ptgJustificatifRequis, setPtgJustificatifRequis] = useState('false');
   const [ptgHeureSortie, setPtgHeureSortie] = useState('16:30');
   const [ptgTauxChange, setPtgTauxChange] = useState('');
   const [ptgSeuilRetards, setPtgSeuilRetards] = useState('3');
@@ -72,13 +73,14 @@ export default function Configuration() {
   useEffect(() => {
     if (!currentSchoolId) return;
     (async () => {
-      const { data } = await supabase.from('app_settings').select('key, value').eq('ecole_id', currentSchoolId).in('key', ['pointage_heure_entree', 'pointage_heure_sortie']);
+      const { data } = await supabase.from('app_settings').select('key, value').eq('ecole_id', currentSchoolId).in('key', ['pointage_heure_entree', 'pointage_heure_sortie', 'permissions_justificatif_requis']);
       const map: Record<string, string> = {};
       (data || []).forEach((r: any) => { map[r.key] = r.value; });
       if (map.pointage_heure_entree) setPtgHeureEntree(map.pointage_heure_entree);
       if (map.pointage_heure_sortie) setPtgHeureSortie(map.pointage_heure_sortie);
       if (map.pointage_taux_change) setPtgTauxChange(map.pointage_taux_change);
       if (map.pointage_seuil_retards) setPtgSeuilRetards(map.pointage_seuil_retards);
+      if (map.permissions_justificatif_requis) setPtgJustificatifRequis(map.permissions_justificatif_requis);
     })();
   }, [currentSchoolId]);
 
@@ -135,6 +137,7 @@ export default function Configuration() {
           { ecole_id: currentSchoolId, key: 'pointage_heure_sortie', value: ptgHeureSortie },
           { ecole_id: currentSchoolId, key: 'pointage_taux_change', value: ptgTauxChange },
           { ecole_id: currentSchoolId, key: 'pointage_seuil_retards', value: ptgSeuilRetards },
+          { ecole_id: currentSchoolId, key: 'permissions_justificatif_requis', value: ptgJustificatifRequis },
         ],
         { onConflict: 'ecole_id,key' }
       );
@@ -320,6 +323,18 @@ export default function Configuration() {
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
               <p className="text-[11px] text-gray-400 mt-1">Permet d'afficher le salaire payable en dollars (en plus des francs).</p>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={ptgJustificatifRequis === 'true'}
+                  onChange={e => setPtgJustificatifRequis(e.target.checked ? 'true' : 'false')}
+                  className="w-4 h-4 rounded border-slate-300 text-blue-600"
+                />
+                <span className="font-medium">Exiger un justificatif (pièce jointe) pour les permissions des élèves</span>
+              </label>
+              <p className="text-[11px] text-gray-400 mt-1">Si coché, le portail parent et la page admin exigent une pièce jointe (photo, PDF) pour soumettre une permission.</p>
             </div>
           </div>
           <button

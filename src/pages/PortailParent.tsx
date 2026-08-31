@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X, BookOpen, Upload, CalendarClock, CalendarPlus, ShieldCheck, ShieldX } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { parseScannedMatricule } from '../utils/ascii';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/calculations';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
-import { isTableMissingError } from '../lib/hooks/usePointage';
+import { isTableMissingError, loadPointageConfig, compareHeures, type PointageConfig } from '../lib/hooks/usePointage';
+import type { PointageEleveRecord } from '../utils/pointageElevesReportGenerator';
 
 interface EleveInfo {
   id: string;
@@ -75,11 +76,64 @@ export default function PortailParent() {
   const [permError, setPermError] = useState('');
   const [permTableMissing, setPermTableMissing] = useState(false);
   const [permFichier, setPermFichier] = useState<File | null>(null);
+  const [pointages, setPointages] = useState<PointageEleveRecord[]>([]);
+  const [ptgConfig, setPtgConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null, seuilRetards: 3 });
+  const [ptgTableMissing, setPtgTableMissing] = useState(false);
+  const [justifRequis, setJustifRequis] = useState(false);
   const [permFileResetKey, setPermFileResetKey] = useState(0);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-scanner-reader';
   const { schoolId, loading: schoolLoading } = usePublicSchool();
+
+  // ═══ Pointage du mois — statut effectif (rec > permission approuvée > absent auto) ═══
+  const ptgByDate = useMemo(() => {
+    const m = new Map<string, PointageEleveRecord>();
+    for (const p of pointages) m.set(p.date_pointage, p);
+    return m;
+  }, [pointages]);
+
+  const ptgMonth = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const mo = now.getMonth() + 1;
+    const last = new Date(y, mo, 0).getDate();
+    const days: string[] = [];
+    for (let d = 1; d <= last; d++) {
+      const day = new Date(y, mo - 1, d).getDay();
+      if (day >= 1 && day <= 5) days.push(y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0'));
+    }
+    return { y, mo, days };
+  }, []);
+
+  function ptgStatutJour(date: string): string {
+    const rec = ptgByDate.get(date);
+    if (rec) {
+      if (rec.statut === 'present' && rec.heure_arrivee && compareHeures(rec.heure_arrivee.slice(0, 5), ptgConfig.heureEntree) > 0) return 'retard';
+      return rec.statut || 'present';
+    }
+    if (permissions.some(p => p.statut === 'approuvee' && date >= p.date_debut && date <= p.date_fin)) return 'permission';
+    if (date <= new Date().toISOString().slice(0, 10)) return 'absent';
+    return '';
+  }
+
+  const ptgBilan = useMemo(() => {
+    const s = { present: 0, retard: 0, absent: 0, permission: 0 };
+    let ecoules = 0;
+    const today = new Date().toISOString().slice(0, 10);
+    for (const d of ptgMonth.days) {
+      if (d > today) continue;
+      ecoules++;
+      const st = ptgStatutJour(d);
+      if (st === 'present') s.present++;
+      else if (st === 'retard') s.retard++;
+      else if (st === 'absent') s.absent++;
+      else if (st === 'permission') s.permission++;
+    }
+    const taux = ecoules > 0 ? Math.round(((s.present + s.retard + s.permission) / ecoules) * 100) : null;
+    return { ...s, ecoules, taux };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pointages, permissions, ptgConfig, ptgMonth]);
 
   // QR Scanner lifecycle
   useEffect(() => {
@@ -146,6 +200,8 @@ export default function PortailParent() {
     setPaiements([]);
     setPermissions([]);
     setPermTableMissing(false);
+    setPointages([]);
+    setPtgTableMissing(false);
 
     try {
       const { data: eleveData, error: eleveError } = await supabase
@@ -201,6 +257,33 @@ export default function PortailParent() {
         setPermTableMissing(false);
         setPermissions((permsRes.data || []) as PermissionInfo[]);
       }
+
+      // Pointage du mois + config (justificatif requis ?)
+      const now = new Date();
+      const y = now.getFullYear();
+      const mo = now.getMonth() + 1;
+      const startPtg = y + '-' + String(mo).padStart(2, '0') + '-01';
+      const lastDPtg = new Date(y, mo, 0).getDate();
+      const endPtg = y + '-' + String(mo).padStart(2, '0') + '-' + String(lastDPtg).padStart(2, '0');
+      const [ptgRes, cfgRes] = await Promise.all([
+        supabase.from('pointages_eleves').select('*').eq('eleve_id', eleveData.id).gte('date_pointage', startPtg).lte('date_pointage', endPtg),
+        loadPointageConfig(schoolId),
+      ]);
+      if (ptgRes.error) {
+        setPtgTableMissing(isTableMissingError(ptgRes.error));
+        setPointages([]);
+      } else {
+        setPtgTableMissing(false);
+        setPointages((ptgRes.data || []) as PointageEleveRecord[]);
+      }
+      setPtgConfig(cfgRes);
+      // Justificatif obligatoire ? (clé app_settings, défaut non requis)
+      try {
+        const { data: jr } = await supabase.from('app_settings').select('value').eq('ecole_id', schoolId).eq('key', 'permissions_justificatif_requis').maybeSingle();
+        setJustifRequis(jr?.value === 'true');
+      } catch {
+        setJustifRequis(false);
+      }
     } catch (err: any) {
       console.error('Erreur recherche:', err);
       setError('Une erreur est survenue. Veuillez reessayer.');
@@ -219,6 +302,7 @@ export default function PortailParent() {
     e.preventDefault();
     if (!schoolId || !eleve || !permDebut || !permFin) return;
     if (permFin < permDebut) { setPermError('La date de fin doit être après la date de début.'); return; }
+    if (justifRequis && !permFichier) { setPermError('Le justificatif (pièce jointe) est obligatoire pour cette demande.'); return; }
     setPermError('');
     setPermSaving(true);
 
@@ -668,7 +752,7 @@ export default function PortailParent() {
                     <div className="mt-3">
                       <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/40 cursor-pointer transition-all">
                         <Upload className="w-4 h-4" />
-                        <span>{permFichier ? permFichier.name + ' (' + Math.max(1, Math.round(permFichier.size / 1024)) + ' Ko)' : 'Joindre un justificatif (photo du certificat, PDF) — optionnel'}</span>
+                        <span>{permFichier ? permFichier.name + ' (' + Math.max(1, Math.round(permFichier.size / 1024)) + ' Ko)' : justifRequis ? 'Joindre un justificatif (photo du certificat, PDF) — obligatoire *' : 'Joindre un justificatif (photo du certificat, PDF) — optionnel'}</span>
                         <input
                           type="file"
                           key={permFileResetKey}
@@ -687,6 +771,58 @@ export default function PortailParent() {
                     </div>
                     <p className="text-[11px] text-gray-400 mt-2">La demande sera examinée par l'école (promoteur, IT Manager ou admin).</p>
                   </form>
+                </div>
+              )}
+            </div>
+
+            {/* ═══ Pointage du mois ═══ */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                  <CalendarClock className="w-5 h-5 text-indigo-600" /> Pointage du mois
+                </h3>
+                <span className="text-xs text-gray-500">Heure d'entrée : {ptgConfig.heureEntree}</span>
+              </div>
+              {ptgTableMissing ? (
+                <div className="px-5 py-8 text-center text-gray-400 text-sm">
+                  Le pointage sera disponible prochainement (migration à exécuter par l'école).
+                </div>
+              ) : (
+                <div className="p-4">
+                  {/* Bilan */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+                    {[
+                      { label: 'Présent', v: ptgBilan.present, cls: 'text-green-600', bg: 'bg-green-50' },
+                      { label: 'Retard', v: ptgBilan.retard, cls: 'text-amber-600', bg: 'bg-amber-50' },
+                      { label: 'Absent', v: ptgBilan.absent, cls: 'text-red-600', bg: 'bg-red-50' },
+                      { label: 'Permission', v: ptgBilan.permission, cls: 'text-blue-600', bg: 'bg-blue-50' },
+                      { label: 'Taux présence', v: ptgBilan.taux != null ? ptgBilan.taux + '%' : '—', cls: 'text-indigo-600', bg: 'bg-indigo-50' },
+                    ].map(x => (
+                      <div key={x.label} className={x.bg + ' rounded-lg p-3 text-center'}>
+                        <div className={'text-lg font-bold ' + x.cls}>{x.v}</div>
+                        <div className="text-[11px] text-gray-500">{x.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Grille du mois */}
+                  <p className="text-xs text-gray-400 mb-2">
+                    {ptgMonth.y} — {new Date(ptgMonth.y, ptgMonth.mo - 1, 1).toLocaleDateString('fr-FR', { month: 'long' })} · {ptgBilan.ecoules} jour(s) écoulé(s)
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ptgMonth.days.map(d => {
+                      const st = ptgStatutJour(d);
+                      const dayNum = Number(d.slice(8, 10));
+                      const dayName = new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short' });
+                      const badge = st === 'present' ? 'bg-green-100 text-green-700' : st === 'retard' ? 'bg-amber-100 text-amber-700' : st === 'absent' ? 'bg-red-100 text-red-700' : st === 'permission' ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-300';
+                      const letter = st === 'present' ? 'P' : st === 'retard' ? 'R' : st === 'absent' ? 'A' : st === 'permission' ? 'Perm' : '·';
+                      return (
+                        <div key={d} className={'w-9 py-1 rounded-md text-center text-[10px] font-bold ' + badge} title={dayName + ' ' + dayNum}>
+                          {dayNum}
+                          <div className="text-[8px] font-semibold">{letter}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

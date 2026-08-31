@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { UserCheck, Clock, Search, FileDown, CalendarDays, CalendarRange, Users, ShieldCheck, ShieldX, CalendarPlus, CalendarClock } from 'lucide-react';
+import { UserCheck, Clock, Search, FileDown, CalendarDays, CalendarRange, Users, ShieldCheck, ShieldX, CalendarPlus, CalendarClock, MessageCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { loadPointageConfig, compareHeures, formatDatePointage, isTableMissingError, type PointageConfig } from '../lib/hooks/usePointage';
@@ -59,6 +59,7 @@ export default function PointageEleves() {
   const [permFin, setPermFin] = useState('');
   const [permMotif, setPermMotif] = useState('');
   const [permSaving, setPermSaving] = useState(false);
+  const [schoolPhone, setSchoolPhone] = useState<string | null>(null);
 
   const today = todayStr();
   const [year, m] = month.split('-').map(Number);
@@ -99,6 +100,8 @@ export default function PointageEleves() {
       ]);
       setConfig(cfg);
       if (!permsRes.error) setPermissions((permsRes.data as PermissionEleve[]) || []);
+      const { data: ecoleTel } = await supabase.from('ecoles').select('telephone').eq('id', currentSchoolId).maybeSingle();
+      setSchoolPhone(ecoleTel?.telephone || null);
       const missingPointages = !!isTableMissingError(r.error);
       const missingPerms = !!isTableMissingError(permsRes.error);
       setMigrationMissing(missingPointages || missingPerms);
@@ -262,6 +265,14 @@ export default function PointageEleves() {
     reload();
   }
 
+  // Lien WhatsApp (prévenir l'école) — téléphone international si possible
+  function waLink(phone: string, msg: string): string {
+    let d = phone.replace(/\D/g, '');
+    if (d.startsWith('00')) d = d.slice(2);
+    if (d.length === 10 && d.startsWith('0')) d = '243' + d.slice(1); // RDC : 09xx... → +243 9xx...
+    return 'https://wa.me/' + d + '?text=' + encodeURIComponent(msg);
+  }
+
   function cellBadge(s: StatutJour) {
     if (s.statut === 'present') return <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 text-[10px] font-bold">P</span>;
     if (s.statut === 'retard') return <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold">R</span>;
@@ -367,6 +378,17 @@ export default function PointageEleves() {
                           <button onClick={() => decidePermission(p, false)} disabled={permBusy === p.id} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-50">
                             <ShieldX className="w-3.5 h-3.5" /> Refuser
                           </button>
+                          {schoolPhone && (
+                            <a
+                              href={waLink(schoolPhone, 'Permission d\'absence — ' + (e ? e.nom + ' ' + (e.postnom || '') + ' ' + e.prenom : 'élève') + ' (' + (e ? e.matricule : '') + ') du ' + p.date_debut + ' au ' + p.date_fin + (p.motif ? ' : ' + p.motif : '') + (p.justificatif_url ? ' | Justificatif : ' + p.justificatif_url : ''))}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-500 text-white text-xs font-semibold hover:bg-green-600"
+                              title="Prévenir l'école par WhatsApp"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                            </a>
+                          )}
                         </div>
                       </div>
                     );
