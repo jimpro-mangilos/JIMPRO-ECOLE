@@ -100,8 +100,12 @@ export default function PointageEleves() {
       ]);
       setConfig(cfg);
       if (!permsRes.error) setPermissions((permsRes.data as PermissionEleve[]) || []);
-      const { data: ecoleTel } = await supabase.from('ecoles').select('telephone').eq('id', currentSchoolId).maybeSingle();
-      setSchoolPhone(ecoleTel?.telephone || null);
+      // Numéro WhatsApp : app_settings « ecole_whatsapp » d'abord, sinon ecoles.telephone
+      const [waRes, ecoleTel] = await Promise.all([
+        supabase.from('app_settings').select('value').eq('ecole_id', currentSchoolId).eq('key', 'ecole_whatsapp').maybeSingle(),
+        supabase.from('ecoles').select('telephone').eq('id', currentSchoolId).maybeSingle(),
+      ]);
+      setSchoolPhone(waRes.data?.value || ecoleTel?.telephone || null);
       const missingPointages = !!isTableMissingError(r.error);
       const missingPerms = !!isTableMissingError(permsRes.error);
       setMigrationMissing(missingPointages || missingPerms);

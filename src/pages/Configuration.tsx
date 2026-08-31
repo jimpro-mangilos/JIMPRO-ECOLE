@@ -29,6 +29,7 @@ export default function Configuration() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [ptgHeureEntree, setPtgHeureEntree] = useState('08:00');
   const [ptgJustificatifRequis, setPtgJustificatifRequis] = useState('false');
+  const [ptgWhatsapp, setPtgWhatsapp] = useState('');
   const [ptgHeureSortie, setPtgHeureSortie] = useState('16:30');
   const [ptgTauxChange, setPtgTauxChange] = useState('');
   const [ptgSeuilRetards, setPtgSeuilRetards] = useState('3');
@@ -73,7 +74,7 @@ export default function Configuration() {
   useEffect(() => {
     if (!currentSchoolId) return;
     (async () => {
-      const { data } = await supabase.from('app_settings').select('key, value').eq('ecole_id', currentSchoolId).in('key', ['pointage_heure_entree', 'pointage_heure_sortie', 'permissions_justificatif_requis']);
+      const { data } = await supabase.from('app_settings').select('key, value').eq('ecole_id', currentSchoolId).in('key', ['pointage_heure_entree', 'pointage_heure_sortie', 'permissions_justificatif_requis', 'ecole_whatsapp']);
       const map: Record<string, string> = {};
       (data || []).forEach((r: any) => { map[r.key] = r.value; });
       if (map.pointage_heure_entree) setPtgHeureEntree(map.pointage_heure_entree);
@@ -81,6 +82,7 @@ export default function Configuration() {
       if (map.pointage_taux_change) setPtgTauxChange(map.pointage_taux_change);
       if (map.pointage_seuil_retards) setPtgSeuilRetards(map.pointage_seuil_retards);
       if (map.permissions_justificatif_requis) setPtgJustificatifRequis(map.permissions_justificatif_requis);
+      if (map.ecole_whatsapp) setPtgWhatsapp(map.ecole_whatsapp);
     })();
   }, [currentSchoolId]);
 
@@ -138,6 +140,7 @@ export default function Configuration() {
           { ecole_id: currentSchoolId, key: 'pointage_taux_change', value: ptgTauxChange },
           { ecole_id: currentSchoolId, key: 'pointage_seuil_retards', value: ptgSeuilRetards },
           { ecole_id: currentSchoolId, key: 'permissions_justificatif_requis', value: ptgJustificatifRequis },
+          { ecole_id: currentSchoolId, key: 'ecole_whatsapp', value: ptgWhatsapp },
         ],
         { onConflict: 'ecole_id,key' }
       );
@@ -335,6 +338,17 @@ export default function Configuration() {
                 <span className="font-medium">Exiger un justificatif (pièce jointe) pour les permissions des élèves</span>
               </label>
               <p className="text-[11px] text-gray-400 mt-1">Si coché, le portail parent et la page admin exigent une pièce jointe (photo, PDF) pour soumettre une permission.</p>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Numéro WhatsApp de l'école (prévenir à l'approbation des permissions)</label>
+              <input
+                type="tel"
+                value={ptgWhatsapp}
+                onChange={e => setPtgWhatsapp(e.target.value)}
+                placeholder="Ex : +243 8xx xxx xxx"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">Format international conseillé (+243...). Le bouton « WhatsApp » de la page Pointage des élèves s'activera avec ce numéro (sinon celui de l'école).</p>
             </div>
           </div>
           <button
