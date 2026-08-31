@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X, BookOpen, Upload, CalendarClock, CalendarPlus, ShieldCheck, ShieldX } from 'lucide-react';
+import { Search, User, Calendar, Phone, MapPin, DollarSign, FileText, Package, Loader2, School, ChevronRight, QrCode, X, BookOpen, Upload, CalendarClock, CalendarPlus, ShieldCheck, ShieldX, MessageCircle } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { parseScannedMatricule } from '../utils/ascii';
@@ -80,11 +80,35 @@ export default function PortailParent() {
   const [ptgConfig, setPtgConfig] = useState<PointageConfig>({ heureEntree: '08:00', heureSortie: '16:30', tauxChange: null, seuilRetards: 3 });
   const [ptgTableMissing, setPtgTableMissing] = useState(false);
   const [justifRequis, setJustifRequis] = useState(false);
+  const [whatsapp, setWhatsapp] = useState<string | null>(null);
   const [permFileResetKey, setPermFileResetKey] = useState(0);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerRunning = useRef(false);
   const scannerDivId = 'qr-scanner-reader';
   const { schoolId, loading: schoolLoading } = usePublicSchool();
+
+  // Numéro WhatsApp de l'école (app_settings « ecole_whatsapp » sinon ecoles.telephone)
+  useEffect(() => {
+    if (!schoolId) return;
+    (async () => {
+      try {
+        const [waRes, ecoleRes] = await Promise.all([
+          supabase.from('app_settings').select('value').eq('ecole_id', schoolId).eq('key', 'ecole_whatsapp').maybeSingle(),
+          supabase.from('ecoles').select('telephone').eq('id', schoolId).maybeSingle(),
+        ]);
+        setWhatsapp(waRes.data?.value || ecoleRes.data?.telephone || null);
+      } catch {
+        setWhatsapp(null);
+      }
+    })();
+  }, [schoolId]);
+
+  function waLink(phone: string, msg: string): string {
+    let d = phone.replace(/\D/g, '');
+    if (d.startsWith('00')) d = d.slice(2);
+    if (d.length === 10 && d.startsWith('0')) d = '243' + d.slice(1); // RDC : 09xx... → +243 9xx...
+    return 'https://wa.me/' + d + '?text=' + encodeURIComponent(msg);
+  }
 
   // ═══ Pointage du mois — statut effectif (rec > permission approuvée > absent auto) ═══
   const ptgByDate = useMemo(() => {
@@ -363,6 +387,20 @@ export default function PortailParent() {
               <h1 className="text-lg font-bold text-gray-900">JIMPRO</h1>
               <p className="text-xs text-gray-500">Portail Parent</p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {whatsapp && (
+              <a
+                href={waLink(whatsapp, 'Bonjour, je vous contacte depuis le portail parent.')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-green-700 transition-colors font-medium"
+                title="Contacter l'école sur WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4 text-green-600" />
+                {whatsapp}
+              </a>
+            )}
           </div>
         </div>
       </div>
