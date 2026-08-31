@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogo, clearLogoCache } from '../contexts/LogoContext';
 import { invalidatePrefixCache } from '../utils/matriculeGenerator';
-import { Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Upload, Download, RotateCcw } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Upload, Download, RotateCcw, Send, MessageSquare } from 'lucide-react';
+import { envoyerSms, sauverConfigSms } from '../lib/smsService';
 import MenuConfigTab from '../components/MenuConfigTab';
 import PersonnelConfigTab from '../components/PersonnelConfigTab';
 import TaillesConfigTab from '../components/TaillesConfigTab';
@@ -14,11 +15,11 @@ import { useConfiguration } from '../lib/hooks/useConfiguration';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const emptyForm = (extra?: Record<string, any>): any => ({ nom: '', description: '', is_active: true, ...extra });
 const libForm = (extra?: Record<string, string | boolean>) => ({ libelle: '', description: '', is_active: true, ...extra });
-type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'pointage' | 'sauvegarde' | 'menu_par_role' | 'personnel' | 'tailles';
+type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'pointage' | 'sauvegarde' | 'menu_par_role' | 'personnel' | 'tailles' | 'sms';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'sections', label: 'Sections' }, { key: 'options', label: 'Options' }, { key: 'classes', label: 'Classes' },
   { key: 'motifs', label: 'Motifs' }, { key: 'types_paiement', label: 'Types Paiement' }, { key: 'annees_scolaires', label: 'Années Scolaires' },
-  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'pointage', label: 'Pointage' }, { key: 'sauvegarde', label: 'Sauvegarde' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' }, { key: 'tailles', label: 'Tailles' },
+  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'pointage', label: 'Pointage' }, { key: 'sms', label: 'SMS' }, { key: 'sauvegarde', label: 'Sauvegarde' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' }, { key: 'tailles', label: 'Tailles' },
 ];
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -30,6 +31,16 @@ export default function Configuration() {
   const [ptgHeureEntree, setPtgHeureEntree] = useState('08:00');
   const [ptgJustificatifRequis, setPtgJustificatifRequis] = useState('false');
   const [ptgWhatsapp, setPtgWhatsapp] = useState('');
+  const [smsActif, setSmsActif] = useState(false);
+  const [smsPaiementActif, setSmsPaiementActif] = useState(false);
+  const [smsProvider, setSmsProvider] = useState('');
+  const [smsSid, setSmsSid] = useState('');
+  const [smsToken, setSmsToken] = useState('');
+  const [smsFrom, setSmsFrom] = useState('');
+  const [smsTestTel, setSmsTestTel] = useState('');
+  const [smsSaving, setSmsSaving] = useState(false);
+  const [smsTesting, setSmsTesting] = useState(false);
+  const [smsJournal, setSmsJournal] = useState<any[]>([]);
   const [ptgHeureSortie, setPtgHeureSortie] = useState('16:30');
   const [ptgTauxChange, setPtgTauxChange] = useState('');
   const [ptgSeuilRetards, setPtgSeuilRetards] = useState('3');
@@ -83,7 +94,20 @@ export default function Configuration() {
       if (map.pointage_seuil_retards) setPtgSeuilRetards(map.pointage_seuil_retards);
       if (map.permissions_justificatif_requis) setPtgJustificatifRequis(map.permissions_justificatif_requis);
       if (map.ecole_whatsapp) setPtgWhatsapp(map.ecole_whatsapp);
+
+      // Configuration SMS
+      const { data: smsData } = await supabase.from('app_settings').select('key, value').eq('ecole_id', currentSchoolId).in('key', ['sms_actif', 'sms_paiement_actif', 'sms_provider', 'sms_sid', 'sms_token', 'sms_from']);
+      const smsMap: Record<string, string> = {};
+      (smsData || []).forEach((r: any) => { smsMap[r.key] = r.value; });
+      setSmsActif(smsMap.sms_actif === 'true');
+      setSmsPaiementActif(smsMap.sms_paiement_actif === 'true');
+      setSmsProvider(smsMap.sms_provider || '');
+      setSmsSid(smsMap.sms_sid || '');
+      setSmsToken(smsMap.sms_token || '');
+      setSmsFrom(smsMap.sms_from || '');
+      chargerJournalSms();
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSchoolId]);
 
   const TABLES_SAUVEGARDE = ['eleves', 'personnel', 'paiements', 'pointages_personnel', 'permissions_personnel', 'paiements_salaires', 'notes_eleves', 'sections', 'options', 'classes', 'motifs_paiement', 'types_paiement', 'annees_scolaires', 'types_uniforme'];
@@ -150,6 +174,39 @@ export default function Configuration() {
     } finally {
       setPtgSaving(false);
     }
+  }
+
+  async function chargerJournalSms() {
+    if (!currentSchoolId) return;
+    try {
+      const { data } = await supabase.from('notifications_sms').select('*').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false }).limit(20);
+      setSmsJournal((data || []) as any[]);
+    } catch {
+      setSmsJournal([]);
+    }
+  }
+
+  async function saveSmsConfig() {
+    if (!currentSchoolId) return;
+    setSmsSaving(true);
+    const { error } = await sauverConfigSms(currentSchoolId, {
+      actif: smsActif, paiementActif: smsPaiementActif,
+      provider: smsProvider, sid: smsSid, token: smsToken, from: smsFrom,
+    });
+    if (error) showError('Erreur : ' + error);
+    else showSuccess('Configuration SMS enregistrée');
+    setSmsSaving(false);
+  }
+
+  async function testerSms() {
+    if (!currentSchoolId) return;
+    if (!smsTestTel.trim()) { showError('Saisissez un numéro de test.'); return; }
+    setSmsTesting(true);
+    const r = await envoyerSms(currentSchoolId, smsTestTel.trim(), 'Test SMS JIMPRO — notification de paiement opérationnelle.', 'test');
+    if (r.ok) showSuccess('SMS de test envoyé !');
+    else showError('Échec : ' + (r.erreur || r.statut));
+    await chargerJournalSms();
+    setSmsTesting(false);
   }
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -358,6 +415,89 @@ export default function Configuration() {
           >
             {ptgSaving ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Enregistrer les horaires
           </button>
+        </div>
+      )}
+
+      {/* ─── SMS Tab ─────────────────────────────────────────────────────── */}
+      {activeTab === 'sms' && (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><MessageSquare className="w-5 h-5 text-blue-600" /> Notifications SMS</h2>
+          <p className="text-sm text-gray-500 mb-5">Envoyez un SMS au numéro de téléphone de l'élève (fiche) à chaque paiement enregistré. Prestataires supportés : Twilio, Africa's Talking.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" checked={smsActif} onChange={e => setSmsActif(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-blue-600" />
+              <span className="font-medium">Notifications SMS actives</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" checked={smsPaiementActif} onChange={e => setSmsPaiementActif(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-blue-600" />
+              <span className="font-medium">SMS à chaque paiement enregistré</span>
+            </label>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Prestataire</label>
+              <select value={smsProvider} onChange={e => setSmsProvider(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white">
+                <option value="">Aucun</option>
+                <option value="twilio">Twilio</option>
+                <option value="africastalking">Africa's Talking</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Numéro / Sender ID expéditeur</label>
+              <input type="text" value={smsFrom} onChange={e => setSmsFrom(e.target.value)} placeholder="Twilio : +1xxx / AT : nom expéditeur" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">SID / Identifiant de compte</label>
+              <input type="text" value={smsSid} onChange={e => setSmsSid(e.target.value)} placeholder="Twilio Account SID / AT username" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Jeton / Clé API</label>
+              <input type="password" value={smsToken} onChange={e => setSmsToken(e.target.value)} placeholder="Twilio Auth Token / AT apiKey" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white" />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <button onClick={saveSmsConfig} disabled={smsSaving} className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 text-sm">
+              {smsSaving ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Enregistrer la configuration
+            </button>
+            <div className="flex items-center gap-2">
+              <input type="tel" value={smsTestTel} onChange={e => setSmsTestTel(e.target.value)} placeholder="Numéro de test (ex : +243 8xx xxx xxx)" className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500" />
+              <button onClick={testerSms} disabled={smsTesting} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 disabled:opacity-50">
+                {smsTesting ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Tester l'envoi
+              </button>
+            </div>
+          </div>
+          {/* Journal */}
+          <h3 className="font-bold text-gray-800 mb-2">Journal des dernières notifications</h3>
+          {smsJournal.length === 0 ? (
+            <p className="text-sm text-gray-400">Aucune notification (le journal se remplit dès l'envoi — le SMS de test l'alimente aussi).</p>
+          ) : (
+            <div className="overflow-x-auto border border-slate-100 rounded-lg">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase">
+                  <tr>
+                    <th className="px-3 py-2">Date</th>
+                    <th className="px-3 py-2">Téléphone</th>
+                    <th className="px-3 py-2">Contexte</th>
+                    <th className="px-3 py-2">Message</th>
+                    <th className="px-3 py-2 text-center">Statut</th>
+                    <th className="px-3 py-2">Erreur</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {smsJournal.map(n => (
+                    <tr key={n.id} className="hover:bg-gray-50/50">
+                      <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">{new Date(n.created_at).toLocaleString('fr-FR')}</td>
+                      <td className="px-3 py-2 text-xs">{n.telephone}</td>
+                      <td className="px-3 py-2 text-xs">{n.contexte}</td>
+                      <td className="px-3 py-2 text-xs text-gray-600 max-w-xs truncate" title={n.message}>{n.message}</td>
+                      <td className="px-3 py-2 text-center">
+                        <span className={'px-2 py-0.5 text-[10px] font-bold rounded-full ' + (n.statut === 'envoye' ? 'bg-green-100 text-green-700' : n.statut === 'echec' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')}>{n.statut}</span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-red-600 max-w-[180px] truncate" title={n.erreur || ''}>{n.erreur || ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

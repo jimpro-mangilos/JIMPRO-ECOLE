@@ -3,6 +3,7 @@ import { DollarSign, Search, X, User, Phone, MapPin, Calendar, GraduationCap, Us
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { montantEnLettres } from '../utils/numberToWords';
+import { notifierPaiement } from '../lib/smsService';
 
 interface Eleve {
   id: string;
@@ -335,9 +336,25 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
         paiementData.nom_encaisseur = `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim();
       }
 
-      const { error } = await supabase.from('paiements').insert(paiementData);
+      const { data: paiementCree, error } = await supabase.from('paiements').insert(paiementData).select().maybeSingle();
 
       if (error) throw error;
+
+      // Notification SMS au numéro de l'élève (fiche) — non bloquant, si activé
+      try {
+        const { data: ecoleRow } = await supabase.from('ecoles').select('nom').eq('id', currentSchoolId).maybeSingle();
+        notifierPaiement({
+          ecoleId: currentSchoolId || '',
+          eleveId: formData.eleve_id,
+          telephone: eleveSelectionne.telephone || null,
+          nomEleve: (eleveSelectionne.nom + ' ' + (eleveSelectionne.postnom || '') + ' ' + eleveSelectionne.prenom).trim(),
+          montant: parseFloat(formData.montant_paye) || 0,
+          motif: motifLibelle || '',
+          numeroRecu: paiementCree?.numero_recu || '',
+          datePaiement: formData.date_paiement,
+          schoolName: ecoleRow?.nom || '',
+        });
+      } catch { /* le SMS ne doit jamais bloquer l'enregistrement */ }
 
       alert('Paiement enregistré avec succès');
       setFormData({
