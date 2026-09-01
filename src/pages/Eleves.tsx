@@ -88,11 +88,15 @@ export default function Eleves() {
   // ─── Form handlers ────────────────────────────────────────────────────────
   const handleOpenForm = () => {
     setPhotoPreview(null);
+    setCameraFile(null);
+    if (photoInputRef.current) photoInputRef.current.value = '';
     openCreate();
   };
 
   const handleCloseModal = () => {
     setPhotoPreview(null);
+    setCameraFile(null);
+    if (photoInputRef.current) photoInputRef.current.value = '';
     setShowModal(false);
   };
 
@@ -119,6 +123,9 @@ export default function Eleves() {
   }
 
   const handleEditClick = (eleve: Eleve) => {
+    setPhotoPreview(null);
+    setCameraFile(null);
+    if (photoInputRef.current) photoInputRef.current.value = '';
     openEdit(eleve);
   };
 
@@ -139,6 +146,10 @@ export default function Eleves() {
       }
       setFormData(p => ({ ...p, photo_url: photoUrl }));
       await submitEleve(classeList, photoUrl);
+      // Réinitialiser la photo : sinon le même fichier/capture est réutilisé pour l'élève suivant
+      if (photoInputRef.current) photoInputRef.current.value = '';
+      setCameraFile(null);
+      setPhotoPreview(null);
     } catch (err: any) {
       console.error('Erreur enregistrement:', err);
       alert("Erreur lors de l'enregistrement: " + (err.message || ''));
