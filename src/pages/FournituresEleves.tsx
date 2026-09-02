@@ -3,6 +3,7 @@ import { Plus, Search, Package, X, Loader2, Users, Trash2, RotateCcw, Calendar, 
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
+import { parseScannedMatricule, isMatriculePlausible } from '../utils/ascii';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDateTime } from '../utils/calculations';
 import UniformeFormModal from '../components/UniformeFormModal';
@@ -91,19 +92,18 @@ export default function FournituresEleves() {
         async (decodedText) => {
           // Only process if this callback belongs to the current scan session
           if (scannerSessionId.current !== currentSessionId) return;
-          const match = decodedText.match(/GA[^|]*/i);
-          if (match) {
-            const matriculeExtrait = match[0].toUpperCase();
+          const m = parseScannedMatricule(decodedText);
+          if (m && isMatriculePlausible(m)) {
             setShowScanner(false);
             setScanError('');
-            const { data } = await supabase.from('eleves').select('*').eq('ecole_id', currentSchoolId).ilike('matricule', matriculeExtrait).maybeSingle();
+            const { data } = await supabase.from('eleves').select('*').eq('ecole_id', currentSchoolId).ilike('matricule', m).maybeSingle();
             // Double-check session is still current after async fetch
             if (data && scannerSessionId.current === currentSessionId) {
               setSelectedEleve(data);
               setShowUniformeForm(true);
             }
           } else {
-            setScanError('Aucun matricule valide (GA...) trouve.');
+            setScanError('Aucun matricule valide trouvé dans ce QR code.');
           }
         },
         () => {}
@@ -687,6 +687,18 @@ interface EleveSelectorModalProps {
   onSelect: (eleve: Eleve) => void;
 }
 
+/**
+ * Extrait un matricule d'un décombre d'informations (texte collé, QR complet,
+ * nom + matricule...) : d'abord le format MATRICULE:..., puis un motif
+ * matricule plausible (préfixe-date-code, ex. GAM-20260812-KR3SRB5).
+ */
+function extraireMatriculeDepuisTexte(texte: string): string {
+  const p = parseScannedMatricule(texte);
+  if (p && isMatriculePlausible(p)) return p;
+  const m = texte.toUpperCase().match(/[A-Z]{2,5}-\d{8}-[A-Z0-9]+/);
+  return m ? m[0] : '';
+}
+
 function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
   const { currentSchoolId } = useAuth();
   const [eleves, setEleves] = useState<Eleve[]>([]);
@@ -740,18 +752,17 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
         (decodedText) => {
           if (!scannerRunning2.current) return;
           scannerRunning2.current = false;
-          const match = decodedText.match(/GA[^|]*/i);
-          if (match) {
-            const matriculeExtrait = match[0].toUpperCase();
-            setSearch(matriculeExtrait);
+          const m = parseScannedMatricule(decodedText);
+          if (m && isMatriculePlausible(m)) {
+            setSearch(m);
             setShowScanner(false);
             setScanError('');
             setTimeout(() => {
-              const found = eleves.filter(e => e.matricule.toUpperCase().includes(matriculeExtrait));
+              const found = eleves.filter(e => e.matricule.toUpperCase() === m.toUpperCase());
               if (found.length === 1) onSelect(found[0]);
             }, 200);
           } else {
-            setScanError('Aucun matricule valide (GA...) trouvé dans ce QR code.');
+            setScanError('Aucun matricule valide trouvé dans ce QR code.');
           }
         },
         () => {}
@@ -762,18 +773,31 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
     return () => {
       const s = scannerRef.current;
       scannerRef.current = null;
-      if (s && scannerRunning2.current) {
-        scannerRunning2.current = false;
-        s.stop().catch(() => {});
+      scannerRunning2.current = false;
+      if (s) {
+        // stop() lève une erreur synchrone si le scanner n'a jamais démarré
+        try { s.stop().catch(() => {}); } catch { /* scanner non démarré */ }
       }
     };
   }, [showScanner, eleves, onSelect]);
 
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return eleves;
+    const raw = search.trim();
+    if (!raw) return eleves;
+    // Comme au portail de pointage : on extrait le MATRICULE du décombre
+    // d'informations tapées/collées (QR complet, nom + matricule, texte...)
+    const m = extraireMatriculeDepuisTexte(raw);
+    if (m) {
+      const upper = m.toUpperCase();
+      return eleves.filter(e => {
+        const mat = e.matricule.toUpperCase();
+        return mat === upper || mat.startsWith(upper);
+      });
+    }
+    // Sinon : recherche par nom / prénom / postnom / classe / section
+    const term = raw.toLowerCase();
     return eleves.filter(e =>
-      `${e.matricule} ${e.nom} ${e.postnom} ${e.prenom} ${(e as any).classe || ''}`
+      `${e.nom} ${e.postnom || ''} ${e.prenom} ${e.matricule} ${(e as any).classe || ''} ${e.section}`
         .toLowerCase()
         .includes(term)
     );
@@ -799,7 +823,7 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
               <input
                 autoFocus={!showScanner}
                 type="text"
-                placeholder="Rechercher par matricule, nom, prénom..."
+                placeholder="Matricule (même collé avec d'autres infos), nom, prénom..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 py-2 outline-none text-gray-700"
