@@ -49,6 +49,7 @@ const PersonnelDetail = lazy(() => import('./pages/PersonnelDetail'));
 const PointagePersonnel = lazy(() => import('./pages/PointagePersonnel'));
 const PointageEleves = lazy(() => import('./pages/PointageEleves'));
 const PortailPointageEleves = lazy(() => import('./pages/PortailPointageEleves'));
+const CarteServicePublic = lazy(() => import('./pages/CarteServicePublic'));
 const Recouvrement = lazy(() => import('./pages/Recouvrement'));
 
 function LoadingFallback() {
@@ -124,6 +125,16 @@ function App() {
                 <ErrorBoundary>
                   <Suspense fallback={<LoadingFallback />}>
                     <ApercuCarteService />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/carte-service/:matricule"
+              element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <CarteServicePublic />
                   </Suspense>
                 </ErrorBoundary>
               }

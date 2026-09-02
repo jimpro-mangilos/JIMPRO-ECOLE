@@ -84,7 +84,7 @@ export default function Personnel() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const [form, setForm] = useState<PersonnelForm>(EMPTY_FORM);
-  const { currentSchoolId, isItManager } = useAuth();
+  const { currentSchoolId, isItManager, currentSchoolCode } = useAuth();
   const [niveaux, setNiveaux] = useState<{ id: string; libelle: string }[]>([]);
   const [configFonctions, setConfigFonctions] = useState<string[]>([]);
   const [configDomaines, setConfigDomaines] = useState<string[]>([]);
@@ -442,6 +442,7 @@ export default function Personnel() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <a href={'/carte-service/' + encodeURIComponent(p.matricule || '') + '?ecole=' + (currentSchoolCode || '')} target="_blank" rel="noopener noreferrer" className="inline-flex p-2 text-teal-600 hover:bg-teal-50 rounded-lg" title="Voir la carte de service (recto + verso)"><CreditCard className="w-4 h-4" /></a>
                       <button onClick={() => navigate(`/personnel/${p.id}`)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg" title="Fiche du membre"><Eye className="w-4 h-4" /></button>
                       <button onClick={() => printCarte(p)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Carte de service (recto)"><CreditCard className="w-4 h-4" /></button>
                       <button onClick={() => printCarteBack(p)} className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg" title="Verso de la carte de service"><CreditCard className="w-4 h-4 rotate-180" /></button>
