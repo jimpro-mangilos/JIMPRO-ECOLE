@@ -704,6 +704,10 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
   const [eleves, setEleves] = useState<Eleve[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  // Référence stable à onSelect (l'ouverture automatique l'utilise dans un timeout)
+  const onSelectRef = useRef(onSelect);
+  useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
+  const autoOpened = useRef(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -757,10 +761,6 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
             setSearch(m);
             setShowScanner(false);
             setScanError('');
-            setTimeout(() => {
-              const found = eleves.filter(e => e.matricule.toUpperCase() === m.toUpperCase());
-              if (found.length === 1) onSelect(found[0]);
-            }, 200);
           } else {
             setScanError('Aucun matricule valide trouvé dans ce QR code.');
           }
@@ -802,6 +802,23 @@ function EleveSelectorModal({ onClose, onSelect }: EleveSelectorModalProps) {
         .includes(term)
     );
   }, [eleves, search]);
+
+  // Ouverture DIRECTE du formulaire de distribution dès que le matricule
+  // saisi/scanné correspond à UN SEUL élève (délai court pour laisser finir la frappe)
+  useEffect(() => {
+    const raw = search.trim();
+    if (filtered.length !== 1 || !raw) { autoOpened.current = false; return; }
+    const m = extraireMatriculeDepuisTexte(raw);
+    if (!m) { autoOpened.current = false; return; }
+    const t = setTimeout(() => {
+      if (!autoOpened.current) {
+        autoOpened.current = true;
+        onSelectRef.current(filtered[0]);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, filtered]);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
