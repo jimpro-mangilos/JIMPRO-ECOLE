@@ -228,3 +228,72 @@ async function buildQrDataUrl(p: CarteService): Promise<string> {
     { width: 800, margin: 2, errorCorrectionLevel: 'H' }
   );
 }
+// ═══ Verso UNIVERSEL : impression en lot (8 par feuille A4 paysage) ═══
+async function chargerInfosEtablissement(): Promise<{ schoolName: string; logo: string | null; telephone: string | null }> {
+  const schoolName = (await loadSchoolName()) || 'ÉTABLISSEMENT';
+  const logo = await loadLogoBase64();
+  let telephone: string | null = null;
+  try {
+    const ecoleId = await getCurrentEcoleId();
+    if (ecoleId) {
+      const { data } = await (supabase as any).from('ecoles').select('telephone').eq('id', ecoleId).maybeSingle();
+      telephone = data?.telephone || null;
+    }
+  } catch { /* ignore */ }
+  return { schoolName, logo: logo || null, telephone };
+}
+
+async function renderCarteServiceBackToCanvas(schoolName: string, logoUrl: string | null, telephone: string | null, scale = 3): Promise<HTMLCanvasElement> {
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '-10000px';
+  container.style.top = '0';
+  container.style.zIndex = '-1';
+  document.body.appendChild(container);
+  try {
+    // Rendu statique (react-dom/server) : aucune donnée personnelle — verso universel
+    container.innerHTML = renderToString(
+      createElement(CarteServiceCardBack, { schoolName, logoUrl, telephone })
+    );
+    await waitForImages(container);
+    await new Promise((r) => setTimeout(r, 60));
+    const cardEl = container.firstElementChild as HTMLElement;
+    if (!cardEl) throw new Error('Verso non rendu');
+    return await html2canvas(cardEl, { scale, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+  } finally {
+    container.remove();
+  }
+}
+
+/**
+ * Imprime les VERSOS (universels — identiques) des cartes de service pour N membres
+ * sélectionnés : le verso est rendu UNE fois puis reproduit N fois, 8 par feuille A4
+ * paysage (4 colonnes × 2 rangées), pages en cascade.
+ */
+export async function generateCartesServiceBack8PerSheet(nb: number): Promise<void> {
+  if (!nb || nb <= 0) return;
+  const { schoolName, logo, telephone } = await chargerInfosEtablissement();
+  const canvas = await renderCarteServiceBackToCanvas(schoolName, logo, telephone);
+  const img = canvas.toDataURL('image/jpeg', 0.97);
+
+  // A4 PAYSAGE : 297 × 210 mm — grille 4 × 2 = 8 cartes portrait / page
+  const PAGE_W = 297;
+  const PAGE_H = 210;
+  const MARGIN = 9;
+  const COLS = 4;
+  const ROWS = 2;
+  const PER_PAGE = COLS * ROWS; // 8
+  const cellW = (PAGE_W - MARGIN * 2) / COLS;
+  const cellH = (PAGE_H - MARGIN * 2) / ROWS;
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  for (let i = 0; i < nb; i++) {
+    if (i > 0 && i % PER_PAGE === 0) doc.addPage('a4', 'landscape');
+    const col = i % COLS;
+    const row = Math.floor((i % PER_PAGE) / COLS);
+    const x = MARGIN + col * cellW + (cellW - CARD_W) / 2;
+    const y = MARGIN + row * cellH + (cellH - CARD_H) / 2;
+    doc.addImage(img, 'JPEG', x, y, CARD_W, CARD_H);
+  }
+  doc.save('Versos-carte-service-' + nb + '.pdf');
+}

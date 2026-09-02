@@ -15,7 +15,7 @@ import {
 } from '../lib/hooks/usePersonnel';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { generateCarteService, generateCarteServiceBack, generateCartesService8PerSheet } from '../utils/carteServiceGenerator';
+import { generateCarteService, generateCarteServiceBack, generateCartesService8PerSheet, generateCartesServiceBack8PerSheet } from '../utils/carteServiceGenerator';
 import CameraCapture from '../components/CameraCapture';
 import { compressImage } from '../utils/compressImage';
 import { formatDateTime, calculerAnciennete } from '../utils/calculations';
@@ -173,6 +173,23 @@ export default function Personnel() {
       await generateCartesService8PerSheet(selected);
     } catch {
       alert('Erreur lors de la génération des cartes.');
+    } finally {
+      setPrintingAll(false);
+    }
+  }
+
+  async function printSelectedVersos() {
+    const selected = filtered.filter(p => selectedIds.has(p.id));
+    if (!selected.length) {
+      alert('Sélectionnez au moins un membre à imprimer (cases à cocher).');
+      return;
+    }
+    if (!confirm(`Imprimer ${selected.length} verso(s) universels (8 par feuille A4) ?`)) return;
+    setPrintingAll(true);
+    try {
+      await generateCartesServiceBack8PerSheet(selected.length);
+    } catch {
+      alert('Erreur lors de la génération des versos.');
     } finally {
       setPrintingAll(false);
     }
@@ -370,10 +387,19 @@ export default function Personnel() {
           onClick={printSelectedCartes}
           disabled={printingAll || filtered.length === 0}
           className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 font-semibold disabled:opacity-50 whitespace-nowrap transition-colors"
-          title="Imprimer les cartes des membres sélectionnés (8 par feuille A4)"
+          title="Imprimer les cartes (recto) des membres sélectionnés (8 par feuille A4)"
         >
           {printingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-          Imprimer les cartes sélectionnées ({selectedIds.size}) — 8/feuille
+          Cartes sélectionnées ({selectedIds.size}) — 8/feuille
+        </button>
+        <button
+          onClick={printSelectedVersos}
+          disabled={printingAll || selectedIds.size === 0}
+          className="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 font-semibold disabled:opacity-50 whitespace-nowrap transition-colors"
+          title="Imprimer les versos universels selon le nombre de membres sélectionnés (8 par feuille A4)"
+        >
+          {printingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+          Imprimer les versos ({selectedIds.size}) — 8/feuille
         </button>
       </div>
 
