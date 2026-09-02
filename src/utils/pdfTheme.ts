@@ -102,7 +102,7 @@ export function setUiLogoBase64(b64: string | null) {
  * Détermine l'école active hors-React : priorité override localStorage (admin),
  * sinon claim JWT (app_metadata.ecole_id).
  */
-async function getCurrentEcoleId(): Promise<string | null> {
+export async function getCurrentEcoleId(): Promise<string | null> {
   // 1. Override localStorage (admin/promoteur qui a basculé d'école)
   try {
     const stored = localStorage.getItem('jimpro_active_school_id');

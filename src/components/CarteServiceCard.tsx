@@ -262,86 +262,153 @@ export function CarteServiceCard({ personnel, schoolName, logoUrl, qrDataUrl }: 
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// VERSO de la carte de service — mêmes dimensions portrait 54 × 86 mm
+// VERSO UNIVERSEL de la carte de service — mêmes dimensions portrait 54 × 86 mm.
+// AUCUNE donnée personnelle : ce verso est identique pour TOUT le personnel.
+// Design « Royaume » : émeraude profonde + or, emblème central (logo ou initiales
+// de l'école), devise, coordonnées de l'établissement et mention légale.
 // ═══════════════════════════════════════════════════════════════════════════════
-export function CarteServiceCardBack({ personnel, schoolName, siteWeb }: {
-  personnel: CarteService;
+export function CarteServiceCardBack({ schoolName, logoUrl, siteWeb, telephone }: {
   schoolName: string;
+  logoUrl?: string | null;
   siteWeb?: string | null;
+  telephone?: string | null;
 }) {
+  const initials = getSchoolInitials(schoolName || 'ÉCOLE');
   const web = siteWeb || slugifySchool(schoolName);
+  const [logoError, setLogoError] = useState(false);
 
-  // Entête diagonale
-  const headerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="110" viewBox="0 0 324 110">` +
-    `<defs>` +
-    `<linearGradient id="bh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN_DEEP}"/><stop offset="0.6" stop-color="${GREEN}"/><stop offset="1" stop-color="${GREEN_LIGHT}"/></linearGradient>` +
-    `<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="0.55" stop-color="${GOLD}"/><stop offset="1" stop-color="${GOLD_DARK}"/></linearGradient>` +
-    `</defs>` +
-    `<rect x="0" y="0" width="324" height="110" rx="14" fill="url(#bh)"/>` +
-    `<polygon points="0,0 128,0 140,22 0,28" fill="url(#bg)"/>` +
-    `<polygon points="196,0 224,0 210,32" fill="url(#bg)" opacity="0.9"/>` +
-    `<polygon points="0,100 324,92 324,110 0,110" fill="url(#bg)" opacity="0.9"/>` +
+  // ── Halo doré doux (halo derrière l'emblème) ──
+  const glowSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="320" viewBox="0 0 324 320">` +
+    `<defs><radialGradient id="gl" cx="50%" cy="40%" r="60%">` +
+    `<stop offset="0" stop-color="#e8c96a" stop-opacity="0.35"/>` +
+    `<stop offset="0.55" stop-color="#e8c96a" stop-opacity="0.08"/>` +
+    `<stop offset="1" stop-color="#e8c96a" stop-opacity="0"/>` +
+    `</radialGradient></defs>` +
+    `<rect width="324" height="320" fill="url(#gl)"/>` +
     `</svg>`
   )}`;
 
-  // Bande inférieure
+  // ── Rayons dorés (éclat depuis le haut) ──
+  const raysSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="340" viewBox="0 0 324 340">` +
+    `<defs><linearGradient id="rf" x1="0" y1="0" x2="0.6" y2="1">` +
+    `<stop offset="0" stop-color="#f0d78c" stop-opacity="0.55"/>` +
+    `<stop offset="1" stop-color="#d4af37" stop-opacity="0"/>` +
+    `</linearGradient></defs>` +
+    `<polygon points="162,16 70,340 136,340" fill="url(#rf)" opacity="0.45"/>` +
+    `<polygon points="162,16 108,340 168,340" fill="url(#rf)" opacity="0.38"/>` +
+    `<polygon points="162,16 152,340 204,340" fill="url(#rf)" opacity="0.30"/>` +
+    `<polygon points="162,16 192,340 258,340" fill="url(#rf)" opacity="0.20"/>` +
+    `<polygon points="162,16 234,340 304,340" fill="url(#rf)" opacity="0.10"/>` +
+    `</svg>`
+  )}`;
+
+  // ── Hachures diagonales très discrètes (texture) ──
+  const patternSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="516" viewBox="0 0 324 516">` +
+    `<g stroke="#ffffff" stroke-width="1" opacity="0.045">` +
+    `<path d="M-40 260 L40 0"/><path d="M20 260 L100 0"/><path d="M80 260 L160 0"/>` +
+    `<path d="M140 260 L220 0"/><path d="M200 260 L280 0"/><path d="M260 260 L340 0"/>` +
+    `</g></svg>`
+  )}`;
+
+  // ── Anneau de l'emblème (double cercle doré, centre émeraude profond) ──
+  const ringSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="142" height="142" viewBox="0 0 142 142">` +
+    `<defs>` +
+    `<linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">` +
+    `<stop offset="0" stop-color="#f5e0a0"/><stop offset="0.5" stop-color="#d4af37"/><stop offset="1" stop-color="#8f6f16"/>` +
+    `</linearGradient>` +
+    `</defs>` +
+    `<circle cx="71" cy="71" r="70" fill="url(#rg)"/>` +
+    `<circle cx="71" cy="71" r="64" fill="none" stroke="#fff3cf" stroke-width="1" opacity="0.85"/>` +
+    `<circle cx="71" cy="71" r="60" fill="#0a3526"/>` +
+    // petites gemmes dorées sur l'anneau (N, E, S, O + diagonales)
+    `<polygon points="71,4 74,9 71,14 68,9" fill="#f5e0a0"/>` +
+    `<polygon points="138,71 133,68 138,65 143,68" fill="#f5e0a0"/>` +
+    `<polygon points="71,138 74,133 71,128 68,133" fill="#f5e0a0"/>` +
+    `<polygon points="4,71 9,74 14,71 9,68" fill="#f5e0a0"/>` +
+    `<polygon points="20,20 24,24 20,28 16,24" fill="#f5e0a0" opacity="0.7"/>` +
+    `<polygon points="122,20 126,24 122,28 118,24" fill="#f5e0a0" opacity="0.7"/>` +
+    `<polygon points="20,122 24,118 28,122 24,126" fill="#f5e0a0" opacity="0.7"/>` +
+    `<polygon points="122,122 118,118 122,114 126,118" fill="#f5e0a0" opacity="0.7"/>` +
+    `</svg>`
+  )}`;
+
+  // ── Bande inférieure (mention légale) ──
   const footerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="44" viewBox="0 0 324 44" preserveAspectRatio="none">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="96" viewBox="0 0 324 96" preserveAspectRatio="none">` +
     `<defs>` +
-    `<linearGradient id="bf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GREEN_LIGHT}"/><stop offset="1" stop-color="${GREEN_DEEP}"/></linearGradient>` +
-    `<linearGradient id="bfo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}"/></linearGradient>` +
+    `<linearGradient id="fb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e4d3a"/><stop offset="1" stop-color="#041f15"/></linearGradient>` +
     `</defs>` +
-    `<rect x="0" y="5" width="324" height="39" fill="url(#bf)"/>` +
-    `<rect x="0" y="0" width="324" height="5" fill="url(#bfo)"/>` +
+    `<rect x="0" y="4" width="324" height="92" fill="url(#fb)"/>` +
+    `<rect x="0" y="0" width="324" height="2.6" fill="#d4af37"/>` +
+    `<rect x="0" y="2.6" width="324" height="1.4" fill="#e8c96a" opacity="0.5"/>` +
+    `<polygon points="0,92 26,92 0,66" fill="#d4af37" opacity="0.35"/>` +
+    `<polygon points="324,92 298,92 324,66" fill="#d4af37" opacity="0.35"/>` +
     `</svg>`
   )}`;
-
-  const Row = ({ label, value }: { label: string; value: string }) => (
-    <div style={{ display: 'flex', alignItems: 'flex-start', padding: '4px 0', borderBottom: '1px solid #e8e9e2' }}>
-      <div style={{ width: 104, flexShrink: 0, fontSize: 8.5, fontWeight: 700, letterSpacing: 1.2, color: '#8b9187', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 11.5, fontWeight: 600, color: '#16324a', lineHeight: 1.3 }}>{value}</div>
-    </div>
-  );
-
-  const nomComplet = [personnel.nom, personnel.postnom, personnel.prenom].filter(Boolean).join(' ');
 
   return (
-    <div style={{ width: CARTE_SERVICE_W, height: CARTE_SERVICE_H, position: 'relative', overflow: 'hidden', fontFamily: FONT, background: '#fcfbf7', borderRadius: 14, color: '#16324a', boxShadow: '0 24px 64px rgba(11,61,46,0.22)' }}>
-      {/* Cadre intérieur */}
-      <div style={{ position: 'absolute', top: 10, left: 10, right: 10, bottom: 10, borderRadius: 10, border: '1px solid rgba(201,162,39,0.30)' }} />
-      <div style={{ position: 'absolute', top: 14, left: 14, right: 14, bottom: 14, borderRadius: 8, border: '1px solid rgba(201,162,39,0.14)' }} />
+    <div style={{ width: CARTE_SERVICE_W, height: CARTE_SERVICE_H, position: 'relative', overflow: 'hidden', fontFamily: FONT, background: 'linear-gradient(168deg, #06281d 0%, #0b3f2e 46%, #10513c 100%)', borderRadius: 14, boxShadow: '0 24px 64px rgba(3,28,19,0.45)' }}>
+      {/* Décor de fond */}
+      <img src={glowSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 320 }} />
+      <img src={raysSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 340 }} />
+      <img src={patternSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 516 }} />
 
-      {/* Entête */}
-      <img src={headerSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 110 }} />
-      <div style={{ position: 'absolute', top: 20, left: 28, right: 28 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: '#ffffff', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{schoolName}</div>
-        <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 3.5, color: GOLD_LIGHT, marginTop: 5, textTransform: 'uppercase' }}>Carte de service — Verso</div>
+      {/* Cadres intérieurs dorés */}
+      <div style={{ position: 'absolute', top: 11, left: 11, right: 11, bottom: 11, borderRadius: 10, border: '1px solid rgba(212,175,55,0.4)' }} />
+      <div style={{ position: 'absolute', top: 15, left: 15, right: 15, bottom: 15, borderRadius: 8, border: '1px solid rgba(212,175,55,0.15)' }} />
+
+      {/* Liseré haut + gemme centrale */}
+      <div style={{ position: 'absolute', top: 24, left: 44, right: 44, height: 1, background: 'linear-gradient(90deg, rgba(212,175,55,0), #d4af37, rgba(212,175,55,0))' }} />
+      <div style={{ position: 'absolute', top: 20.5, left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: 7, height: 7, background: 'linear-gradient(135deg, #f5e0a0, #c9a227)', boxShadow: '0 0 10px rgba(212,175,55,0.7)' }} />
+
+      {/* ═══ Emblème central (logo ou initiales de l'école) ═══ */}
+      <div style={{ position: 'absolute', top: 46, left: '50%', marginLeft: -71, width: 142, height: 142 }}>
+        <img src={ringSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 142, height: 142 }} />
+        <div style={{ position: 'absolute', top: 10, left: 10, width: 122, height: 122, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 36%, #145640, #09301f)', border: '1px solid rgba(240,215,140,0.25)' }}>
+          {logoUrl && !logoError ? (
+            <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setLogoError(true)} />
+          ) : (
+            <span style={{ fontSize: 40, fontWeight: 800, color: '#f0d78c', letterSpacing: 1, fontFamily: "'Georgia', 'Times New Roman', serif" }}>{initials}</span>
+          )}
+        </div>
       </div>
 
-      {/* Membre */}
-      <div style={{ position: 'absolute', top: 126, left: 30, right: 30 }}>
-        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2.5, color: GOLD_DARK, textTransform: 'uppercase', marginBottom: 4 }}>Membre</div>
-        <Row label="Matricule" value={personnel.matricule || '—'} />
-        <Row label="Nom complet" value={nomComplet} />
-        <Row label="Fonction" value={personnel.fonction} />
-        <Row label="Naissance" value={personnel.date_naissance || '—'} />
-        <Row label="Nationalité" value={personnel.nationalite || '—'} />
-        <Row label="Adresse" value={personnel.adresse || '—'} />
+      {/* Étiquette */}
+      <div style={{ position: 'absolute', top: 198, left: 0, right: 0, textAlign: 'center', fontSize: 8, fontWeight: 700, letterSpacing: 5, color: '#e8c96a' }}>CARTE DE SERVICE</div>
+
+      {/* Nom de l'école */}
+      <div style={{ position: 'absolute', top: 212, left: 28, right: 28, textAlign: 'center', fontSize: 17.5, fontWeight: 800, letterSpacing: 1.4, color: '#f9ecc9', textTransform: 'uppercase', lineHeight: 1.18 }}>{schoolName}</div>
+
+      {/* Séparateur avec losange */}
+      <div style={{ position: 'absolute', top: 258, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 58, height: 1, background: 'linear-gradient(90deg, rgba(212,175,55,0), #d4af37)' }} />
+        <Diamond size={6} color="#f0d78c" />
+        <div style={{ width: 58, height: 1, background: 'linear-gradient(90deg, #d4af37, rgba(212,175,55,0))' }} />
       </div>
 
-      {/* Établissement */}
-      <div style={{ position: 'absolute', top: 372, left: 30, right: 30 }}>
-        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2.5, color: GOLD_DARK, textTransform: 'uppercase', marginBottom: 4 }}>Établissement</div>
-        <Row label="Téléphone" value={personnel.telephone || '—'} />
-        <Row label="E-mail" value={personnel.email || '—'} />
-        <Row label="Site web" value={web} />
+      {/* Devise */}
+      <div style={{ position: 'absolute', top: 274, left: 0, right: 0, textAlign: 'center', fontSize: 10.5, fontWeight: 700, letterSpacing: 3.2, color: '#e8c96a' }}>EXCELLENCE · DISCIPLINE · SAVOIR</div>
+
+      {/* Couronne de gemmes décorative */}
+      <div style={{ position: 'absolute', top: 302, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+        {[4, 6, 8, 12, 8, 6, 4].map((s, i) => <Diamond key={i} size={s} color={s === 12 ? '#f5e0a0' : 'rgba(212,175,55,0.75)'} />)}
       </div>
 
-      {/* Bande inférieure */}
-      <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: 324, height: 44 }} />
-      <div style={{ position: 'absolute', bottom: 10, left: 24, right: 24, textAlign: 'center', fontSize: 6.5, fontWeight: 600, letterSpacing: 0.8, color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>
-        Ce document est la propriété de l'établissement. En cas de perte, veuillez le signaler à l'administration.
+      {/* Coordonnées de l'établissement (universel — aucune donnée personnelle) */}
+      <div style={{ position: 'absolute', top: 348, left: 0, right: 0, textAlign: 'center' }}>
+        <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: 3.5, color: 'rgba(240,215,140,0.9)' }}>ÉTABLISSEMENT</div>
+        <div style={{ marginTop: 7, fontSize: 12.5, fontWeight: 600, color: '#f4ead0', letterSpacing: 0.5 }}>{web}</div>
+        {telephone && <div style={{ marginTop: 4, fontSize: 11, fontWeight: 600, color: '#dfe8d8', letterSpacing: 0.4 }}>{telephone}</div>}
+      </div>
+
+      {/* Bande inférieure + mention légale */}
+      <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: 324, height: 96 }} />
+      <div style={{ position: 'absolute', bottom: 16, left: 22, right: 22, textAlign: 'center', fontSize: 6.6, fontWeight: 600, letterSpacing: 0.5, lineHeight: 1.6, color: 'rgba(255,255,255,0.9)' }}>
+        Ce document est la propriété de l'établissement. Il est délivré à titre professionnel et doit être restitué en cas de départ.
       </div>
     </div>
   );

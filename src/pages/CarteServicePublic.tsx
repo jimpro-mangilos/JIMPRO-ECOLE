@@ -25,7 +25,7 @@ async function urlToBase64(url: string): Promise<string | null> {
 type State =
   | { type: 'loading' }
   | { type: 'error'; message: string }
-  | { type: 'ready'; membre: CarteService; schoolName: string; logoData: string | null; qrDataUrl: string };
+  | { type: 'ready'; membre: CarteService; schoolName: string; schoolPhone: string | null; logoData: string | null; qrDataUrl: string };
 
 export default function CarteServicePublic() {
   const { matricule } = useParams<{ matricule: string }>();
@@ -41,7 +41,7 @@ export default function CarteServicePublic() {
     async function load() {
       if (!matricule) return;
       try {
-        const { data: ecole } = await supabase.from('ecoles').select('id, nom').eq('code', ecoleCode.toUpperCase()).eq('is_active', true).maybeSingle();
+        const { data: ecole } = await supabase.from('ecoles').select('id, nom, telephone').eq('code', ecoleCode.toUpperCase()).eq('is_active', true).maybeSingle();
         if (!ecole) { if (!cancelled) setState({ type: 'error', message: ecoleCode ? 'École "' + ecoleCode + '" introuvable.' : '?ecole= requis (ex : ?ecole=CSGA).' }); return; }
         // Membre : école d'abord, puis repli global (matricules uniques)
         let { data: membre } = await supabase
@@ -76,7 +76,7 @@ export default function CarteServicePublic() {
           'MATRICULE:' + (carte.matricule || '') + '|NOM:' + nomComplet + '|FONCTION:' + (carte.fonction || ''),
           { width: 800, margin: 2, errorCorrectionLevel: 'H' }
         );
-        if (!cancelled) setState({ type: 'ready', membre: carte, schoolName: ecole.nom, logoData, qrDataUrl });
+        if (!cancelled) setState({ type: 'ready', membre: carte, schoolName: ecole.nom, schoolPhone: ecole.telephone || null, logoData, qrDataUrl });
       } catch (err: any) {
         if (!cancelled) setState({ type: 'error', message: err?.message || 'Erreur de chargement.' });
       }
@@ -114,7 +114,7 @@ export default function CarteServicePublic() {
     );
   }
 
-  const { membre, schoolName, logoData, qrDataUrl } = state;
+  const { membre, schoolName, schoolPhone, logoData, qrDataUrl } = state;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -144,7 +144,7 @@ export default function CarteServicePublic() {
           <div className="flex flex-col items-center gap-3">
             <span className="text-sm font-bold text-amber-600 uppercase tracking-wide">Verso</span>
             <div ref={versoRef}>
-              <CarteServiceCardBack personnel={membre} schoolName={schoolName} />
+              <CarteServiceCardBack schoolName={schoolName} logoUrl={logoData} telephone={schoolPhone} />
             </div>
           </div>
         </div>

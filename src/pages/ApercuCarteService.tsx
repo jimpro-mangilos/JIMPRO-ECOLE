@@ -96,21 +96,27 @@ export default function ApercuCarteService() {
       </div>
 
       <div className="flex flex-col items-center gap-10">
-        {SAMPLES.map((p, i) => (
-          <div key={p.matricule} className="flex flex-col items-center gap-3">
-            <span className="text-lg font-semibold text-gray-700">{p.nom} {p.postnom} {p.prenom} — {p.fonction}</span>
-            {cote === 'recto' ? (
+        {cote === 'recto' ? (
+          SAMPLES.map((p, i) => (
+            <div key={p.matricule} className="flex flex-col items-center gap-3">
+              <span className="text-lg font-semibold text-gray-700">{p.nom} {p.postnom} {p.prenom} — {p.fonction}</span>
               <CarteServiceCard
                 personnel={p}
                 schoolName={SCHOOL}
                 logoUrl={null}
                 qrDataUrl={qrs[i] || ''}
               />
-            ) : (
-              <CarteServiceCardBack personnel={p} schoolName={SCHOOL} />
-            )}
+            </div>
+          ))
+        ) : (
+          <div className="flex flex-col items-center gap-4">
+            <div className="max-w-md text-center">
+              <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold mb-3">Verso universel</span>
+              <p className="text-sm text-gray-500">Identique pour tout le personnel — aucune donnée personnelle. Le logo de l'école s'affiche dans l'emblème central s'il est configuré.</p>
+            </div>
+            <CarteServiceCardBack schoolName={SCHOOL} />
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

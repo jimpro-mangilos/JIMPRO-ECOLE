@@ -4,7 +4,8 @@ import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import html2canvas from 'html2canvas';
 import { CarteServiceCard, CarteServiceCardBack, type CarteService } from '../components/CarteServiceCard';
-import { loadLogoBase64, loadSchoolName } from './pdfTheme';
+import { loadLogoBase64, loadSchoolName, getCurrentEcoleId } from './pdfTheme';
+import { supabase } from '../lib/supabase';
 import { asciiFold } from './ascii';
 
 const CARD_W = 54; // mm (largeur — carte verticale)
@@ -125,6 +126,16 @@ export async function generateCarteService(p: CarteService): Promise<void> {
  */
 export async function generateCarteServiceBack(p: CarteService): Promise<void> {
   const schoolName = (await loadSchoolName()) || 'ÉTABLISSEMENT';
+  const logo = await loadLogoBase64();
+  // Téléphone de l'établissement (verso universel — aucune donnée personnelle)
+  let telephone: string | null = null;
+  try {
+    const ecoleId = await getCurrentEcoleId();
+    if (ecoleId) {
+      const { data } = await (supabase as any).from('ecoles').select('telephone').eq('id', ecoleId).maybeSingle();
+      telephone = data?.telephone || null;
+    }
+  } catch { /* ignore */ }
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.left = '-10000px';
@@ -133,7 +144,7 @@ export async function generateCarteServiceBack(p: CarteService): Promise<void> {
   document.body.appendChild(container);
   try {
     container.innerHTML = renderToString(
-      createElement(CarteServiceCardBack, { personnel: p, schoolName, siteWeb: p.siteWeb })
+      createElement(CarteServiceCardBack, { schoolName, logoUrl: logo || null, telephone, siteWeb: p.siteWeb })
     );
     await waitForImages(container);
     await new Promise((r) => setTimeout(r, 60));
