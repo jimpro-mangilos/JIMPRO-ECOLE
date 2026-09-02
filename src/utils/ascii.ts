@@ -42,3 +42,16 @@ export function isMatriculePlausible(matricule: string): boolean {
   if (!/\d{8}/.test(matricule)) return false; // doit contenir une date AAAAMMJJ
   return /^[A-Z0-9\-]+$/.test(matricule);
 }
+
+/**
+ * Extrait un matricule d'un décombre d'informations (texte collé, QR complet,
+ * nom + matricule, lecture lecteur...). D'abord le format « MATRICULE:... »,
+ * puis un motif matricule plausible (préfixe-date-code, ex. GAM-20260812-KR3SRB5).
+ * Retourne '' si aucun matricule plausible n'est détecté (→ recherche par nom).
+ */
+export function extraireMatriculeTexte(texte: string): string {
+  const p = parseScannedMatricule(texte);
+  if (p && isMatriculePlausible(p)) return p;
+  const m = texte.toUpperCase().match(/[A-Z]{2,5}-\d{8}-[A-Z0-9]+/);
+  return m ? m[0] : '';
+}

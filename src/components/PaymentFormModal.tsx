@@ -3,6 +3,7 @@ import { DollarSign, Search, X, User, Phone, MapPin, Calendar, GraduationCap, Us
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { montantEnLettres } from '../utils/numberToWords';
+import { extraireMatriculeTexte } from '../utils/ascii';
 import { notifierPaiement } from '../lib/smsService';
 
 interface Eleve {
@@ -73,6 +74,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
   const [showEleveSuggestions, setShowEleveSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const eleveSearchRef = useRef<HTMLDivElement | null>(null);
+  const autoSelectedEleve = useRef(false);
 
   const [paidMonths, setPaidMonths] = useState<string[]>([]);
   const [loadingMonths, setLoadingMonths] = useState(false);
@@ -407,11 +409,24 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
     s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   const filteredEleves = useMemo(() => {
-    const term = normalize(eleveSearch.trim());
+    const raw = eleveSearch.trim();
     const selectedLabel = selectedEleve
       ? `${selectedEleve.matricule} - ${selectedEleve.nom} ${selectedEleve.postnom} ${selectedEleve.prenom}`
       : '';
-    if (!term || eleveSearch === selectedLabel) return eleves.slice(0, 50);
+    if (!raw || eleveSearch === selectedLabel) return eleves.slice(0, 50);
+    // Comme au portail de pointage : le matricule est extrait du décombre
+    // d'informations tapées/collées (QR complet, nom + matricule, texte...)
+    const m = extraireMatriculeTexte(raw);
+    if (m) {
+      const upper = m.toUpperCase();
+      const res = eleves.filter(e => {
+        const mat = e.matricule.toUpperCase();
+        return mat === upper || mat.startsWith(upper);
+      });
+      return res.slice(0, 50);
+    }
+    // Sinon : recherche par nom / prénom / postnom / classe / section
+    const term = normalize(raw);
     return eleves
       .filter(e => {
         const haystack = normalize(
@@ -435,6 +450,25 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
     setShowEleveSuggestions(true);
     setHighlightedIndex(0);
   };
+
+  // Ouverture DIRECTE : dès que le MATRICULE saisi identifie UN SEUL élève,
+  // on sélectionne automatiquement (l'élève choisi remplit le formulaire)
+  useEffect(() => {
+    if (preselectedEleve) { autoSelectedEleve.current = false; return; }
+    const raw = eleveSearch.trim();
+    if (!raw || filteredEleves.length !== 1) { autoSelectedEleve.current = false; return; }
+    const m = extraireMatriculeTexte(raw);
+    if (!m) { autoSelectedEleve.current = false; return; }
+    if (autoSelectedEleve.current) return;
+    const t = setTimeout(() => {
+      if (!autoSelectedEleve.current) {
+        autoSelectedEleve.current = true;
+        selectEleve(filteredEleves[0]);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eleveSearch, filteredEleves]);
 
   const handleEleveKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
@@ -487,7 +521,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
             </div>
             <div>
               <label className="block text-sm font-medium text-blue-900 mb-2">
-                Rechercher par matricule, nom, prénom ou classe *
+                Rechercher par matricule, nom, prénom ou classe * — le matricule est reconnu même collé avec d'autres infos
               </label>
               <div className="relative" ref={eleveSearchRef}>
                 <div className="relative">
@@ -506,7 +540,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                     onFocus={() => !preselectedEleve && setShowEleveSuggestions(true)}
                     onKeyDown={handleEleveKeyDown}
                     disabled={!!preselectedEleve}
-                    placeholder="Tapez un matricule, un nom, un prénom..."
+                    placeholder="Tapez un matricule (même avec d'autres infos), un nom, un prénom..."
                     className="w-full pl-9 pr-20 py-2 border border-blue-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     autoComplete="off"
                   />
