@@ -277,42 +277,6 @@ export function CarteServiceCardBack({ schoolName, logoUrl, siteWeb, telephone }
   const web = siteWeb || slugifySchool(schoolName);
   const [logoError, setLogoError] = useState(false);
 
-  // ── Halo doré doux (halo derrière l'emblème) ──
-  const glowSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="320" viewBox="0 0 324 320">` +
-    `<defs><radialGradient id="gl" cx="50%" cy="40%" r="60%">` +
-    `<stop offset="0" stop-color="#e8c96a" stop-opacity="0.35"/>` +
-    `<stop offset="0.55" stop-color="#e8c96a" stop-opacity="0.08"/>` +
-    `<stop offset="1" stop-color="#e8c96a" stop-opacity="0"/>` +
-    `</radialGradient></defs>` +
-    `<rect width="324" height="320" fill="url(#gl)"/>` +
-    `</svg>`
-  )}`;
-
-  // ── Rayons dorés (éclat depuis le haut) ──
-  const raysSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="340" viewBox="0 0 324 340">` +
-    `<defs><linearGradient id="rf" x1="0" y1="0" x2="0.6" y2="1">` +
-    `<stop offset="0" stop-color="#f0d78c" stop-opacity="0.55"/>` +
-    `<stop offset="1" stop-color="#d4af37" stop-opacity="0"/>` +
-    `</linearGradient></defs>` +
-    `<polygon points="162,16 70,340 136,340" fill="url(#rf)" opacity="0.45"/>` +
-    `<polygon points="162,16 108,340 168,340" fill="url(#rf)" opacity="0.38"/>` +
-    `<polygon points="162,16 152,340 204,340" fill="url(#rf)" opacity="0.30"/>` +
-    `<polygon points="162,16 192,340 258,340" fill="url(#rf)" opacity="0.20"/>` +
-    `<polygon points="162,16 234,340 304,340" fill="url(#rf)" opacity="0.10"/>` +
-    `</svg>`
-  )}`;
-
-  // ── Hachures diagonales très discrètes (texture) ──
-  const patternSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="516" viewBox="0 0 324 516">` +
-    `<g stroke="#ffffff" stroke-width="1" opacity="0.045">` +
-    `<path d="M-40 260 L40 0"/><path d="M20 260 L100 0"/><path d="M80 260 L160 0"/>` +
-    `<path d="M140 260 L220 0"/><path d="M200 260 L280 0"/><path d="M260 260 L340 0"/>` +
-    `</g></svg>`
-  )}`;
-
   // ── Anneau de l'emblème (double cercle doré, centre émeraude profond) ──
   const ringSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="142" height="142" viewBox="0 0 142 142">` +
@@ -336,13 +300,37 @@ export function CarteServiceCardBack({ schoolName, logoUrl, siteWeb, telephone }
     `</svg>`
   )}`;
 
+  // ── Rayons dorés de la zone haute (éclat depuis le sommet) ──
+  const raysSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="150" viewBox="0 0 324 150">` +
+    `<defs><linearGradient id="rf" x1="0" y1="0" x2="0.6" y2="1">` +
+    `<stop offset="0" stop-color="#f0d78c" stop-opacity="0.55"/>` +
+    `<stop offset="1" stop-color="#d4af37" stop-opacity="0"/>` +
+    `</linearGradient></defs>` +
+    `<polygon points="162,16 70,150 136,150" fill="url(#rf)" opacity="0.45"/>` +
+    `<polygon points="162,16 108,150 168,150" fill="url(#rf)" opacity="0.38"/>` +
+    `<polygon points="162,16 152,150 204,150" fill="url(#rf)" opacity="0.30"/>` +
+    `<polygon points="162,16 192,150 258,150" fill="url(#rf)" opacity="0.20"/>` +
+    `<polygon points="162,16 234,150 304,150" fill="url(#rf)" opacity="0.10"/>` +
+    `</svg>`
+  )}`;
+
+  // ── Hachures diagonales très discrètes (texture) ──
+  const patternSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="516" viewBox="0 0 324 516">` +
+    `<g stroke="#ffffff" stroke-width="1" opacity="0.045">` +
+    `<path d="M-40 260 L40 0"/><path d="M20 260 L100 0"/><path d="M80 260 L160 0"/>` +
+    `<path d="M140 260 L220 0"/><path d="M200 260 L280 0"/><path d="M260 260 L340 0"/>` +
+    `</g></svg>`
+  )}`;
+
   // ── Bande inférieure (mention légale) ──
   const footerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="96" viewBox="0 0 324 96" preserveAspectRatio="none">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="156" viewBox="0 0 324 156" preserveAspectRatio="none">` +
     `<defs>` +
     `<linearGradient id="fb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e4d3a"/><stop offset="1" stop-color="#041f15"/></linearGradient>` +
     `</defs>` +
-    `<rect x="0" y="4" width="324" height="92" fill="url(#fb)"/>` +
+    `<rect x="0" y="2" width="324" height="154" fill="url(#fb)"/>` +
     `<rect x="0" y="0" width="324" height="2.6" fill="#d4af37"/>` +
     `<rect x="0" y="2.6" width="324" height="1.4" fill="#e8c96a" opacity="0.5"/>` +
     `<polygon points="0,92 26,92 0,66" fill="#d4af37" opacity="0.35"/>` +
@@ -351,22 +339,17 @@ export function CarteServiceCardBack({ schoolName, logoUrl, siteWeb, telephone }
   )}`;
 
   return (
-    <div style={{ width: CARTE_SERVICE_W, height: CARTE_SERVICE_H, position: 'relative', overflow: 'hidden', fontFamily: FONT, background: 'linear-gradient(168deg, #06281d 0%, #0b3f2e 46%, #10513c 100%)', borderRadius: 14, boxShadow: '0 24px 64px rgba(3,28,19,0.45)' }}>
-      {/* Décor de fond */}
-      <img src={glowSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 320 }} />
-      <img src={raysSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 340 }} />
+    <div style={{ width: CARTE_SERVICE_W, height: CARTE_SERVICE_H, position: 'relative', overflow: 'hidden', fontFamily: FONT, background: '#fdfcf7', borderRadius: 14, boxShadow: '0 24px 64px rgba(3,28,19,0.45)' }}>
+
+      {/* ═══ Zone haute colorée (0 → ~30 %) : émeraude + or, emblème ═══ */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 150, background: 'linear-gradient(168deg, #06281d 0%, #0b3f2e 52%, #10513c 100%)' }} />
+      <img src={raysSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 150 }} />
       <img src={patternSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 516 }} />
+      {/* fin de zone : liseré doré */}
+      <div style={{ position: 'absolute', top: 147, left: 0, right: 0, height: 2.5, background: 'linear-gradient(90deg, #e8c96a, #c9a227, #e8c96a)' }} />
 
-      {/* Cadres intérieurs dorés */}
-      <div style={{ position: 'absolute', top: 11, left: 11, right: 11, bottom: 11, borderRadius: 10, border: '1px solid rgba(212,175,55,0.4)' }} />
-      <div style={{ position: 'absolute', top: 15, left: 15, right: 15, bottom: 15, borderRadius: 8, border: '1px solid rgba(212,175,55,0.15)' }} />
-
-      {/* Liseré haut + gemme centrale */}
-      <div style={{ position: 'absolute', top: 24, left: 44, right: 44, height: 1, background: 'linear-gradient(90deg, rgba(212,175,55,0), #d4af37, rgba(212,175,55,0))' }} />
-      <div style={{ position: 'absolute', top: 20.5, left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: 7, height: 7, background: 'linear-gradient(135deg, #f5e0a0, #c9a227)', boxShadow: '0 0 10px rgba(212,175,55,0.7)' }} />
-
-      {/* ═══ Emblème central (logo ou initiales de l'école) ═══ */}
-      <div style={{ position: 'absolute', top: 46, left: '50%', marginLeft: -71, width: 142, height: 142 }}>
+      {/* Emblème central (logo ou initiales) dans la zone haute */}
+      <div style={{ position: 'absolute', top: 4, left: '50%', marginLeft: -71, width: 142, height: 142 }}>
         <img src={ringSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 142, height: 142 }} />
         <div style={{ position: 'absolute', top: 10, left: 10, width: 122, height: 122, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 36%, #145640, #09301f)', border: '1px solid rgba(240,215,140,0.25)' }}>
           {logoUrl && !logoError ? (
@@ -377,37 +360,38 @@ export function CarteServiceCardBack({ schoolName, logoUrl, siteWeb, telephone }
         </div>
       </div>
 
+      {/* ═══ Zone centrale BLANCHE (≈ 30 % → 70 %) : texte sombre sur blanc ═══ */}
       {/* Étiquette */}
-      <div style={{ position: 'absolute', top: 198, left: 0, right: 0, textAlign: 'center', fontSize: 8, fontWeight: 700, letterSpacing: 5, color: '#e8c96a' }}>CARTE DE SERVICE</div>
+      <div style={{ position: 'absolute', top: 158, left: 0, right: 0, textAlign: 'center', fontSize: 8, fontWeight: 700, letterSpacing: 5, color: '#9c7c1e' }}>CARTE DE SERVICE</div>
 
       {/* Nom de l'école */}
-      <div style={{ position: 'absolute', top: 212, left: 28, right: 28, textAlign: 'center', fontSize: 17.5, fontWeight: 800, letterSpacing: 1.4, color: '#f9ecc9', textTransform: 'uppercase', lineHeight: 1.18 }}>{schoolName}</div>
+      <div style={{ position: 'absolute', top: 170, left: 26, right: 26, textAlign: 'center', fontSize: 18, fontWeight: 800, letterSpacing: 1.2, color: '#0f4c3a', textTransform: 'uppercase', lineHeight: 1.18 }}>{schoolName}</div>
 
       {/* Séparateur avec losange */}
-      <div style={{ position: 'absolute', top: 258, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 58, height: 1, background: 'linear-gradient(90deg, rgba(212,175,55,0), #d4af37)' }} />
-        <Diamond size={6} color="#f0d78c" />
-        <div style={{ width: 58, height: 1, background: 'linear-gradient(90deg, #d4af37, rgba(212,175,55,0))' }} />
+      <div style={{ position: 'absolute', top: 226, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div style={{ width: 56, height: 1.5, background: 'linear-gradient(90deg, rgba(201,162,39,0), #c9a227)' }} />
+        <Diamond size={6} color="#b58b1e" />
+        <div style={{ width: 56, height: 1.5, background: 'linear-gradient(90deg, #c9a227, rgba(201,162,39,0))' }} />
       </div>
 
       {/* Devise */}
-      <div style={{ position: 'absolute', top: 274, left: 0, right: 0, textAlign: 'center', fontSize: 10.5, fontWeight: 700, letterSpacing: 3.2, color: '#e8c96a' }}>EXCELLENCE · DISCIPLINE · SAVOIR</div>
+      <div style={{ position: 'absolute', top: 244, left: 0, right: 0, textAlign: 'center', fontSize: 10.5, fontWeight: 700, letterSpacing: 3.2, color: '#a8821f' }}>EXCELLENCE · DISCIPLINE · SAVOIR</div>
 
       {/* Couronne de gemmes décorative */}
-      <div style={{ position: 'absolute', top: 302, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-        {[4, 6, 8, 12, 8, 6, 4].map((s, i) => <Diamond key={i} size={s} color={s === 12 ? '#f5e0a0' : 'rgba(212,175,55,0.75)'} />)}
+      <div style={{ position: 'absolute', top: 272, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+        {[4, 6, 8, 12, 8, 6, 4].map((s, i) => <Diamond key={i} size={s} color={s === 12 ? '#b58b1e' : 'rgba(201,162,39,0.8)'} />)}
       </div>
 
-      {/* Coordonnées de l'établissement (universel — aucune donnée personnelle) */}
-      <div style={{ position: 'absolute', top: 348, left: 0, right: 0, textAlign: 'center' }}>
-        <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: 3.5, color: 'rgba(240,215,140,0.9)' }}>ÉTABLISSEMENT</div>
-        <div style={{ marginTop: 7, fontSize: 12.5, fontWeight: 600, color: '#f4ead0', letterSpacing: 0.5 }}>{web}</div>
-        {telephone && <div style={{ marginTop: 4, fontSize: 11, fontWeight: 600, color: '#dfe8d8', letterSpacing: 0.4 }}>{telephone}</div>}
+      {/* Coordonnées de l'établissement (universel) */}
+      <div style={{ position: 'absolute', top: 300, left: 0, right: 0, textAlign: 'center' }}>
+        <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: 3.5, color: '#9c7c1e' }}>ÉTABLISSEMENT</div>
+        <div style={{ marginTop: 6, fontSize: 12.5, fontWeight: 600, color: '#16324a', letterSpacing: 0.5 }}>{web}</div>
+        {telephone && <div style={{ marginTop: 3, fontSize: 11, fontWeight: 600, color: '#3f5468', letterSpacing: 0.4 }}>{telephone}</div>}
       </div>
 
-      {/* Bande inférieure + mention légale */}
-      <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: 324, height: 96 }} />
-      <div style={{ position: 'absolute', bottom: 16, left: 22, right: 22, textAlign: 'center', fontSize: 6.6, fontWeight: 600, letterSpacing: 0.5, lineHeight: 1.6, color: 'rgba(255,255,255,0.9)' }}>
+      {/* ═══ Zone basse colorée (≈ 70 % → 100 %) : mention légale ═══ */}
+      <img src={footerSvg} alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: 324, height: 156 }} />
+      <div style={{ position: 'absolute', bottom: 18, left: 22, right: 22, textAlign: 'center', fontSize: 6.6, fontWeight: 600, letterSpacing: 0.5, lineHeight: 1.6, color: 'rgba(255,255,255,0.92)' }}>
         Ce document est la propriété de l'établissement. Il est délivré à titre professionnel et doit être restitué en cas de départ.
       </div>
     </div>
