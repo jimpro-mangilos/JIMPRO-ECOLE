@@ -300,18 +300,33 @@ export function CarteServiceCardBack({ schoolName, logoUrl, siteWeb, telephone }
     `</svg>`
   )}`;
 
-  // ── Rayons dorés de la zone haute (éclat depuis le sommet) ──
-  const raysSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
+  // ── Zone haute : composition de TRAPÈZES aux dégradés prononcés ──
+  const topSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="150" viewBox="0 0 324 150">` +
-    `<defs><linearGradient id="rf" x1="0" y1="0" x2="0.6" y2="1">` +
-    `<stop offset="0" stop-color="#f0d78c" stop-opacity="0.55"/>` +
-    `<stop offset="1" stop-color="#d4af37" stop-opacity="0"/>` +
-    `</linearGradient></defs>` +
-    `<polygon points="162,16 70,150 136,150" fill="url(#rf)" opacity="0.45"/>` +
-    `<polygon points="162,16 108,150 168,150" fill="url(#rf)" opacity="0.38"/>` +
-    `<polygon points="162,16 152,150 204,150" fill="url(#rf)" opacity="0.30"/>` +
-    `<polygon points="162,16 192,150 258,150" fill="url(#rf)" opacity="0.20"/>` +
-    `<polygon points="162,16 234,150 304,150" fill="url(#rf)" opacity="0.10"/>` +
+    `<defs>` +
+    `<linearGradient id="tb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#042a1e"/><stop offset="0.55" stop-color="#0d4433"/><stop offset="1" stop-color="#11503b"/></linearGradient>` +
+    `<linearGradient id="te1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d7350"/><stop offset="0.5" stop-color="#155f44"/><stop offset="1" stop-color="#093427"/></linearGradient>` +
+    `<linearGradient id="tg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fce9ac"/><stop offset="0.4" stop-color="#e6c04f"/><stop offset="0.75" stop-color="#c1931f"/><stop offset="1" stop-color="#82620f"/></linearGradient>` +
+    `<linearGradient id="tg2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f6df96"/><stop offset="1" stop-color="#b38620"/></linearGradient>` +
+    `</defs>` +
+    // fond
+    `<rect width="324" height="150" fill="url(#tb)"/>` +
+    // trapèze émeraude CLAIR (balayage diagonal prononcé, bas-gauche → haut-droit)
+    `<polygon points="0,34 324,126 324,150 0,150" fill="url(#te1)" opacity="0.95"/>` +
+    // bande dorée épaisse en diagonale (dégradé prononcé clair → foncé)
+    `<polygon points="0,6 324,96 324,105 0,15" fill="url(#tg1)" opacity="0.95"/>` +
+    // rehaut doré fin parallèle
+    `<polygon points="0,20 324,110 324,113 0,23" fill="#f7e2a4" opacity="0.6"/>` +
+    // facette sombre haut-droite (relief)
+    `<polygon points="214,0 324,0 324,92 258,32" fill="#032117" opacity="0.9"/>` +
+    // trapèze doré coin haut-gauche
+    `<polygon points="0,0 118,0 134,16 0,24" fill="url(#tg2)" opacity="0.95"/>` +
+    // éclats losange dorés (marges droite/gauche)
+    `<polygon points="262,42 266,46 262,50 258,46" fill="url(#tg1)" opacity="0.9"/>` +
+    `<polygon points="286,58 290,62 286,66 282,62" fill="url(#tg1)" opacity="0.7"/>` +
+    `<polygon points="304,34 308,38 304,42 300,38" fill="url(#tg1)" opacity="0.8"/>` +
+    `<polygon points="30,84 33,87 30,90 27,87" fill="url(#tg1)" opacity="0.75"/>` +
+    `<polygon points="14,66 17,69 14,72 11,69" fill="url(#tg1)" opacity="0.6"/>` +
     `</svg>`
   )}`;
 
@@ -324,26 +339,38 @@ export function CarteServiceCardBack({ schoolName, logoUrl, siteWeb, telephone }
     `</g></svg>`
   )}`;
 
-  // ── Bande inférieure (mention légale) ──
+  // ── Bande inférieure : trapèzes dégradés + mention légale ──
   const footerSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="324" height="156" viewBox="0 0 324 156" preserveAspectRatio="none">` +
     `<defs>` +
-    `<linearGradient id="fb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e4d3a"/><stop offset="1" stop-color="#041f15"/></linearGradient>` +
+    `<linearGradient id="fb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e4d3a"/><stop offset="1" stop-color="#031c12"/></linearGradient>` +
+    `<linearGradient id="fe2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b6f4e"/><stop offset="1" stop-color="#0a3526"/></linearGradient>` +
+    `<linearGradient id="fg3" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f6df96"/><stop offset="1" stop-color="#9c7c1e"/></linearGradient>` +
+    `<linearGradient id="fg4" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fce9ac"/><stop offset="1" stop-color="#8f6f16"/></linearGradient>` +
     `</defs>` +
-    `<rect x="0" y="2" width="324" height="154" fill="url(#fb)"/>` +
-    `<rect x="0" y="0" width="324" height="2.6" fill="#d4af37"/>` +
-    `<rect x="0" y="2.6" width="324" height="1.4" fill="#e8c96a" opacity="0.5"/>` +
-    `<polygon points="0,92 26,92 0,66" fill="#d4af37" opacity="0.35"/>` +
-    `<polygon points="324,92 298,92 324,66" fill="#d4af37" opacity="0.35"/>` +
+    // fond émeraude (profond en bas pour la lisibilité du texte blanc)
+    `<rect x="0" y="0" width="324" height="156" fill="url(#fb)"/>` +
+    // trapèze émeraude clair (bas-gauche, dégradé prononcé)
+    `<polygon points="0,18 150,18 210,86 0,86" fill="url(#fe2)" opacity="0.85"/>` +
+    // bande dorée diagonale (haut de la bande)
+    `<polygon points="0,6 324,38 324,47 0,15" fill="url(#fg3)" opacity="0.95"/>` +
+    // liseré or fin sous la bande
+    `<polygon points="0,22 324,54 324,57 0,25" fill="#f7e2a4" opacity="0.55"/>` +
+    // facette sombre haut-droite
+    `<polygon points="240,0 324,0 324,64 278,22" fill="#041f15" opacity="0.9"/>` +
+    // triangles dorés des coins inférieurs (plis)
+    `<polygon points="0,156 52,156 0,108" fill="url(#fg4)"/>` +
+    `<polygon points="0,156 30,156 0,126" fill="#f7d774" opacity="0.85"/>` +
+    `<polygon points="324,156 272,156 324,108" fill="url(#fg4)"/>` +
+    `<polygon points="324,156 294,156 324,126" fill="#f7d774" opacity="0.85"/>` +
     `</svg>`
   )}`;
 
   return (
     <div style={{ width: CARTE_SERVICE_W, height: CARTE_SERVICE_H, position: 'relative', overflow: 'hidden', fontFamily: FONT, background: '#fdfcf7', borderRadius: 14, boxShadow: '0 24px 64px rgba(3,28,19,0.45)' }}>
 
-      {/* ═══ Zone haute colorée (0 → ~30 %) : émeraude + or, emblème ═══ */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 150, background: 'linear-gradient(168deg, #06281d 0%, #0b3f2e 52%, #10513c 100%)' }} />
-      <img src={raysSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 150 }} />
+      {/* ═══ Zone haute colorée (0 → ~30 %) : trapèzes dégradés + emblème ═══ */}
+      <img src={topSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 150 }} />
       <img src={patternSvg} alt="" style={{ position: 'absolute', top: 0, left: 0, width: 324, height: 516 }} />
       {/* fin de zone : liseré doré */}
       <div style={{ position: 'absolute', top: 147, left: 0, right: 0, height: 2.5, background: 'linear-gradient(90deg, #e8c96a, #c9a227, #e8c96a)' }} />
