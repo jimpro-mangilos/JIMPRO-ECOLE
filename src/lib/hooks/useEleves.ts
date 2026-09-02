@@ -4,6 +4,7 @@ import { supabase } from '../supabase';
 import { queryKeys } from '../queryKeys';
 import type { Database } from '../database.types';
 import { generateMatricule, validateMatriculeUniqueness } from '../../utils/matriculeGenerator';
+import { extraireMatriculeTexte } from '../../utils/ascii';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -99,7 +100,19 @@ export function useEleves(filters: UseElevesOptions) {
   const filteredEleves = useMemo(() => {
     const result = eleves.filter((eleve) => {
       const s = filters.searchTerm.toLowerCase();
-      const matchesSearch = !s || eleve.nom.toLowerCase().includes(s) || eleve.postnom.toLowerCase().includes(s) || eleve.prenom.toLowerCase().includes(s) || eleve.matricule.toLowerCase().includes(s);
+      let matchesSearch = !s;
+      if (s) {
+        // Le matricule est extrait d'un décombre d'informations (QR complet, nom + matricule...)
+        const m = extraireMatriculeTexte(filters.searchTerm);
+        if (m) {
+          const upper = m.toUpperCase();
+          const mat = eleve.matricule.toUpperCase();
+          matchesSearch = mat === upper || mat.startsWith(upper);
+        } else {
+          // Sinon : recherche par nom / prénom / postnom / classe / matricule (sous-chaîne)
+          matchesSearch = eleve.nom.toLowerCase().includes(s) || eleve.postnom.toLowerCase().includes(s) || eleve.prenom.toLowerCase().includes(s) || eleve.matricule.toLowerCase().includes(s);
+        }
+      }
       const matchesSection = filters.selectedSection.length === 0 || filters.selectedSection.some(sec => eleve.section.toLowerCase() === sec.toLowerCase());
       const matchesOption = filters.selectedOption.length === 0 || (eleve.option && filters.selectedOption.some(o => eleve.option!.toLowerCase() === o.toLowerCase()));
       const matchesClasse = filters.selectedClasse.length === 0 || (eleve.classe && filters.selectedClasse.some(c => eleve.classe!.toLowerCase() === c.toLowerCase()));

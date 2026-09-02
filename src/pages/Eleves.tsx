@@ -284,7 +284,7 @@ export default function Eleves() {
       <div className="bg-white rounded-lg shadow-sm p-4">
         <div className="flex items-center gap-3 mb-2">
           <Search className="w-5 h-5 text-gray-400" />
-          <input type="text" placeholder="Rechercher un élève..." value={filters.searchTerm}
+          <input type="text" placeholder="Rechercher un élève (matricule même collé à d'autres infos, nom, prénom...)" value={filters.searchTerm}
             onChange={e => filters.setSearchTerm(e.target.value)} className="flex-1 outline-none text-gray-700" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">

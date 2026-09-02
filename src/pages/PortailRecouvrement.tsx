@@ -241,13 +241,55 @@ export default function PortailRecouvrement() {
   // même si plusieurs informations sont collées (QR complet, texte, espaces…)
   // via parseScannedMatricule, puis on valide le format avec isMatriculePlausible.
   async function soumettreMatriculeAgent() {
-    const m = parseScannedMatricule(agentMatricule);
-    if (!m) { setAgentError('Matricule invalide.'); return; }
-    if (!isMatriculePlausible(m)) {
-      setAgentError('Scan illisible (encodage). Configurez le lecteur en ASCII ou vérifiez le matricule.');
+    const raw = agentMatricule.trim();
+    if (!raw) { setAgentError('Saisissez votre matricule ou votre nom.'); return; }
+    const m = parseScannedMatricule(raw);
+    if (m && isMatriculePlausible(m)) {
+      await identifierAgent(m);
       return;
     }
-    await identifierAgent(m);
+    // Pas de matricule plausible → recherche par NOM (agent de recouvrement actif)
+    await identifierAgentParNom(raw);
+  }
+
+  // Identification par nom (nom, postnom ou prénom) — un seul agent actif de recouvrement
+  async function identifierAgentParNom(nomSaisi: string) {
+    setAgentError('');
+    setAgentLoading(true);
+    try {
+      const terme = nomSaisi.trim();
+      if (!terme) { setAgentError('Saisissez un matricule ou un nom.'); return; }
+      const { data: liste, error } = await supabase
+        .from('personnel')
+        .select('id, matricule, nom, postnom, prenom, fonction')
+        .eq('ecole_id', schoolId)
+        .eq('est_agent_recouvrement', true)
+        .eq('statut', 'actif')
+        .or('nom.ilike.%' + terme + '%,postnom.ilike.%' + terme + '%,prenom.ilike.%' + terme + '%');
+      if (error) throw error;
+      if (!liste || liste.length === 0) {
+        setAgentError('Aucun agent de recouvrement trouvé avec ce nom. Vérifiez la carte de service.');
+        return;
+      }
+      if (liste.length > 1) {
+        setAgentError(liste.length + ' agents correspondent à ce nom. Saisissez le matricule (PGA-...).');
+        return;
+      }
+      const personne = liste[0];
+      const info = {
+        id: personne.id, matricule: personne.matricule, nom: personne.nom,
+        postnom: personne.postnom, prenom: personne.prenom, fonction: personne.fonction,
+      };
+      setAgent(info);
+      try { sessionStorage.setItem('jimpro_agent_recouvrement', JSON.stringify(info)); } catch { /* ignore */ }
+      setAgentMatricule('');
+      setShowAgentScanner(false);
+    } catch (err) {
+      console.error(err);
+      setAgentError('Erreur lors de l\'identification.');
+    } finally {
+      setAgentLoading(false);
+    }
   }
 
   async function identifierAgent(matricule: string) {
@@ -406,7 +448,7 @@ export default function PortailRecouvrement() {
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">{schoolName || 'GOLDEN ACADEMY'}</h1>
             <p className="text-white/60 text-sm">Portail de Recouvrement — réservé aux agents autorisés</p>
-            <p className="text-white/40 text-xs mt-2">Identifiez-vous par scan de votre carte de service ou par matricule.</p>
+            <p className="text-white/40 text-xs mt-2">Identifiez-vous par scan de votre carte de service, par matricule ou par nom.</p>
           </div>
 
           <button
@@ -427,7 +469,7 @@ export default function PortailRecouvrement() {
             onSubmit={async (e) => { e.preventDefault(); await soumettreMatriculeAgent(); }}
             className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-4"
           >
-            <p className="text-white/50 text-xs mb-2">Ou saisissez / collez votre matricule (même avec d'autres informations, seul le matricule est reconnu)</p>
+            <p className="text-white/50 text-xs mb-2">Ou saisissez votre matricule (même collé à d'autres infos, seul le matricule est reconnu) ou votre nom</p>
             <div className="flex gap-2">
               <input
                 value={agentMatricule}
