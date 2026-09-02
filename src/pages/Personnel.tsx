@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plus, Search, Users, UserCog, Pencil, Trash2, X, Phone, Mail, Loader2, CalendarDays, Banknote, Wand2, CreditCard, Eye, Printer,
+  Plus, Search, Users, UserCog, Pencil, Trash2, X, Phone, Mail, Loader2, CalendarDays, Banknote, Wand2, CreditCard, Eye, Printer, Camera, CameraOff,
 } from 'lucide-react';
 import {
   usePersonnel,
@@ -76,6 +76,7 @@ export default function Personnel() {
   const [search, setSearch] = useState('');
   const [filterFonction, setFilterFonction] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
+  const [filterPhoto, setFilterPhoto] = useState(''); // '' | 'avec' | 'sans'
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<PersonnelRecord | null>(null);
   const [saving, setSaving] = useState(false);
@@ -199,9 +200,11 @@ export default function Personnel() {
       }
       if (filterFonction && p.fonction !== filterFonction) return false;
       if (filterStatut && p.statut !== filterStatut) return false;
+      if (filterPhoto === 'avec' && !p.photo_url) return false;
+      if (filterPhoto === 'sans' && p.photo_url) return false;
       return true;
     });
-  }, [personnel, search, filterFonction, filterStatut]);
+  }, [personnel, search, filterFonction, filterStatut, filterPhoto]);
 
   const allSelected = filtered.length > 0 && filtered.every(p => selectedIds.has(p.id));
   function toggleSelectAll() {
@@ -358,6 +361,11 @@ export default function Personnel() {
           <option value="">Tous les statuts</option>
           {Object.entries(STATUT_PERSONNEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
+        <select value={filterPhoto} onChange={e => setFilterPhoto(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white" title="Filtrer par présence de photo">
+          <option value="">Toutes les photos</option>
+          <option value="avec">Avec photo</option>
+          <option value="sans">Sans photo</option>
+        </select>
         <button
           onClick={printSelectedCartes}
           disabled={printingAll || filtered.length === 0}
@@ -405,7 +413,14 @@ export default function Personnel() {
                       <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="accent-emerald-600" />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="font-semibold text-gray-900">{p.nom} {p.postnom ? p.postnom + ' ' : ''}{p.prenom}</div>
+                        {p.photo_url ? (
+                          <span title="Photo présente" className="shrink-0"><Camera className="w-3.5 h-3.5 text-green-600" /></span>
+                        ) : (
+                          <span title="Sans photo" className="shrink-0"><CameraOff className="w-3.5 h-3.5 text-slate-300" /></span>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-400">{p.matricule || '—'}{p.sexe ? ` · ${p.sexe}` : ''}</div>
                     </td>
                     <td className="px-4 py-3 text-gray-700">
