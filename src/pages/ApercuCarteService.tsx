@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { CarteServiceCard, type CarteService } from '../components/CarteServiceCard';
+import { CarteServiceCard, CarteServiceCardBack, type CarteService } from '../components/CarteServiceCard';
 
 // Données d'exemple — variées pour évaluer le rendu réel (noms longs, avec/sans photo)
 const SAMPLES: CarteService[] = [
@@ -60,6 +60,7 @@ async function qrFor(p: CarteService): Promise<string> {
 
 export default function ApercuCarteService() {
   const [qrs, setQrs] = useState<Record<number, string>>({});
+  const [cote, setCote] = useState<'recto' | 'verso'>('recto');
 
   useEffect(() => {
     let cancelled = false;
@@ -71,21 +72,43 @@ export default function ApercuCarteService() {
     return () => { cancelled = true; };
   }, []);
 
+  const SCHOOL = 'C.S GOLDEN ACADEMY';
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Aperçu — Carte de service du PERSONNEL (template actuel)</h1>
-      <p className="text-gray-500 mb-8">Carte d'identité professionnelle verticale · 54 × 86 mm · design « Prestige ».</p>
+      <p className="text-gray-500 mb-6">Carte d'identité professionnelle verticale · 54 × 86 mm · design « Prestige » — consultez le recto et le verso pour ajuster le design.</p>
+
+      {/* Bascule Recto / Verso */}
+      <div className="flex justify-center gap-2 mb-8">
+        <button
+          onClick={() => setCote('recto')}
+          className={'px-5 py-2 rounded-lg font-semibold text-sm transition-colors ' + (cote === 'recto' ? 'bg-emerald-600 text-white shadow' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50')}
+        >
+          Recto
+        </button>
+        <button
+          onClick={() => setCote('verso')}
+          className={'px-5 py-2 rounded-lg font-semibold text-sm transition-colors ' + (cote === 'verso' ? 'bg-amber-500 text-white shadow' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50')}
+        >
+          Verso
+        </button>
+      </div>
 
       <div className="flex flex-col items-center gap-10">
         {SAMPLES.map((p, i) => (
           <div key={p.matricule} className="flex flex-col items-center gap-3">
             <span className="text-lg font-semibold text-gray-700">{p.nom} {p.postnom} {p.prenom} — {p.fonction}</span>
-            <CarteServiceCard
-              personnel={p}
-              schoolName="C.S GOLDEN ACADEMY"
-              logoUrl={null}
-              qrDataUrl={qrs[i] || ''}
-            />
+            {cote === 'recto' ? (
+              <CarteServiceCard
+                personnel={p}
+                schoolName={SCHOOL}
+                logoUrl={null}
+                qrDataUrl={qrs[i] || ''}
+              />
+            ) : (
+              <CarteServiceCardBack personnel={p} schoolName={SCHOOL} />
+            )}
           </div>
         ))}
       </div>
