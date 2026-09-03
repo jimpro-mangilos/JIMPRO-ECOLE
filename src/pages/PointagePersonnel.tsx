@@ -90,6 +90,15 @@ export default function PointagePersonnel() {
 
   useEffect(() => { reload(); }, [reload]);
 
+  // ═══ TEMPS RÉEL : un pointage (QR, borne empreinte, manuel) apparaît instantanément ═══
+  useEffect(() => {
+    const ch = supabase
+      .channel('pointages-personnel-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pointages_personnel' }, () => { reload(); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [reload]);
+
   // Maps d'accès
   const recByKey = useMemo(() => {
     const map = new Map<string, PointageRecord>();

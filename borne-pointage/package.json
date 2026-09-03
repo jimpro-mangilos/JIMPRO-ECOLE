@@ -1,0 +1,10 @@
+{
+  "name": "borne-pointage-empreinte",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pont local entre un lecteur d'empreintes et JIMPRO (Supabase) — pointage temps réel",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4"
+  }
+}
