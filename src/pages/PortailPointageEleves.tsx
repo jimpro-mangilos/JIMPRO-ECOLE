@@ -108,14 +108,15 @@ export default function PortailPointageEleves() {
       // Recherche scoped école, puis repli global (matricules uniques)
       let { data: eleve } = await supabase
         .from('eleves')
-        .select('id, matricule, nom, postnom, prenom, section, classe, photo_url')
+        .select('id, matricule, nom, postnom, prenom, section, classe, photo_url, ecole_id')
         .eq('ecole_id', schoolId)
         .ilike('matricule', matriculeTrim)
         .maybeSingle();
       if (!eleve) {
+        // Repli global : pointer sous l'école RÉELLE de l'élève
         const { data: fb } = await supabase
           .from('eleves')
-          .select('id, matricule, nom, postnom, prenom, section, classe, photo_url')
+          .select('id, matricule, nom, postnom, prenom, section, classe, photo_url, ecole_id')
           .ilike('matricule', matriculeTrim)
           .maybeSingle();
         eleve = fb;
@@ -148,7 +149,8 @@ export default function PortailPointageEleves() {
       if (!existing) {
         const heureArrivee = heureActuelle();
         const { error: insErr } = await supabase.from('pointages_eleves').insert({
-          ecole_id: schoolId, eleve_id: eleve.id, date_pointage: today,
+          // École RÉELLE de l'élève (repli global) — jamais l'école du portail
+          ecole_id: eleve.ecole_id || schoolId, eleve_id: eleve.id, date_pointage: today,
           heure_arrivee: heureArrivee, statut: statutAuto(heureArrivee, config),
         });
         if (insErr) {

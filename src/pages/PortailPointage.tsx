@@ -106,14 +106,16 @@ export default function PortailPointage() {
       const matriculeTrim = matricule.trim();
       let { data: personne } = await supabase
         .from('personnel')
-        .select('id, matricule, nom, postnom, prenom, fonction, photo_url')
+        .select('id, matricule, nom, postnom, prenom, fonction, photo_url, ecole_id')
         .eq('ecole_id', schoolId)
         .ilike('matricule', matriculeTrim)
         .maybeSingle();
       if (!personne) {
+        // Repli global : la carte appartient peut-être à une autre école → on pointera
+        // sous l'école RÉELLE du membre (sinon son admin le verrait « absent »).
         const { data: fb } = await supabase
           .from('personnel')
-          .select('id, matricule, nom, postnom, prenom, fonction, photo_url')
+          .select('id, matricule, nom, postnom, prenom, fonction, photo_url, ecole_id')
           .ilike('matricule', matriculeTrim)
           .maybeSingle();
         personne = fb;
@@ -140,7 +142,8 @@ export default function PortailPointage() {
         const h = heuresPourFonction(personne.fonction, fonctHeures, config);
         const configFonction = { ...config, heureEntree: h.heureEntree, heureSortie: h.heureSortie };
         await supabase.from('pointages_personnel').insert({
-          ecole_id: schoolId, personnel_id: personne.id, date_pointage: today,
+          // École RÉELLE du membre (repli global) — jamais l'école du portail
+          ecole_id: personne.ecole_id || schoolId, personnel_id: personne.id, date_pointage: today,
           heure_arrivee: heureArrivee, statut: statutAuto(heureArrivee, configFonction),
         });
         setResultat({ type: 'arrivee', personne: info, heure: heureActuelle() });
