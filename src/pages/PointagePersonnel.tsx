@@ -99,6 +99,17 @@ export default function PointagePersonnel() {
     return () => { supabase.removeChannel(ch); };
   }, [reload]);
 
+  // Ouvrir directement le détail d'AUJOURD'HUI (jour ouvrable du mois affiché) :
+  // on voit immédiatement qui est présent / retard / absent au lieu d'une grille vide.
+  useEffect(() => {
+    if (month === todayStr().slice(0, 7)) {
+      setSelectedDay(workDays.includes(today) ? today : null);
+    } else {
+      setSelectedDay(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month]);
+
   // Maps d'accès
   const recByKey = useMemo(() => {
     const map = new Map<string, PointageRecord>();
@@ -195,6 +206,21 @@ export default function PointagePersonnel() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list, workDays, recByKey, permDates, permPayeesDates, config, today]);
+
+  // Compteurs du JOUR sélectionné (cohérents avec getStatutEffectif)
+  const dayCounts = useMemo(() => {
+    if (!selectedDay) return null;
+    const c = { present: 0, retard: 0, absent: 0, permission: 0, saisis: 0 };
+    for (const p of list) {
+      const s = getStatutEffectif(p.id, selectedDay);
+      if (!s.statut) continue;
+      const k = s.statut as 'present' | 'retard' | 'absent' | 'permission';
+      c[k]++;
+      if (!s.auto) c.saisis++;
+    }
+    return c;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDay, list, recByKey, permDates, permPayeesDates, config, today]);
 
   // Statistiques globales (dérivées du bilan — cohérence garantie)
   const stats = useMemo(() => {
@@ -639,8 +665,19 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
       {selectedDay && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-6">
           <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
-            <h3 className="font-bold text-gray-800">Détail — {formatDatePointage(selectedDay)}</h3>
-            <p className="text-xs text-gray-500">Marquez le statut ou ajustez les heures. Un jour ouvrable passé sans pointage = <span className="font-semibold text-red-600">absent (auto)</span> ; un retard est déduit de l'heure d'arrivée si elle dépasse l'heure d'entrée de la fonction du membre (repli : {config.heureEntree}).</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-bold text-gray-800">Détail — {formatDatePointage(selectedDay)}</h3>
+              {dayCounts && (
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-bold">{dayCounts.present} présents</span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">{dayCounts.retard} retards</span>
+                  <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">{dayCounts.absent} absents</span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">{dayCounts.permission} permissions</span>
+                  <span className="text-gray-400 font-medium">{dayCounts.saisis} marqué(s) à la main</span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Marquez le statut ou ajustez les heures. Un jour ouvrable passé sans pointage = <span className="font-semibold text-red-600">absent (auto)</span> ; un retard est déduit de l'heure d'arrivée si elle dépasse l'heure d'entrée de la fonction du membre (repli : {config.heureEntree}).</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

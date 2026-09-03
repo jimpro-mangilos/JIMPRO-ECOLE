@@ -3,7 +3,7 @@ import { QrCode, X, Loader2, CheckCircle2, LogIn, LogOut, UserCheck, CalendarClo
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
-import { loadPointageConfig, loadFonctionsHeures, heuresPourFonction, statutAuto, type PointageConfig, type FonctionHeures } from '../lib/hooks/usePointage';
+import { loadPointageConfig, loadFonctionsHeures, heuresPourFonction, statutAuto, dateLocaleJour, type PointageConfig, type FonctionHeures } from '../lib/hooks/usePointage';
 import { parseScannedMatricule, isMatriculePlausible } from '../utils/ascii';
 
 interface PersonnelInfo {
@@ -126,7 +126,7 @@ export default function PortailPointage() {
         fonction: personne.fonction, photo_url: personne.photo_url,
       };
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = dateLocaleJour();
       const { data: existing } = await supabase
         .from('pointages_personnel')
         .select('id, heure_arrivee, heure_depart')

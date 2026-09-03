@@ -181,6 +181,13 @@ export function isTableMissingError(err: any): boolean {
   return msg.includes('does not exist') || msg.includes('Could not find the table') || msg.includes('PGRST205') || msg.includes('42P01');
 }
 
+/** Date du jour au format local AAAA-MM-JJ (jamais UTC — sinon un scan passé minuit
+ *  serait daté la veille et l'admin verrait « absent » le jour même). */
+export function dateLocaleJour(): string {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 export function formatDatePointage(date: string): string {
   const d = new Date(date + 'T00:00:00');
   return d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' });

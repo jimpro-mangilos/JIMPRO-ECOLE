@@ -4,7 +4,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { usePublicSchool } from '../lib/hooks/usePublicSchool';
-import { loadPointageConfig, statutAuto, isTableMissingError, type PointageConfig } from '../lib/hooks/usePointage';
+import { loadPointageConfig, statutAuto, isTableMissingError, dateLocaleJour, type PointageConfig } from '../lib/hooks/usePointage';
 import { parseScannedMatricule, isMatriculePlausible } from '../utils/ascii';
 
 interface EleveInfo {
@@ -128,7 +128,7 @@ export default function PortailPointageEleves() {
         section: eleve.section, classe: eleve.classe || null, photo_url: eleve.photo_url || null,
       };
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = dateLocaleJour();
       const { data: existing, error: selectErr } = await supabase
         .from('pointages_eleves')
         .select('id, heure_arrivee, heure_depart')
