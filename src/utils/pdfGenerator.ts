@@ -104,11 +104,27 @@ function runAutoTable(doc: jsPDF, config: any, header: ReportHeaderOptions) {
   (doc as any).autoTable({
     ...defaultTableStyles(config.headColor),
     ...config,
-    didDrawPage: async () => {
+    didDrawPage: () => {
+      // ⚠️ didDrawPage est SYNC chez jspdf-autotable : dessiner l'en-tête complet ici
+      // (async, logo via canvas) peindrait APRÈS les lignes du tableau → corruption.
+      // L'en-tête de la page 1 est déjà dessiné par l'appelant AVANT le tableau.
       const currentPage = doc.getNumberOfPages();
-      if (currentPage === firstPageNum) {
-        await drawReportHeader(doc, header);
-      }
+      if (currentPage === firstPageNum) return; // déjà dessiné
+      // Pages suivantes : bandeau de continuation SYNC (sans logo) + titre
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.setFillColor(PDF_THEME.colors.primary[0], PDF_THEME.colors.primary[1], PDF_THEME.colors.primary[2]);
+      doc.rect(0, 0, pageWidth, PDF_THEME.titleBandHeight, 'F');
+      doc.setFillColor(PDF_THEME.colors.accent[0], PDF_THEME.colors.accent[1], PDF_THEME.colors.accent[2]);
+      doc.rect(0, 0, 4, PDF_THEME.titleBandHeight, 'F');
+      doc.setFont(PDF_THEME.font, 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text(sanitizePdfText((header.title || '').toUpperCase()), PDF_THEME.pageMargin, 11);
+      doc.setFont(PDF_THEME.font, 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(220, 225, 235);
+      doc.text(sanitizePdfText((header.schoolName || '') + ' — suite'), pageWidth - PDF_THEME.pageMargin, 11, { align: 'right' });
+      doc.setTextColor(0, 0, 0);
     },
     margin: {
       left: PDF_THEME.pageMargin,

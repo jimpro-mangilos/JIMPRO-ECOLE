@@ -70,11 +70,17 @@ export async function generateFichePresence(params: {
     headStyles: { fillColor: PDF_THEME.colors.primary, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
     bodyStyles: { fontSize: 8.5, textColor: PDF_THEME.colors.black, cellPadding: 1.5 },
     footStyles: { fillColor: PDF_THEME.colors.slateSoft, textColor: PDF_THEME.colors.primary, fontStyle: 'bold', fontSize: 8 },
-    columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 60 }, 2: { halign: 'center', cellWidth: 40 }, 3: { halign: 'center', cellWidth: 40 } },
+    columnStyles: { 0: { cellWidth: 42 }, 1: { cellWidth: 42 }, 2: { halign: 'center', cellWidth: 33 }, 3: { halign: 'center', cellWidth: 33 } },
     margin: { left: 15, right: 15 },
   });
 
-  const y = (doc as any).lastAutoTable.finalY + 14;
+  // Bloc signatures — placé sur la page courante SANS dépasser le bas (sinon coupé)
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let y = (doc as any).lastAutoTable.finalY + 14;
+  if (y + 26 > pageHeight - 12) {
+    doc.addPage();
+    y = 25;
+  }
   const mid = doc.internal.pageSize.getWidth() / 2;
   doc.setDrawColor(PDF_THEME.colors.border[0], PDF_THEME.colors.border[1], PDF_THEME.colors.border[2]);
   doc.setLineWidth(0.2);
