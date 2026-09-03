@@ -297,23 +297,25 @@ export default function PortailRecouvrement() {
     setAgentLoading(true);
     try {
       const m = matricule.trim();
-      // Recherche dans le personnel : école résolue, puis repli global (comme le pointage)
-      let { data: personne } = await supabase
+      // Identification limitée à CETTE école — pas de repli inter-écoles
+      const { data: personne } = await supabase
         .from('personnel')
         .select('id, matricule, nom, postnom, prenom, fonction, est_agent_recouvrement, statut')
         .eq('ecole_id', schoolId)
         .ilike('matricule', m)
         .maybeSingle();
       if (!personne) {
-        const { data: fb } = await supabase
+        // La carte existe peut-être dans une autre école → message utile, accès refusé
+        const { data: autre } = await supabase
           .from('personnel')
-          .select('id, matricule, nom, postnom, prenom, fonction, est_agent_recouvrement, statut')
+          .select('ecole_id')
           .ilike('matricule', m)
           .maybeSingle();
-        personne = fb;
-      }
-      if (!personne) {
-        setAgentError('Matricule inconnu. Vérifiez la carte de service.');
+        if (autre) {
+          setAgentError('Cette carte de service appartient à une autre école : accès refusé ici. Utilisez le portail de son école.');
+        } else {
+          setAgentError('Matricule inconnu. Vérifiez la carte de service.');
+        }
         return;
       }
       if (personne.statut !== 'actif') {
@@ -372,24 +374,28 @@ export default function PortailRecouvrement() {
     setResultat({ type: 'loading' });
 
     try {
-      // Find student — insensible à la casse, scoped par école (avec repli sans école)
+      // Vérification limitée à CETTE école — pas de repli inter-écoles
       const matriculeTrim = matricule.trim();
-      let { data: eleve } = await supabase
+      const { data: eleve } = await supabase
         .from('eleves')
         .select('*')
         .eq('ecole_id', schoolId)
         .ilike('matricule', matriculeTrim)
         .maybeSingle();
       if (!eleve) {
-        // Repli : matricules globalement uniques → recherche sans filtre école
-        const { data: fallback } = await supabase
+        const { data: autre } = await supabase
           .from('eleves')
-          .select('*')
+          .select('ecole_id')
           .ilike('matricule', matriculeTrim)
           .maybeSingle();
-        eleve = fallback;
+        if (autre) {
+          setResultat(null);
+          setScanError('Cette carte appartient à une autre école : la vérification est refusée ici.');
+        } else {
+          setResultat({ type: 'introuvable' });
+        }
+        return;
       }
-      if (!eleve) { setResultat({ type: 'introuvable' }); return; }
 
       const info: EleveInfo = {
         matricule: eleve.matricule, nom: eleve.nom, postnom: eleve.postnom, prenom: eleve.prenom,

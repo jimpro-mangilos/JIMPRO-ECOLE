@@ -113,15 +113,20 @@ export default function PortailPointageEleves() {
         .ilike('matricule', matriculeTrim)
         .maybeSingle();
       if (!eleve) {
-        // Repli global : pointer sous l'école RÉELLE de l'élève
-        const { data: fb } = await supabase
+        // ÉCHEC : chaque élève pointe dans SON école — pas de repli inter-écoles
+        const { data: autre } = await supabase
           .from('eleves')
-          .select('id, matricule, nom, postnom, prenom, section, classe, photo_url, ecole_id')
+          .select('ecole_id')
           .ilike('matricule', matriculeTrim)
           .maybeSingle();
-        eleve = fb;
+        if (autre) {
+          setResultat(null);
+          setScanError('Cette carte appartient à une autre école : le pointage est refusé ici. Ouvrez le portail de son école (?ecole=...).');
+        } else {
+          setResultat({ type: 'introuvable' });
+        }
+        return;
       }
-      if (!eleve) { setResultat({ type: 'introuvable' }); return; }
 
       const info: EleveInfo = {
         id: eleve.id, matricule: eleve.matricule, nom: eleve.nom,

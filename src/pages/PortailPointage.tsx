@@ -111,16 +111,20 @@ export default function PortailPointage() {
         .ilike('matricule', matriculeTrim)
         .maybeSingle();
       if (!personne) {
-        // Repli global : la carte appartient peut-être à une autre école → on pointera
-        // sous l'école RÉELLE du membre (sinon son admin le verrait « absent »).
-        const { data: fb } = await supabase
+        // ÉCHEC : chaque matricule pointe dans SON école — pas de repli inter-écoles
+        const { data: autre } = await supabase
           .from('personnel')
-          .select('id, matricule, nom, postnom, prenom, fonction, photo_url, ecole_id')
+          .select('ecole_id')
           .ilike('matricule', matriculeTrim)
           .maybeSingle();
-        personne = fb;
+        if (autre) {
+          setResultat(null);
+          setScanError('Cette carte de service appartient à une autre école : le pointage est refusé ici. Ouvrez le portail de son école (?ecole=...).');
+        } else {
+          setResultat({ type: 'introuvable' });
+        }
+        return;
       }
-      if (!personne) { setResultat({ type: 'introuvable' }); return; }
 
       const info: PersonnelInfo = {
         id: personne.id, matricule: personne.matricule, nom: personne.nom,
@@ -173,16 +177,20 @@ export default function PortailPointage() {
         .eq('ecole_id', schoolId)
         .ilike('matricule', permMatricule.trim())
         .maybeSingle();
-      // Fallback : recherche globale (même logique que le pointage)
+      // ÉCHEC si la carte n'est pas de CETTE école (pas de repli inter-écoles)
       if (!personne) {
-        const { data: fb } = await supabase
+        const { data: autre } = await supabase
           .from('personnel')
-          .select('id')
+          .select('ecole_id')
           .ilike('matricule', permMatricule.trim())
           .maybeSingle();
-        personne = fb;
+        if (autre) {
+          setPermMsg('Cette carte appartient à une autre école : la demande est refusée ici.');
+        } else {
+          setPermMsg('Matricule introuvable. Vérifiez le matricule imprimé sur la carte.');
+        }
+        return;
       }
-      if (!personne) { setPermMsg('Matricule introuvable. Vérifiez le matricule imprimé sur la carte.'); return; }
       const { error } = await supabase.from('permissions_personnel').insert({
         ecole_id: schoolId, personnel_id: personne.id,
         date_debut: permDebut, date_fin: permFin,

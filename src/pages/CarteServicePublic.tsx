@@ -43,22 +43,22 @@ export default function CarteServicePublic() {
       try {
         const { data: ecole } = await supabase.from('ecoles').select('id, nom, telephone').eq('code', ecoleCode.toUpperCase()).eq('is_active', true).maybeSingle();
         if (!ecole) { if (!cancelled) setState({ type: 'error', message: ecoleCode ? 'École "' + ecoleCode + '" introuvable.' : '?ecole= requis (ex : ?ecole=CSGA).' }); return; }
-        // Membre : école d'abord, puis repli global (matricules uniques)
-        let { data: membre } = await supabase
+        // Membre limité à CETTE école (pas de repli inter-écoles)
+        const { data: membre } = await supabase
           .from('personnel')
           .select('matricule, nom, postnom, prenom, sexe, fonction, date_naissance, nationalite, date_embauche, photo_url, telephone, email, adresse')
           .eq('ecole_id', ecole.id)
           .ilike('matricule', matricule)
           .maybeSingle();
         if (!membre) {
-          const { data: fb } = await supabase
-            .from('personnel')
-            .select('matricule, nom, postnom, prenom, sexe, fonction, date_naissance, nationalite, date_embauche, photo_url, telephone, email, adresse')
-            .ilike('matricule', matricule)
-            .maybeSingle();
-          membre = fb;
+          if (!cancelled) {
+            const { data: autre } = await supabase.from('personnel').select('ecole_id').ilike('matricule', matricule).maybeSingle();
+            setState({ type: 'error', message: autre
+              ? 'Ce matricule appartient à une autre école. Ouvrez le lien avec ?ecole= de son école.'
+              : 'Aucun membre trouvé avec le matricule "' + matricule + '" dans cette école.' });
+          }
+          return;
         }
-        if (!membre) { if (!cancelled) setState({ type: 'error', message: 'Aucun membre trouvé avec le matricule "' + matricule + '".' }); return; }
 
         const { data: logo } = await supabase.from('app_settings').select('value').eq('ecole_id', ecole.id).eq('key', 'logo_url').maybeSingle();
         const logoUrl = logo?.value || '';
