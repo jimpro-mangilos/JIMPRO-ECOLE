@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { loadLogoBase64, loadSchoolName, PDF_THEME, sanitizePdfText } from './pdfTheme';
+import { loadLogoBase64, loadSchoolName, PDF_THEME, sanitizePdfText, addRoundedImage } from './pdfTheme';
+import { getSchoolInitials } from './schoolInitials';
 
 export const MOIS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -112,7 +113,16 @@ export async function generatePointageElevesReport(opts: {
   doc.rect(0, 0, pw, 30, 'F');
   doc.setFillColor(c.accent[0], c.accent[1], c.accent[2]);
   doc.rect(0, 30, pw, 1.2, 'F');
-  if (logo) { try { doc.addImage(logo, 'PNG', 12, 7, 14, 14); } catch { } }
+  if (logo) {
+    try { await addRoundedImage(doc, logo, 12, 7, 14, 14, 7, c.primary); } catch { /* logo indisponible */ }
+  } else {
+    doc.setFillColor(c.accent[0], c.accent[1], c.accent[2]);
+    doc.circle(19, 14, 7, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text(getSchoolInitials(schoolName), 19, 16, { align: 'center' });
+  }
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
@@ -160,7 +170,17 @@ export async function generatePointageElevesReport(opts: {
       7: { cellWidth: 18, halign: 'center' },
       8: { cellWidth: 18, halign: 'center' },
     },
-    didDrawPage: () => {
+    didDrawPage: (data: any) => {
+      // Pages suivantes : bandeau SYNC (jamais d'async ici) + pied
+      if (data.pageNumber > 1) {
+        doc.setFillColor(c.primary[0], c.primary[1], c.primary[2]);
+        doc.rect(0, 0, pw, 9, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text('RAPPORT DE PRÉSENCE DES ÉLÈVES — suite', pw / 2, 6.5, { align: 'center' });
+        doc.setTextColor(0, 0, 0);
+      }
       doc.setFontSize(8);
       doc.setTextColor(c.muted[0], c.muted[1], c.muted[2]);
       doc.text('JIMPRO ÉCOLE — Généré le ' + new Date().toLocaleDateString('fr-FR'), PDF_THEME.pageMargin, doc.internal.pageSize.getHeight() - 6);

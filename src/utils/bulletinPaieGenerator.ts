@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { sanitizePdfText, PDF_THEME, drawReportHeader, loadSchoolName, loadLogoBase64 } from './pdfTheme';
+import { sanitizePdfText, PDF_THEME, drawReportHeader, contentStartY, loadSchoolName, loadLogoBase64 } from './pdfTheme';
 
 export interface BulletinData {
   nom: string;
@@ -42,8 +42,9 @@ export async function generateBulletinPaie(b: BulletinData) {
   const nomComplet = sanitizePdfText(`${b.nom} ${b.postnom || ''} ${b.prenom}`.trim().toUpperCase());
   doc.setFontSize(11);
   doc.setTextColor(PDF_THEME.colors.slate[0], PDF_THEME.colors.slate[1], PDF_THEME.colors.slate[2]);
-  doc.text(`Membre : ${nomComplet}`, 15, 42);
-  doc.text(`Matricule : ${sanitizePdfText(b.matricule || '-')}    Fonction : ${sanitizePdfText(b.fonction)}`, 15, 48);
+  const cy = contentStartY();
+  doc.text(`Membre : ${nomComplet}`, 15, cy);
+  doc.text(`Matricule : ${sanitizePdfText(b.matricule || '-')}    Fonction : ${sanitizePdfText(b.fonction)}`, 15, cy + 6);
 
   const t = PDF_THEME.colors;
   const rows = [
@@ -55,7 +56,7 @@ export async function generateBulletinPaie(b: BulletinData) {
   ];
 
   (doc as any).autoTable({
-    startY: 54,
+    startY: contentStartY() + 12,
     head: [['Détail', 'Valeur']],
     body: rows,
     theme: 'grid',

@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { loadLogoBase64, loadSchoolName, PDF_THEME, sanitizePdfText } from './pdfTheme';
+import { loadLogoBase64, loadSchoolName, PDF_THEME, sanitizePdfText, addRoundedImage } from './pdfTheme';
+import { getSchoolInitials } from './schoolInitials';
 import type { PersonnelRecord } from '../lib/hooks/usePersonnel';
 import type { PointageRecord } from '../lib/hooks/usePointage';
 
@@ -49,7 +50,15 @@ export async function generatePointageReport(opts: {
   doc.rect(0, 30, pw, 1.2, 'F');
 
   if (logo) {
-    try { doc.addImage(logo, 'PNG', 12, 7, 14, 14); } catch { /* ignore */ }
+    // Détection auto du format + arrondi (jamais d'erreur avalée silencieusement)
+    try { await addRoundedImage(doc, logo, 12, 7, 14, 14, 7, c.primary); } catch { /* logo indisponible */ }
+  } else {
+    doc.setFillColor(c.accent[0], c.accent[1], c.accent[2]);
+    doc.circle(19, 14, 7, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text(getSchoolInitials(schoolName), 19, 16, { align: 'center' });
   }
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
@@ -99,13 +108,26 @@ export async function generatePointageReport(opts: {
     headStyles: { fillColor: [30, 58, 95], textColor: [255, 255, 255], fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      0: { cellWidth: 55 },
-      1: { cellWidth: 40 },
+      0: { cellWidth: 50 },
+      1: { cellWidth: 36 },
       2: { halign: 'center', cellWidth: 18 },
       3: { halign: 'center', cellWidth: 18 },
       4: { halign: 'center', cellWidth: 18 },
       5: { halign: 'center', cellWidth: 22 },
       6: { halign: 'center', cellWidth: 18 },
+    },
+    margin: { left: 14, right: 14, bottom: 20 },
+    didDrawPage: (data: any) => {
+      // Pages suivantes : petit bandeau SYNC (jamais d'async dans ce hook)
+      if (data.pageNumber > 1) {
+        doc.setFillColor(c.primary[0], c.primary[1], c.primary[2]);
+        doc.rect(0, 0, pw, 10, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text('RAPPORT DE PRÉSENCE DU PERSONNEL — suite', pw / 2, 7, { align: 'center' });
+        doc.setTextColor(0, 0, 0);
+      }
     },
   });
 

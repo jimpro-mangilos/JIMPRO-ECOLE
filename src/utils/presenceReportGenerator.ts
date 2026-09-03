@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { sanitizePdfText, PDF_THEME, drawReportHeader, loadSchoolName, loadLogoBase64 } from './pdfTheme';
+import { sanitizePdfText, PDF_THEME, drawReportHeader, contentStartY, loadSchoolName, loadLogoBase64 } from './pdfTheme';
 import type { PointageRecord, PointageConfig } from '../lib/hooks/usePointage';
 
 const STATUT_LABEL: Record<string, string> = { present: 'Présent', retard: 'Retard', absent: 'Absent', permission: 'Permission' };
@@ -35,8 +35,9 @@ export async function generateFichePresence(params: {
   const nomComplet = sanitizePdfText(`${membre.nom} ${membre.postnom || ''} ${membre.prenom}`.trim().toUpperCase());
   doc.setFontSize(11);
   doc.setTextColor(PDF_THEME.colors.slate[0], PDF_THEME.colors.slate[1], PDF_THEME.colors.slate[2]);
-  doc.text(`Membre : ${nomComplet}`, 15, 42);
-  doc.text(`Matricule : ${sanitizePdfText(membre.matricule || '-')}    Fonction : ${sanitizePdfText(membre.fonction)}`, 15, 48);
+  const cy = contentStartY();
+  doc.text(`Membre : ${nomComplet}`, 15, cy);
+  doc.text(`Matricule : ${sanitizePdfText(membre.matricule || '-')}    Fonction : ${sanitizePdfText(membre.fonction)}`, 15, cy + 6);
   doc.setFontSize(8.5);
   doc.setTextColor(PDF_THEME.colors.muted[0], PDF_THEME.colors.muted[1], PDF_THEME.colors.muted[2]);
   doc.text(`Heure d'entrée : ${config.heureEntree} · Heure de sortie : ${config.heureSortie} · Jours ouvrables : lun–ven`, 15, 53.5);
@@ -62,10 +63,10 @@ export async function generateFichePresence(params: {
   }
 
   (doc as any).autoTable({
-    startY: 58,
+    startY: contentStartY() + 12,
     head: [['Date', 'Statut', 'Arrivée', 'Départ']],
     body,
-    foot: [[`Présents : ${counts.present} · Retards : ${counts.retard} · Absents : ${counts.absent} · Permissions : ${counts.permission}`, '', '', '']],
+    foot: [[{ content: `Présents : ${counts.present} · Retards : ${counts.retard} · Absents : ${counts.absent} · Permissions : ${counts.permission}`, colSpan: 4, styles: { halign: 'left' } }]],
     theme: 'grid',
     headStyles: { fillColor: PDF_THEME.colors.primary, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
     bodyStyles: { fontSize: 8.5, textColor: PDF_THEME.colors.black, cellPadding: 1.5 },

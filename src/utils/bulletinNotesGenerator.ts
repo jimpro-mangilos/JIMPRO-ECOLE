@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { sanitizePdfText, PDF_THEME, drawReportHeader, loadSchoolName, loadLogoBase64 } from './pdfTheme';
+import { sanitizePdfText, PDF_THEME, drawReportHeader, contentStartY, loadSchoolName, loadLogoBase64 } from './pdfTheme';
 
 export interface BulletinNoteLigne {
   titre: string;
@@ -27,8 +27,9 @@ export async function generateBulletinNotes(params: {
 
   doc.setFontSize(11);
   doc.setTextColor(PDF_THEME.colors.slate[0], PDF_THEME.colors.slate[1], PDF_THEME.colors.slate[2]);
-  doc.text(`Élève : ${sanitizePdfText(eleveNom.toUpperCase())}`, 15, 42);
-  doc.text(`Matricule : ${sanitizePdfText(eleveMatricule || '-')}    Classe : ${sanitizePdfText(classe)}`, 15, 48);
+  const cy = contentStartY();
+  doc.text(`Élève : ${sanitizePdfText(eleveNom.toUpperCase())}`, 15, cy);
+  doc.text(`Matricule : ${sanitizePdfText(eleveMatricule || '-')}    Classe : ${sanitizePdfText(classe)}`, 15, cy + 6);
 
   const body = lignes.map(l => [
     sanitizePdfText(l.titre),
@@ -40,10 +41,10 @@ export async function generateBulletinNotes(params: {
   const moyenne = notes.length > 0 ? notes.reduce((a, b) => a + b, 0) / notes.length : null;
 
   (doc as any).autoTable({
-    startY: 54,
+    startY: contentStartY() + 12,
     head: [['Devoir', 'Note /20', 'Appréciation']],
     body,
-    foot: [[`Moyenne : ${moyenne != null ? moyenne.toFixed(2) + ' /20' : '-'}`, '', '']],
+    foot: [[{ content: `Moyenne : ${moyenne != null ? moyenne.toFixed(2) + ' /20' : '-'}`, colSpan: 3, styles: { halign: 'left' } }]],
     theme: 'grid',
     headStyles: { fillColor: PDF_THEME.colors.primary, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
     bodyStyles: { fontSize: 9, textColor: PDF_THEME.colors.black, cellPadding: 2 },

@@ -130,6 +130,7 @@ function runAutoTable(doc: jsPDF, config: any, header: ReportHeaderOptions) {
       left: PDF_THEME.pageMargin,
       right: PDF_THEME.pageMargin,
       top: PDF_THEME.pageMargin,
+      bottom: 20, // garde le filet de pied (pageHeight−16) libre de chevaucher la dernière ligne
     },
   });
 }

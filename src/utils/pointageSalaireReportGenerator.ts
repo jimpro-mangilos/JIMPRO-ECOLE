@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { sanitizePdfText, PDF_THEME, drawReportHeader, loadSchoolName, loadLogoBase64 } from './pdfTheme';
+import { sanitizePdfText, PDF_THEME, drawReportHeader, contentStartY, loadSchoolName, loadLogoBase64 } from './pdfTheme';
 
 export interface SalaireLigne {
   nom: string;
@@ -59,7 +59,7 @@ export async function generatePointageSalaireReport(params: {
   const totalFC = rows.reduce((acc, r) => acc + (r.salaireMois || 0), 0);
 
   (doc as any).autoTable({
-    startY: 40,
+    startY: contentStartY(),
     head: [['Personnel', 'Fonction', 'Jours présents', 'Salaire mensuel', 'Salaire journalier', 'Salaire du mois (FC)', 'Salaire du mois ($)']],
     body,
     foot: [['', '', '', '', '', sanitizePdfText(fmtFC(totalFC)), sanitizePdfText(fmtUSD(totalFC, tauxChange))]],
