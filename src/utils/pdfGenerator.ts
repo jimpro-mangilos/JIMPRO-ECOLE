@@ -107,7 +107,7 @@ function runAutoTable(doc: jsPDF, config: any, header: ReportHeaderOptions) {
   const rawStart = config.startY ?? contentStartY();
   if (rawStart + 10 > pageH - 18) {
     doc.addPage();
-    config = { ...config, startY: PDF_THEME.pageMargin };
+    config = { ...config, startY: PDF_THEME.titleBandHeight };
   }
   (doc as any).autoTable({
     ...defaultTableStyles(config.headColor),
@@ -137,7 +137,7 @@ function runAutoTable(doc: jsPDF, config: any, header: ReportHeaderOptions) {
     margin: {
       left: PDF_THEME.pageMargin,
       right: PDF_THEME.pageMargin,
-      top: PDF_THEME.pageMargin,
+      top: PDF_THEME.titleBandHeight,
       bottom: 20, // garde le filet de pied (pageHeight−16) libre de chevaucher la dernière ligne
     },
   });
@@ -171,7 +171,7 @@ export async function generateElevesReport(eleves: Eleve[]) {
 
   sections.forEach(section => {
     const elevesSection = eleves.filter(e => (e.section || 'Non defini') === section);
-    y = ensureSpace(doc, y, 25, header);
+    y = ensureSpace(doc, y, 20, header);
     y = drawSectionTitle(
       doc,
       y + 2,
