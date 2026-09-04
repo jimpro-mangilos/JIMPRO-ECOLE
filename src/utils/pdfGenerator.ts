@@ -101,6 +101,14 @@ function lastTableY(doc: jsPDF): number | undefined {
 
 function runAutoTable(doc: jsPDF, config: any, header: ReportHeaderOptions) {
   const firstPageNum = doc.getNumberOfPages();
+  // Garde : si le contenu pré-tableau pousse startY en bas de page, un startY trop
+  // grand rendrait la page 1 « en-tête seul » (les lignes partiraient hors page).
+  const pageH = doc.internal.pageSize.getHeight();
+  const rawStart = config.startY ?? contentStartY();
+  if (rawStart + 10 > pageH - 18) {
+    doc.addPage();
+    config = { ...config, startY: PDF_THEME.pageMargin };
+  }
   (doc as any).autoTable({
     ...defaultTableStyles(config.headColor),
     ...config,
