@@ -246,6 +246,8 @@ function detectImageFormat(img: string, fallback = 'PNG'): string {
  * Recompose une image (avec transparence) sur une couleur de fond donnée,
  * et la convertit en JPEG sans alpha.
  * → Corrige jsPDF qui rend la transparence des PNG en blanc opaque.
+ * → Supprime aussi un fond uni opaque (blanc/gris clair) pour ne garder que
+ *   le dessin du logo : sinon un logo à fond blanc s'affiche en « carré blanc ».
  */
 export function compositeOnColor(img: string, r: number, g: number, b: number): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -256,9 +258,44 @@ export function compositeOnColor(img: string, r: number, g: number, b: number): 
         canvas.width = image.width;
         canvas.height = image.height;
         const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(image, 0, 0);
+
+        // Détection d'un fond uni (4 coins quasi identiques) et suppression
+        // de ce fond (rendu transparent) avant la recomposition.
+        try {
+          const w = canvas.width;
+          const h = canvas.height;
+          const imgData = ctx.getImageData(0, 0, w, h);
+          const d = imgData.data;
+          const cornerIndex = (x: number, y: number) => (y * w + x) * 4;
+          const bgR = d[0];
+          const bgG = d[1];
+          const bgB = d[2];
+          const bgA = d[3];
+          const corners: [number, number][] = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]];
+          const uniformBackground = corners.every(([x, y]) => {
+            const i = cornerIndex(x, y);
+            return Math.abs(d[i] - bgR) < 12 && Math.abs(d[i + 1] - bgG) < 12 && Math.abs(d[i + 2] - bgB) < 12;
+          });
+          // On ne retire le fond que s'il est OPAQUE et uniforme (sinon c'est
+          // déjà un logo transparent, ou un visuel photo → on ne touche à rien).
+          if (uniformBackground && bgA > 0) {
+            const threshold = 40;
+            for (let i = 0; i < d.length; i += 4) {
+              if (Math.abs(d[i] - bgR) < threshold && Math.abs(d[i + 1] - bgG) < threshold && Math.abs(d[i + 2] - bgB) < threshold) {
+                d[i + 3] = 0;
+              }
+            }
+            ctx.putImageData(imgData, 0, 0);
+          }
+        } catch { /* pas de getImageData (canvas restreint) → on garde l'image d'origine */ }
+
+        // Recomposition sur la couleur de fond demandée.
+        ctx.globalCompositeOperation = 'destination-over';
         ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(image, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+
         resolve(canvas.toDataURL('image/jpeg', 0.95));
       } catch (e) { reject(e); }
     };
