@@ -22,6 +22,8 @@ export interface BulletinData {
   retenue?: number;
   /** Salaire net à payer : brut − retenue. */
   net?: number | null;
+  /** Total des prises en charge du mois (même si non déductibles faute de salaire). */
+  retenueDue?: number;
   tauxChange: number | null;
 }
 
@@ -118,6 +120,9 @@ export async function generateBulletinPaie(b: BulletinData) {
   doc.text('Salaire du mois = jours de présence × salaire journalier (salaire mensuel ÷ jours ouvrables).', 15, y2);
   if (aPec) {
     doc.text('NET à payer = salaire brut du mois − retenue prise en charge (plafond 80 % du brut).', 15, y2 + 5);
+    doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 10);
+  } else if (b.retenueDue && b.retenueDue > 0) {
+    doc.text('Prise en charge du mois : ' + fmtFC(b.retenueDue) + ' — non déductible ce mois (salaire brut nul, aucun jour de présence).', 15, y2 + 5);
     doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 10);
   } else {
     doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 5);

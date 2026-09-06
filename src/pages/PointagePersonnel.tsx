@@ -330,6 +330,7 @@ export default function PointagePersonnel() {
       salaireMois: ligne.salaireMois,
       retenue: ligne.retenue,
       net: ligne.net,
+      retenueDue: retenuesPec[ligne.p.id] || 0,
       tauxChange: config.tauxChange,
     });
   }
@@ -804,6 +805,7 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     <div className="font-bold text-blue-700">{formatMontant(net)}</div>
                     {retenue > 0 && <div className="text-[10px] font-medium text-red-500" title={`Brut ${formatMontant(salaireMois)} · prise en charge déduite`}>− prise en charge : {formatMontant(retenue)}</div>}
+                    {net == null && (retenuesPec[p.id] || 0) > 0 && <div className="text-[10px] font-medium text-amber-600" title="Prise en charge du mois non déductible : aucun jour de présence (salaire brut nul)">prise en charge {formatMontant(retenuesPec[p.id])} — pas de salaire ce mois</div>}
                   </td>
                   <td className="px-4 py-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">{formatUSD(net, config.tauxChange)}</td>
                   <td className="px-4 py-2.5 text-center">
