@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
-import { loadLogoBase64, loadSchoolName, PDF_THEME, sanitizePdfText, addRoundedImage } from './pdfTheme';
+import { loadLogoBase64, loadSchoolName, PDF_THEME, sanitizePdfText, addLogoImage } from './pdfTheme';
 import { getSchoolInitials } from './schoolInitials';
 import type { PersonnelRecord } from '../lib/hooks/usePersonnel';
 import type { PointageRecord } from '../lib/hooks/usePointage';
@@ -52,7 +52,7 @@ export async function generatePointageReport(opts: {
 
   if (logo) {
     // Détection auto du format + arrondi (jamais d'erreur avalée silencieusement)
-    try { await addRoundedImage(doc, logo, 12, 7, 14, 14, 7, c.primary); } catch { /* logo indisponible */ }
+    try { await addLogoImage(doc, logo, 12, 7, 14, 14, c.primary); } catch { /* logo indisponible */ }
   } else {
     doc.setFillColor(c.accent[0], c.accent[1], c.accent[2]);
     doc.circle(19, 14, 7, 'F');

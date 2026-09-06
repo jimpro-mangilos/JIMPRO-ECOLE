@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
 import QRCode from 'qrcode';
-import { sanitizePdfText, PDF_THEME, loadLogoBase64, loadSchoolName, addRoundedImage } from './pdfTheme';
+import { sanitizePdfText, PDF_THEME, loadLogoBase64, loadSchoolName, addLogoImage } from './pdfTheme';
 import { getSchoolInitials } from './schoolInitials';
 import { asciiFold } from './ascii';
 
@@ -102,7 +102,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
 
   const logoSize = 18;
   if (logoBase64) {
-    await addRoundedImage(doc, logoBase64, margin, 6, logoSize, logoSize, logoSize / 2, PDF_THEME.colors.primary);
+    await addLogoImage(doc, logoBase64, margin, 6, logoSize, logoSize, PDF_THEME.colors.primary);
   } else {
     doc.setFillColor(accent[0], accent[1], accent[2]);
     doc.circle(margin + logoSize / 2, 15, logoSize / 2, 'F');

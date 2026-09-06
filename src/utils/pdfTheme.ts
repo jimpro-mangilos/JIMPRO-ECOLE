@@ -304,6 +304,30 @@ export function compositeOnColor(img: string, r: number, g: number, b: number): 
   });
 }
 
+export async function addLogoImage(
+  doc: jsPDF,
+  img: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  bgColor?: [number, number, number],
+  format = 'PNG',
+) {
+  let imgToAdd = img;
+  let fmt = detectImageFormat(img, format);
+  // Recompose sur la couleur de fond (transparence → JPEG), SANS clip :
+  // certains lecteurs (pdfium/Chrome) abandonnent le rendu de la page après un
+  // chemin de clip (saveGraphicsState + clip) → page 1 « partiellement blanche ».
+  if (bgColor) {
+    try {
+      imgToAdd = await compositeOnColor(img, bgColor[0], bgColor[1], bgColor[2]);
+      fmt = 'JPEG';
+    } catch { /* image d'origine */ }
+  }
+  doc.addImage(imgToAdd, fmt, x, y, w, h);
+}
+
 export async function addRoundedImage(
   doc: jsPDF,
   img: string,
@@ -342,7 +366,7 @@ export async function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions)
   const logoY = (PDF_THEME.headerHeight - logoSize) / 2;
   const schoolName = options.schoolName || 'GOLDEN ACADEMY';
   if (options.logoBase64) {
-    await addRoundedImage(doc, options.logoBase64, logoX, logoY, logoSize, logoSize, logoSize / 2, PDF_THEME.colors.primary);
+    await addLogoImage(doc, options.logoBase64, logoX, logoY, logoSize, logoSize, PDF_THEME.colors.primary);
   } else {
     doc.setFillColor(accent[0], accent[1], accent[2]);
     doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 'F');
