@@ -69,6 +69,7 @@ export function useEleves(filters: UseElevesOptions) {
       }
       return all;
     },
+    staleTime: 60 * 1000,
   });
 
   // Load paid eleve IDs for current month
@@ -83,6 +84,7 @@ export function useEleves(filters: UseElevesOptions) {
         .eq('statut', 'encaisse');
       return new Set((data ?? []).map((p: { eleve_id: string }) => p.eleve_id));
     },
+    staleTime: 60 * 1000,
   });
 
   // Realtime subscription for payment changes

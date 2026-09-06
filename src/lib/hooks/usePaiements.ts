@@ -54,23 +54,48 @@ export function usePaiements(filters: PaiementFilters) {
 
   // ─── Data Queries ──────────────────────────────────────────────────────────
   const { data: paiements = [], isLoading: loading } = useQuery({
-    queryKey: [...queryKeys.paiements.all, 'v3', { schoolId: currentSchoolId }],
+    // ⚡ Requête SCOPÉE par mode/période côté serveur : on ne télécharge que
+    // les paiements de la vue affichée (journalier/mois ≈ quelques lignes),
+    // au lieu des ~5 000 lignes complètes à chaque ouverture.
+    queryKey: [...queryKeys.paiements.all, 'v4', { schoolId: currentSchoolId, mode: filters.viewMode, userId: user?.id }],
     queryFn: async () => {
       const PAGE = 1000;
-      let all: Paiement[] = [];
+      const all: Paiement[] = [];
+      const iso = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const base = () => supabase.from('paiements').select('*').eq('ecole_id', currentSchoolId);
+      const now = new Date();
+      let q: any;
+      if (filters.viewMode === 'journalier') {
+        q = base().gte('date_paiement', iso(now)).lte('date_paiement', iso(now));
+      } else if (filters.viewMode === 'jour_precedent') {
+        const y = new Date(); y.setDate(y.getDate() - 1);
+        q = base().gte('date_paiement', iso(y)).lte('date_paiement', iso(y));
+      } else if (filters.viewMode === 'mois') {
+        q = base().gte('date_paiement', iso(new Date(now.getFullYear(), now.getMonth(), 1))).lte('date_paiement', iso(new Date(now.getFullYear(), now.getMonth() + 1, 0)));
+      } else if (filters.viewMode === 'mois_precedent') {
+        const pm = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+        const py = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        q = base().gte('date_paiement', iso(new Date(py, pm, 1))).lte('date_paiement', iso(new Date(py, pm + 1, 0)));
+      } else if (filters.viewMode === 'compte_actif' && user?.id) {
+        // Compte actif : mes paiements + ceux en attente (serveur) → petit sous-ensemble
+        q = base().or('comptable_id.eq.' + user.id + ',statut.eq.en_attente');
+      } else {
+        q = base();
+      }
+      q = q.order('created_at', { ascending: false });
       let from = 0;
       while (true) {
         const to = from + PAGE - 1;
-        const { data, error } = await supabase.from('paiements').select('*').eq('ecole_id', currentSchoolId).order('created_at', { ascending: false }).range(from, to);
+        const { data, error } = await q.range(from, to);
         if (error) throw error;
         if (!data || data.length === 0) break;
-        all = all.concat(data as Paiement[]);
+        all.push(...(data as Paiement[]));
         if (data.length < PAGE) break;
         from += PAGE;
       }
       return all;
     },
-    staleTime: 0,
+    staleTime: 60 * 1000,
   });
 
   const { data: typesPaiement = [] } = useQuery({
