@@ -19,6 +19,7 @@ export interface Paiement {
   created_at: string; statut: 'en_attente' | 'encaisse' | 'annule';
   motif_annulation: string | null; annule_par: string | null;
   nom_annuleur: string | null; date_annulation: string | null;
+  personnel_id?: string | null;
 }
 
 export function getStatut(p: Paiement): 'en_attente' | 'encaisse' | 'annule' {

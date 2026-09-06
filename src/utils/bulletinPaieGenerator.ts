@@ -18,6 +18,10 @@ export interface BulletinData {
   salaireMensuel: number | null;
   salaireJournalier: number | null;
   salaireMois: number | null;
+  /** Total des paiements « prise en charge » du mois, déduit du salaire (plafond 80 % du brut). */
+  retenue?: number;
+  /** Salaire net à payer : brut − retenue. */
+  net?: number | null;
   tauxChange: number | null;
 }
 
@@ -69,24 +73,41 @@ export async function generateBulletinPaie(b: BulletinData) {
 
   const y = (doc as any).lastAutoTable.finalY + 6;
 
+  const aPec = !!(b.retenue && b.retenue > 0);
+  const bodyRubriques: string[][] = [
+    ['Salaire mensuel (base)', fmtFC(b.salaireMensuel), fmtUSD(b.salaireMensuel, b.tauxChange)],
+    ['Salaire journalier', fmtFC(b.salaireJournalier), fmtUSD(b.salaireJournalier, b.tauxChange)],
+    [aPec ? 'SALAIRE BRUT DU MOIS' : 'SALAIRE DU MOIS', fmtFC(b.salaireMois), fmtUSD(b.salaireMois, b.tauxChange)],
+  ];
+  if (aPec) {
+    bodyRubriques.push([
+      'Retenue — prise en charge (élève pris en charge)',
+      '- ' + fmtFC(b.retenue),
+      b.tauxChange ? '- ' + fmtUSD(b.retenue, b.tauxChange) : '-',
+    ]);
+  }
+  const footRubriques: string[][] = aPec ? [['NET À PAYER', fmtFC(b.net), fmtUSD(b.net, b.tauxChange)]] : [];
+
   (doc as any).autoTable({
     startY: y,
     head: [['Rubrique', 'Montant (FC)', 'Montant ($)']],
-    body: [
-      ['Salaire mensuel (base)', fmtFC(b.salaireMensuel), fmtUSD(b.salaireMensuel, b.tauxChange)],
-      ['Salaire journalier', fmtFC(b.salaireJournalier), fmtUSD(b.salaireJournalier, b.tauxChange)],
-      ['SALAIRE DU MOIS', fmtFC(b.salaireMois), fmtUSD(b.salaireMois, b.tauxChange)],
-    ],
+    body: bodyRubriques,
+    foot: footRubriques.length > 0 ? footRubriques : undefined,
     theme: 'grid',
     headStyles: { fillColor: t.primary, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
     bodyStyles: { fontSize: 9, textColor: t.black, cellPadding: 2 },
-    footStyles: { fillColor: t.slateSoft, textColor: t.primary, fontStyle: 'bold', fontSize: 10 },
+    footStyles: aPec
+      ? { fillColor: t.primary, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 10 }
+      : { fillColor: t.slateSoft, textColor: t.primary, fontStyle: 'bold', fontSize: 10 },
     columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'right', cellWidth: 50 }, 2: { halign: 'right', cellWidth: 35 } },
     margin: { left: 15, right: 15 },
     didParseCell: (data: any) => {
       if (data.section === 'body' && data.row.index === 2) {
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.textColor = (t.primary as any).slice();
+      }
+      if (data.section === 'body' && aPec && data.row.index === 3) {
+        data.cell.styles.textColor = (t.danger as any).slice();
       }
     },
   });
@@ -95,7 +116,12 @@ export async function generateBulletinPaie(b: BulletinData) {
   doc.setFontSize(8);
   doc.setTextColor(t.muted[0], t.muted[1], t.muted[2]);
   doc.text('Salaire du mois = jours de présence × salaire journalier (salaire mensuel ÷ jours ouvrables).', 15, y2);
-  doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 5);
+  if (aPec) {
+    doc.text('NET à payer = salaire brut du mois − retenue prise en charge (plafond 80 % du brut).', 15, y2 + 5);
+    doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 10);
+  } else {
+    doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 5);
+  }
 
   exporterPdf(doc, `bulletin-paie-${(b.matricule || b.nom).replace(/\s+/g, '-')}-${b.moisLabel.replace(/\s+/g, '-')}.pdf`);
 }

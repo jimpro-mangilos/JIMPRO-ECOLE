@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { montantEnLettres } from '../utils/numberToWords';
 import { extraireMatriculeTexte } from '../utils/ascii';
 import { notifierPaiement } from '../lib/smsService';
+import { chargerActivePourEleve, MODE_PRISE_EN_CHARGE } from '../lib/hooks/usePrisesEnCharge';
 
 interface Eleve {
   id: string;
@@ -76,6 +77,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
   const eleveSearchRef = useRef<HTMLDivElement | null>(null);
   const autoSelectedEleve = useRef(false);
 
+
   const [paidMonths, setPaidMonths] = useState<string[]>([]);
   const [loadingMonths, setLoadingMonths] = useState(false);
 
@@ -107,6 +109,24 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
       setFormData(prev => ({ ...prev, eleve_id: preselectedEleve.id }));
     }
   }, [preselectedEleve]);
+
+  // Prise en charge active de l'élève (déduction sur salaire du membre)
+  const [pec, setPec] = useState<{ personnelId: string; membreNom: string } | null>(null);
+  const [pecChecked, setPecChecked] = useState(false);
+  useEffect(() => {
+    let on = true;
+    setPec(null);
+    setPecChecked(false);
+    if (formData.eleve_id && currentSchoolId) {
+      chargerActivePourEleve(currentSchoolId, formData.eleve_id).then(async (f) => {
+        if (!on || !f || !currentSchoolId) return;
+        const { data: m } = await supabase.from('personnel').select('nom, postnom, prenom').eq('id', f.personnel_id).maybeSingle();
+        if (on) setPec({ personnelId: f.personnel_id, membreNom: m ? ((m.nom || '') + ' ' + (m.postnom || '') + ' ' + (m.prenom || '')).trim() : 'membre' });
+      });
+    }
+    return () => { on = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.eleve_id, currentSchoolId]);
 
   useEffect(() => {
     if (formData.montant_paye) {
@@ -331,7 +351,18 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
         ecole_id: currentSchoolId,
       };
 
-      if (formData.encaisser && canEncaisser()) {
+      // Prise en charge : paiement DÉDUIT du salaire du membre (encaissé d'office)
+      if (pec && pecChecked) {
+        paiementData.mode_paiement = MODE_PRISE_EN_CHARGE;
+        paiementData.personnel_id = pec.personnelId;
+        paiementData.est_encaisse = true;
+        paiementData.statut = 'encaisse';
+        paiementData.date_encaissement = new Date().toISOString();
+        paiementData.encaisseur_id = user?.id;
+        paiementData.nom_encaisseur = `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim();
+      }
+
+      if (formData.encaisser && canEncaisser() && !(pec && pecChecked)) {
         paiementData.est_encaisse = true;
         paiementData.date_encaissement = new Date().toISOString();
         paiementData.encaisseur_id = user?.id;
@@ -343,7 +374,8 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
       if (error) throw error;
 
       // Notification SMS au numéro de l'élève (fiche) — non bloquant, si activé
-      try {
+      // (pas de SMS pour une prise en charge : c'est l'école qui règle)
+      if (!(pec && pecChecked)) try {
         const { data: ecoleRow } = await supabase.from('ecoles').select('nom').eq('id', currentSchoolId).maybeSingle();
         notifierPaiement({
           ecoleId: currentSchoolId || '',
@@ -887,6 +919,22 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
                     </option>
                   ))}
                 </select>
+                {pec && (
+                  <div className="mt-2 bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pecChecked}
+                        onChange={e => { setPecChecked(e.target.checked); if (e.target.checked) setFormData({ ...formData, encaisser: false }); }}
+                        className="w-5 h-5 text-indigo-600 rounded mt-0.5"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-indigo-900">Prise en charge — {pec.membreNom}</p>
+                        <p className="text-xs text-indigo-700">Cet élève est pris en charge : le montant sera <b>déduit du salaire</b> de ce membre. Une attestation de prise en charge sera délivrée (aucun SMS au parent).</p>
+                      </div>
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div>

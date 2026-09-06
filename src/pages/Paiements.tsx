@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePaiements, getStatut, type Paiement } from '../lib/hooks/usePaiements';
 import { useSections, useClasses } from '../lib/hooks/useReferenceData';
 import { formatDateTime } from '../utils/calculations';
+import { supabase } from '../lib/supabase';
 
 // ─── Motif Multi-Select (local component) ────────────────────────────────────
 function MotifMultiSelect({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (v: string[]) => void }) {
@@ -111,7 +112,13 @@ export default function Paiements() {
   };
 
   // ─── Print / Edit / Detail handlers ────────────────────────────────────────
-  const recuData = (paiement: Paiement) => {
+  const membrePEC = async (paiement: Paiement): Promise<string | undefined> => {
+    if ((paiement.mode_paiement || '') !== 'prise_en_charge' || !paiement.personnel_id) return undefined;
+    const { data } = await supabase.from('personnel').select('nom, postnom, prenom').eq('id', paiement.personnel_id).maybeSingle();
+    return data ? ((data.nom || '') + ' ' + (data.postnom || '') + ' ' + (data.prenom || '')).trim() : undefined;
+  };
+
+  const recuData = (paiement: Paiement, membre?: string) => {
     const typeLabel = getTypeLabel(paiement.type_paiement);
     return {
       numero_recu: paiement.numero_recu, nom_eleve: paiement.nom_eleve, matricule: paiement.matricule,
@@ -125,18 +132,20 @@ export default function Paiements() {
       nom_comptable: paiement.nom_comptable, nom_encaisseur: paiement.nom_encaisseur,
       type_paiement: typeLabel, annee_scolaire: paiement.annee_scolaire,
       motif_paiement: paiement.motif_libelle || null,
+      membre_prise_en_charge: membre,
     };
   };
 
-  const handlePrintRecu = (paiement: Paiement) => {
+  const handlePrintRecu = async (paiement: Paiement) => {
     try {
-      generateReceipt(recuData(paiement), false);
+      generateReceipt(recuData(paiement, await membrePEC(paiement)), false);
     } catch (err) { console.error('Erreur impression:', err); alert('Erreur lors de la génération du reçu'); }
   };
 
-  const handlePreviewRecu = (paiement: Paiement) => {
+  const handlePreviewRecu = async (paiement: Paiement) => {
     try {
-      enApercu(() => generateReceipt(recuData(paiement), false));
+      const membre = await membrePEC(paiement);
+      enApercu(() => generateReceipt(recuData(paiement, membre), false));
     } catch (err) { console.error('Erreur aperçu:', err); alert('Erreur lors de la génération du reçu'); }
   };
 

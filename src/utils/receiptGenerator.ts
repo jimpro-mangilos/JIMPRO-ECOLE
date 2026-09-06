@@ -32,6 +32,7 @@ interface ReceiptData {
   type_paiement: string;
   annee_scolaire?: string | null;
   motif_paiement?: string | null;
+  membre_prise_en_charge?: string;
 }
 
 function formatMontant(montant: number): string {
@@ -131,7 +132,8 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   doc.setTextColor(slate[0], slate[1], slate[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.text(S('RECU DE PAIEMENT'), margin, 39);
+  const estPriseEnCharge = (data.mode_paiement || '') === 'prise_en_charge';
+  doc.text(S(estPriseEnCharge ? 'ATTESTATION DE PRISE EN CHARGE' : 'RECU DE PAIEMENT'), margin, 39);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
@@ -216,7 +218,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
     startY: yPos,
     head: [['N', 'REF', 'MOTIF', 'DEVISE', 'MONTANT']],
     body: tableData,
-    foot: [['', '', S('TOTAL A PAYER'), '', S(`${formatMontant(data.montant_paye)} FC`)]],
+    foot: [['', '', S(estPriseEnCharge ? 'A DEDUIRE DU SALAIRE' : 'TOTAL A PAYER'), '', S(`${formatMontant(data.montant_paye)} FC`)]],
     theme: 'grid',
     headStyles: {
       fillColor: primary,
@@ -251,6 +253,18 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
   });
 
   yPos += 8;
+
+  if (estPriseEnCharge) {
+    const indigo: [number, number, number] = [79, 70, 229];
+    doc.setFillColor(indigo[0], indigo[1], indigo[2]);
+    doc.rect(margin, yPos - 4, pageWidth - 2 * margin, 10, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text(S('PRISE EN CHARGE — déduit du salaire de ' + (data.membre_prise_en_charge || 'membre du personnel')), margin + 4, yPos + 2.5);
+    yPos += 12;
+    doc.setTextColor(0, 0, 0);
+  }
 
   doc.setFillColor(slateSoft[0], slateSoft[1], slateSoft[2]);
   doc.rect(margin, yPos - 5, pageWidth - 2 * margin, 12, 'F');

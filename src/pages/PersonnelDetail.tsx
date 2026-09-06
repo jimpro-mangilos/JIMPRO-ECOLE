@@ -11,6 +11,7 @@ import { formatDate, calculerAnciennete } from '../utils/calculations';
 import type { PersonnelRecord } from '../lib/hooks/usePersonnel';
 import { STATUT_PERSONNEL_LABELS, STATUT_PERSONNEL_COLORS } from '../lib/hooks/usePersonnel';
 import { STATUT_POINTAGE, type PointageRecord } from '../lib/hooks/usePointage';
+import PrisesEnChargeSection from '../components/PrisesEnChargeSection';
 
 function Info({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: React.ReactNode }) {
   return (
@@ -34,7 +35,8 @@ export default function PersonnelDetail() {
   const [printing, setPrinting] = useState(false);
   const [pointages, setPointages] = useState<PointageRecord[]>([]);
   const [pointagesLoading, setPointagesLoading] = useState(false);
-  const { currentSchoolId } = useAuth();
+  const { currentSchoolId, user, isAdmin, isItManager, isPromoteur } = useAuth();
+  const isApproverPec = isAdmin() || isItManager() || isPromoteur();
   const [tauxChange, setTauxChange] = useState<number | null>(null);
 
   useEffect(() => {
@@ -199,6 +201,19 @@ export default function PersonnelDetail() {
         <Info icon={Briefcase} label="Domaine" value={member.domaine || '—'} />
         <Info icon={CalendarDays} label="Ancienneté" value={member.date_embauche ? calculerAnciennete(member.date_embauche) : '—'} />
       </div>
+
+      {/* ═══ Élèves pris en charge ═══ */}
+      {member && currentSchoolId && (
+        <div className="mt-6">
+          <PrisesEnChargeSection
+            ecoleId={currentSchoolId}
+            personnelId={member.id}
+            membreNom={(member.nom + ' ' + (member.postnom || '') + ' ' + member.prenom).trim()}
+            isApprover={isApproverPec}
+            userId={user?.id || null}
+          />
+        </div>
+      )}
 
       {/* ═══ Présence / Pointage — référence à la liste de présence ═══ */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mt-6">
