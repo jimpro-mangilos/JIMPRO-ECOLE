@@ -15,7 +15,10 @@ interface Combo { section: string; option: string; classe: string; count: number
 export async function chargerEffectifsMax(ecoleId: string): Promise<Record<string, number>> {
   try {
     const { data } = await (supabase as any).from('app_settings').select('value').eq('ecole_id', ecoleId).eq('key', CLEF_EFFECTIF_MAX).maybeSingle();
-    if (data?.value) return JSON.parse(data.value);
+    if (data && data.value != null) {
+      const v = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      if (v && typeof v === 'object') return v as Record<string, number>;
+    }
   } catch { /* ignore */ }
   return {};
 }
@@ -48,6 +51,7 @@ export default function EffectifsConfigTab() {
     try {
       // Élèves (pagination) → combos section|option|classe + comptage
       const mapCount = new Map<string, number>();
+      const mapOrig = new Map<string, { s: string; o: string; c: string }>();
       const PAGE = 1000;
       let from = 0;
       while (true) {
@@ -59,19 +63,20 @@ export default function EffectifsConfigTab() {
           .range(from, to);
         if (!data || data.length === 0) break;
         for (const e of data) {
-          const s = e.section || ''; const o = e.option || ''; const c = e.classe || '';
+          const s = String(e.section || ''); const o = String(e.option || ''); const c = String(e.classe || '');
           const key = cleClasse(s, o, c);
           mapCount.set(key, (mapCount.get(key) || 0) + 1);
+          if (!mapOrig.has(key)) mapOrig.set(key, { s, o, c });
         }
         if (data.length < PAGE) break;
         from += PAGE;
       }
       const list: Combo[] = [];
       for (const [key, count] of mapCount) {
-        const [s, o, c] = key.split('|');
-        list.push({ section: s, option: o, classe: c, count });
+        const orig = mapOrig.get(key) || { s: '', o: '', c: '' };
+        list.push({ section: orig.s, option: orig.o, classe: orig.c, count });
       }
-      list.sort((a, b) => a.section.localeCompare(b.section) || a.classe.localeCompare(b.classe));
+      list.sort((a, b) => String(a.section).localeCompare(String(b.section)) || String(a.classe).localeCompare(String(b.classe)));
       setCombos(list);
       setSecs(Array.from(new Set(list.map(x => x.section))).sort());
       setCaps(await chargerEffectifsMax(currentSchoolId));
