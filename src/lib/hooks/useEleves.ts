@@ -77,13 +77,27 @@ export function useEleves(filters: UseElevesOptions) {
   const { data: paidEleveIds = new Set<string>() } = useQuery({
     queryKey: ['eleves', 'paidThisMonth', { schoolId: currentSchoolId }],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('paiements')
-        .select('eleve_id')
-        .eq('ecole_id', currentSchoolId)
-        .eq('mois_minerval', getCurrentMoisMinerval())
-        .eq('statut', 'encaisse');
-      return new Set((data ?? []).map((p: { eleve_id: string }) => p.eleve_id));
+      // ⚠️ Pagination obligatoire : la limite par défaut de Supabase est 1000 lignes —
+      // sans boucle, des centaines d'élèves payés resteraient « PAS EN ORDRE ».
+      const set = new Set<string>();
+      const PAGE = 1000;
+      let from = 0;
+      while (true) {
+        const to = from + PAGE - 1;
+        const { data, error } = await supabase
+          .from('paiements')
+          .select('eleve_id')
+          .eq('ecole_id', currentSchoolId)
+          .eq('mois_minerval', getCurrentMoisMinerval())
+          .eq('statut', 'encaisse')
+          .range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        for (const p of data as { eleve_id: string }[]) set.add(p.eleve_id);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return set;
     },
     staleTime: 60 * 1000,
   });
