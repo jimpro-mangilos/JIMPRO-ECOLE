@@ -361,17 +361,40 @@ export async function addRoundedImage(
 export function drawFiltresActifs(doc: jsPDF, y: number, filtres: string[]): number {
   const margin = PDF_THEME.pageMargin;
   const pageWidth = doc.internal.pageSize.getWidth();
-  const text = 'FILTRES ACTIFS : ' + filtres.join('  •  ');
+  const right = pageWidth - margin;
+  const c = PDF_THEME.colors;
+  // Découpe chaque filtre « Étiquette : VALEUR » → la VALEUR est en ROUGE.
+  const segs: { t: string; red: boolean }[] = [{ t: 'FILTRES ACTIFS : ', red: false }];
+  filtres.forEach((item, idx) => {
+    if (idx > 0) segs.push({ t: '  •  ', red: false });
+    const m = item.match(/^([^:]+):\s*(.*)$/);
+    if (m) {
+      segs.push({ t: (m[1] || '').trim() + ' : ', red: false });
+      segs.push({ t: m[2], red: true });
+    } else {
+      segs.push({ t: item, red: true });
+    }
+  });
   doc.setFont(PDF_THEME.font, 'bold');
   doc.setFontSize(6.8);
-  doc.setTextColor(PDF_THEME.colors.primary[0], PDF_THEME.colors.primary[1], PDF_THEME.colors.primary[2]);
-  const lines = doc.splitTextToSize(sanitizePdfText(text), pageWidth - 2 * margin) as string[];
-  doc.text(lines, margin, y + 2.5);
-  doc.setDrawColor(PDF_THEME.colors.accent[0], PDF_THEME.colors.accent[1], PDF_THEME.colors.accent[2]);
+  let x = margin;
+  let line = 0;
+  const paint = (red: boolean) => red
+    ? doc.setTextColor(c.danger[0], c.danger[1], c.danger[2])
+    : doc.setTextColor(c.slate[0], c.slate[1], c.slate[2]);
+  for (const s of segs) {
+    const w = doc.getTextWidth(s.t);
+    if (x + w > right && x > margin) { line++; x = margin; }
+    paint(s.red);
+    doc.text(s.t, x, y + 2.5 + line * 3.4);
+    x += w;
+  }
+  paint(false);
+  doc.setDrawColor(c.accent[0], c.accent[1], c.accent[2]);
   doc.setLineWidth(0.4);
-  doc.line(margin, y + 4.5, pageWidth - margin, y + 4.5);
+  doc.line(margin, y + 4.6 + line * 3.4, right, y + 4.6 + line * 3.4);
   doc.setTextColor(0, 0, 0);
-  return y + 4.5 + lines.length * 3.2 + 2;
+  return y + 4.6 + line * 3.4 + 2.5;
 }
 
 export async function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions) {

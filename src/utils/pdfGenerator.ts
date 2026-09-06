@@ -293,19 +293,18 @@ export async function generateMinervalReport(minerval: MinervalRecord[], startDa
   exporterPdf(doc, `rapport_minerval_${Date.now()}.pdf`);
 }
 
-export async function generateFinancesReport(finances: FinanceRecord[], filterInfo?: string, startDate?: Date, endDate?: Date) {
+export async function generateFinancesReport(finances: FinanceRecord[], filterInfo?: string, startDate?: Date, endDate?: Date, resume?: string[]) {
   const doc = landscape();
-  const period = startDate && endDate
-    ? `Du ${formatDatePDF(startDate)} au ${formatDatePDF(endDate)}`
-    : 'Periode : toutes les operations';
   const _logo = await loadLogoBase64();
   const _schoolName = await loadSchoolName();
+  const filtresActifs: string[] = [...(resume || [])];
+  if (startDate && endDate) filtresActifs.push(`Periode : du ${formatDatePDF(startDate)} au ${formatDatePDF(endDate)}`);
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
     schoolName: _schoolName,
     title: 'Rapport Financier',
     subtitle: filterInfo || 'Recettes et depenses consolidees',
-    period,
+    period: filtresActifs.length > 0 ? undefined : 'Periode : toutes les operations',
   };
   await drawReportHeader(doc, header);
 
@@ -316,6 +315,7 @@ export async function generateFinancesReport(finances: FinanceRecord[], filterIn
   const solde = totalRecettes - totalDepenses;
 
   let y = contentStartY();
+  if (filtresActifs.length > 0) y = drawFiltresActifs(doc, y, filtresActifs);
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = PDF_THEME.pageMargin;
   const kpiWidth = (pageWidth - 2 * margin) * 0.38;
@@ -1053,7 +1053,7 @@ interface PaiementsReportFilters {
   annee?: string;
 }
 
-export async function generatePaiementsReport(paiements: PaiementReportRecord[], filters?: PaiementsReportFilters) {
+export async function generatePaiementsReport(paiements: PaiementReportRecord[], filters?: PaiementsReportFilters, resume?: string[]) {
   const doc = landscape();
   const _logo = await loadLogoBase64();
   const _schoolName = await loadSchoolName();
@@ -1070,16 +1070,13 @@ export async function generatePaiementsReport(paiements: PaiementReportRecord[],
   }
   if (filters?.annee && filters.annee !== 'tous') activeFilters.push(`Annee: ${filters.annee}`);
 
-  const period = activeFilters.length > 0
-    ? activeFilters.join(' | ')
-    : 'Tous les paiements';
-
+  const filtresActifs = [...activeFilters, ...(resume || [])];
   const header: ReportHeaderOptions = {
     logoBase64: _logo,
     schoolName: _schoolName,
     title: 'Rapport des Paiements',
     subtitle: 'Liste detaillee des paiements',
-    period,
+    period: filtresActifs.length > 0 ? undefined : 'Tous les paiements',
   };
   await drawReportHeader(doc, header);
 
@@ -1094,6 +1091,7 @@ export async function generatePaiementsReport(paiements: PaiementReportRecord[],
   const totalAnnule = paiements.filter(p => getStatut(p) === 'annule').reduce((sum, p) => sum + p.montant_paye, 0);
 
   let y = contentStartY();
+  if (filtresActifs.length > 0) y = drawFiltresActifs(doc, y, filtresActifs);
   y = drawKpiCards(doc, y, [
     { label: 'Total paiements', value: String(paiements.length), tone: 'primary' },
     { label: 'Encaisse', value: formatCurrencyPDF(totalEncaisse), tone: 'success' },

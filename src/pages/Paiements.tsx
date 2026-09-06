@@ -161,10 +161,29 @@ export default function Paiements() {
   const handleBulkPrint = () => {
     if (selectedIds.size === 0) return;
     const toPrint = paiements.filter(p => selectedIds.has(p.id));
-    generatePaiementsReport(toPrint as any);
+    generatePaiementsReport(toPrint as any, undefined, resumePaiements ? resumePaiements() : undefined);
   };
 
-  const handlePrintReport = () => generatePaiementsReport(paiements as any);
+  // Résumé des filtres actifs (affiché en rouge dans le rapport)
+  const resumePaiements = () => {
+    const r: string[] = [];
+    if (filters.searchTerm.trim()) r.push('Recherche : ' + filters.searchTerm.trim());
+    if (filters.filterType.length) r.push('Types : ' + filters.filterType.join(', '));
+    if (filters.filterStatut.length) r.push('Statuts : ' + filters.filterStatut.join(', '));
+    if (filters.filterMotifs.length) r.push('Motifs : ' + filters.filterMotifs.join(', '));
+    if (filters.filterYear.length) r.push('Année : ' + filters.filterYear.join(', '));
+    if (filters.filterEncaisseur.length) r.push('Encaisseurs : ' + filters.filterEncaisseur.join(', '));
+    if (filters.filterSection.length) r.push('Sections : ' + filters.filterSection.join(', '));
+    if (filters.filterOption.length) r.push('Options : ' + filters.filterOption.join(', '));
+    if (filters.filterClasse.length) r.push('Classes : ' + filters.filterClasse.join(', '));
+    if (filters.filterDateDebut && filters.filterDateFin) r.push('Période : du ' + filters.filterDateDebut + ' au ' + filters.filterDateFin);
+    else if (filters.filterDateDebut) r.push('Depuis le ' + filters.filterDateDebut);
+    else if (filters.filterDateFin) r.push("Jusqu'au " + filters.filterDateFin);
+    if (filters.filterMontantMin) r.push('Montant min : ' + filters.filterMontantMin + ' FC');
+    if (filters.filterMontantMax) r.push('Montant max : ' + filters.filterMontantMax + ' FC');
+    return r;
+  };
+  const handlePrintReport = () => generatePaiementsReport(paiements as any, undefined, resumePaiements());
 
   // ─── Derived data for filter dropdowns ─────────────────────────────────────
   const years = useMemo(() => Array.from(new Set(paiements.map(p => new Date(p.date_paiement).getFullYear().toString()))).sort(), [paiements]);

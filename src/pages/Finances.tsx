@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, TrendingUp, TrendingDown, CheckCircle, ArrowDownCircle, ArrowUpCircle, Trash2, ChevronUp, ChevronDown, ChevronRight, Filter, User, Calendar, CalendarDays, FileDown, LayoutDashboard, Clock, Pencil, X } from 'lucide-react';
+import { Plus, Search, TrendingUp, TrendingDown, CheckCircle, ArrowDownCircle, ArrowUpCircle, Trash2, ChevronUp, ChevronDown, ChevronRight, Filter, User, Calendar, CalendarDays, FileDown, LayoutDashboard, Clock, Pencil, X, Eye } from 'lucide-react';
+import { enApercu } from '../utils/pdfExport';
 import { useAuth } from '../contexts/AuthContext';
 import { generateFinancesReport } from '../utils/pdfGenerator';
 import { montantEnLettres } from '../utils/numberToWords';
@@ -56,6 +57,17 @@ export default function Finances() {
   const openEditModal = (t: Transaction) => { setEditFormData({ montant_chiffre: t.montant_chiffre, montant_lettre: t.montant_lettre || '', beneficiaire: t.beneficiaire, libelle: t.libelle, telephone: t.telephone || '', type_operation: t.type_operation, date_transaction: t.date_transaction ? t.date_transaction.split('T')[0] : '', statut: t.statut || 'en_attente' }); setEditModal({ open: true, transaction: t, loading: false }); };
   const handleMontantBlur = () => { if (formData.montant_chiffre && !formData.montant_lettre) setFormData(p => ({ ...p, montant_lettre: montantEnLettres(p.montant_chiffre) })); };
 
+  // Résumé des filtres actifs (valeurs affichées en rouge dans le rapport)
+  const resumeFinances = () => {
+    const r: string[] = [];
+    const modeLabels: Record<string, string> = { compte_actif: 'Compte actif', journalier: "Aujourd'hui", jour_precedent: 'Hier', mois: 'Ce mois', mois_precedent: 'Mois précédent', general: 'Général' };
+    const mode = filters.viewMode as string;
+    if (mode && mode !== 'general') r.push('Période : ' + (modeLabels[mode] || mode));
+    if (listTab === 'recette') r.push('Type : Recettes');
+    else if (listTab === 'depense') r.push('Type : Dépenses');
+    return r;
+  };
+
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
@@ -104,7 +116,8 @@ export default function Finances() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => generateFinancesReport(transactions as any)} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm"><FileDown className="w-4 h-4" /> Rapport</button>
+            <button onClick={() => generateFinancesReport(transactions as any, undefined, undefined, undefined, resumeFinances())} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm"><FileDown className="w-4 h-4" /> Rapport</button>
+            <button onClick={() => enApercu(() => generateFinancesReport(transactions as any, undefined, undefined, undefined, resumeFinances()))} className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-100 text-sm" title="Aperçu du rapport financier"><Eye className="w-4 h-4" /> Aperçu</button>
             {selectedIds.size > 0 && canSupprimer() && <button onClick={bulkDelete} disabled={bulkDeleting} className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 text-sm disabled:opacity-50"><Trash2 className="w-4 h-4" /> Supprimer ({selectedIds.size})</button>}
           </div>
         </div>
