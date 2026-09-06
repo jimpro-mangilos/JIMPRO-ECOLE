@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import { Plus, BookOpen, FileText, Edit, Trash2, Loader2, Upload, X, Calendar, GraduationCap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -115,7 +116,7 @@ export default function PortailProfesseur() {
   };
 
   const handleDelete = async (id: string, isDevoir: boolean) => {
-    if (!confirm('Confirmer la suppression ?')) return;
+    if (!(await suppressionAuth('Confirmer la suppression ?'))) return;
     if (isDevoir) { await supabase.from('devoirs').delete().eq('id', id); await loadDevoirs(); }
     else { await supabase.from('cours').delete().eq('id', id); await loadCours(); }
     setSuccess('Supprimé');

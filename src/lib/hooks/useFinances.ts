@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { suppressionAuth } from '../../components/SuppressionAuth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { queryKeys } from '../queryKeys';
@@ -186,7 +187,7 @@ export function useFinances(filters: FinanceFilters) {
   }, [currentUserFullName, invalidate]);
 
   const supprimer = useCallback(async (id: string) => {
-    if (!confirm('Supprimer cette transaction ?')) return;
+    if (!(await suppressionAuth('Supprimer cette transaction ?'))) return;
     setActionLoading(id + 'delete');
     try {
       const { error } = await supabase.from('compte_courant').delete().eq('id', id);
@@ -199,7 +200,7 @@ export function useFinances(filters: FinanceFilters) {
 
   const bulkDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Supprimer ${selectedIds.size} transaction(s) ?`)) return;
+    if (!(await suppressionAuth(`Supprimer ${selectedIds.size} transaction(s) ?`))) return;
     setBulkDeleting(true);
     try {
       const { error } = await supabase.from('compte_courant').delete().in('id', [...selectedIds]);

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import { Plus, BookOpen, Edit, Trash2, Loader2, X, Search } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -54,7 +55,7 @@ export default function GestionCours() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer ce cours ?')) return;
+    if (!(await suppressionAuth('Supprimer ce cours ?'))) return;
     await supabase.from('cours').delete().eq('id', id);
     invalidate();
   };

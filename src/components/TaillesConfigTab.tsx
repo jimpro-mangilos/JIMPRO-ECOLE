@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { suppressionAuth } from './SuppressionAuth';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Plus, Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
@@ -40,7 +41,7 @@ export default function TaillesConfigTab() {
   }
 
   async function remove(t: Taille) {
-    if (!confirm(`Supprimer la taille « ${t.libelle} » ?`)) return;
+    if (!(await suppressionAuth(`Supprimer la taille « ${t.libelle} » ?`))) return;
     await supabase.from('tailles_uniforme').delete().eq('id', t.id);
     await load();
   }

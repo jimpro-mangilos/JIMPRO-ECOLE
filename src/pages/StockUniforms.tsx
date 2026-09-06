@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import { Archive, Plus, CreditCard as Edit2, Trash2, AlertTriangle, CheckCircle, XCircle, Search, RefreshCw, Package, TrendingUp, AlertCircle, Loader2, ClipboardList, Ban, History } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -377,7 +378,7 @@ function StockUniforms() {
   };
 
   const handleDelete = async (stock: StockUniforme) => {
-    if (!confirm(`Supprimer l'enregistrement de stock pour "${stock.type_uniforme_libelle}" (${stock.annee_scolaire}) ?`)) return;
+    if (!(await suppressionAuth(`Supprimer l'enregistrement de stock pour "${stock.type_uniforme_libelle}" (${stock.annee_scolaire}) ?`))) return;
     try {
       const { error } = await supabase.from('stock_uniformes').delete().eq('id', stock.id);
       if (error) throw error;
@@ -499,7 +500,7 @@ function StockUniforms() {
 
   const handleDeleteDemande = async (demande: DemandeStock) => {
     if (!isItManager()) return;
-    if (!confirm(`Supprimer la demande d'entrée de « ${demande.type_uniforme?.libelle || ''} » (${demande.annee_scolaire}, ${demande.taille || 'M'}) ?`)) return;
+    if (!(await suppressionAuth(`Supprimer la demande d'entrée de « ${demande.type_uniforme?.libelle || ''} » (${demande.annee_scolaire}, ${demande.taille || 'M'}) ?`))) return;
     try {
       const { error } = await supabase.from('demandes_stock').delete().eq('id', demande.id);
       if (error) throw error;
@@ -530,7 +531,7 @@ function StockUniforms() {
     if (!isItManager()) return;
     if (selectedDemandeIds.size === 0) return;
     const ids = Array.from(selectedDemandeIds);
-    if (!confirm(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} demande(s) d'entrée en stock.\n\nCette action est irréversible. Continuer ?`)) return;
+    if (!(await suppressionAuth(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} demande(s) d'entrée en stock.\n\nCette action est irréversible. Continuer ?`))) return;
     setBulkDeletingDemandes(true);
     try {
       const { error } = await supabase.from('demandes_stock').delete().in('id', ids);
@@ -566,7 +567,7 @@ function StockUniforms() {
     if (selectedIds.size === 0) return;
 
     const ids = Array.from(selectedIds);
-    if (!confirm(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} enregistrement(s) de stock.\n\nCette action est irréversible. Continuer ?`)) {
+    if (!(await suppressionAuth(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} enregistrement(s) de stock.\n\nCette action est irréversible. Continuer ?`))) {
       return;
     }
 

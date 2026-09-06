@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import {
   MessageCircle,
   Search,
@@ -402,7 +403,7 @@ export default function Chat() {
   }
 
   async function handleDeleteMsg(msg: ChatMessage) {
-    if (!confirm('Supprimer ce message ?')) return;
+    if (!(await suppressionAuth('Supprimer ce message ?'))) return;
     await deleteMessage(msg.id);
   }
 

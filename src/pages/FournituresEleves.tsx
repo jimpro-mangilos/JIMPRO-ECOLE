@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import { Plus, Search, Package, X, Loader2, Users, Trash2, RotateCcw, Calendar, QrCode, AlertTriangle, CheckCircle, XCircle, Pencil } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
@@ -157,7 +158,7 @@ export default function FournituresEleves() {
   };
 
   const handleDeleteDistribution = async (d: DistributionUniforme) => {
-    if (!confirm(`Supprimer la distribution "${d.type_uniforme_libelle}" (taille ${d.taille || 'M'}) de ${d.nom_eleve} ${d.prenom} ?\n\nL'article sera restitué au stock si la distribution était validée.`)) return;
+    if (!(await suppressionAuth(`Supprimer la distribution "${d.type_uniforme_libelle}" (taille ${d.taille || 'M'}) de ${d.nom_eleve} ${d.prenom} ?\n\nL'article sera restitué au stock si la distribution était validée.`))) return;
     try {
       const { error } = await supabase.from('gestion_uniformes').delete().eq('id', d.id);
       if (error) throw error;
@@ -280,7 +281,7 @@ export default function FournituresEleves() {
     if (selectedIds.size === 0) return;
 
     const ids = Array.from(selectedIds);
-    if (!confirm(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} distribution(s) de fournitures élèves.\n\nCette action est irréversible. Continuer ?`)) {
+    if (!(await suppressionAuth(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} distribution(s) de fournitures élèves.\n\nCette action est irréversible. Continuer ?`))) {
       return;
     }
 

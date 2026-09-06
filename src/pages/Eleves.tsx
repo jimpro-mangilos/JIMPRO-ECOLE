@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, FileText, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -482,7 +483,7 @@ export default function Eleves() {
                       <img src={photoPreview || formData.photo_url} alt="Aperçu" className="w-16 h-16 object-cover rounded-lg border" />
                       {isItManager() && selectedEleve && (
                         <button type="button" onClick={async () => {
-                          if (!confirm('Supprimer la photo de cet élève ?')) return;
+                          if (!(await suppressionAuth('Supprimer la photo de cet élève ?'))) return;
                           await supabase.from('eleves').update({ photo_url: null }).eq('id', selectedEleve.id);
                           setFormData(p => ({ ...p, photo_url: '' }));
                           setPhotoPreview(null);

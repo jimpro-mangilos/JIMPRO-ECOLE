@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import { Plus, FileText, Edit, Trash2, Loader2, X, Search, ClipboardList } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -88,7 +89,7 @@ export default function GestionDevoirs() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer ce devoir ?')) return;
+    if (!(await suppressionAuth('Supprimer ce devoir ?'))) return;
     await supabase.from('devoirs').delete().eq('id', id);
     invalidate();
   };

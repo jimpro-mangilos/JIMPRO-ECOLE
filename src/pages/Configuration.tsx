@@ -6,6 +6,7 @@ import { invalidatePrefixCache } from '../utils/matriculeGenerator';
 import { Plus, CreditCard as Edit2, Trash2, Check, X, AlertCircle, Upload, Download, RotateCcw, Send, MessageSquare } from 'lucide-react';
 import { envoyerSms, sauverConfigSms } from '../lib/smsService';
 import MenuConfigTab from '../components/MenuConfigTab';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import PersonnelConfigTab from '../components/PersonnelConfigTab';
 import TaillesConfigTab from '../components/TaillesConfigTab';
 import { useSections, useOptions, useClasses, useMotifsPaiement, useTypesPaiement, useAnneesScolaires } from '../lib/hooks/useReferenceData';
@@ -241,7 +242,7 @@ export default function Configuration() {
 
   const handleDeleteLogo = async () => {
     if (!logoUrl) return;
-    if (!confirm('Supprimer le logo de cette école ?')) return;
+    if (!(await suppressionAuth('Supprimer le logo de cette école ?'))) return;
     setLogoUploading(true);
     try {
       const { error } = await supabase
@@ -265,7 +266,7 @@ export default function Configuration() {
   };
 
   const handleDelete = async (deleteFn: Function, id: string, entityName: string) => {
-    if (!confirm(`Supprimer ${entityName} ?`)) return;
+    if (!(await suppressionAuth(`Supprimer ${entityName} ?`))) return;
     try { await deleteFn(id); showSuccess(`${entityName} supprimé`); }
     catch (err: any) { showError(err?.message || 'Erreur suppression'); }
   };

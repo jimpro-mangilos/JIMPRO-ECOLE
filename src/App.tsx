@@ -50,6 +50,7 @@ const PointagePersonnel = lazy(() => import('./pages/PointagePersonnel'));
 const PointageEleves = lazy(() => import('./pages/PointageEleves'));
 const PortailPointageEleves = lazy(() => import('./pages/PortailPointageEleves'));
 const CarteServicePublic = lazy(() => import('./pages/CarteServicePublic'));
+import { SuppressionAuthProvider } from './components/SuppressionAuth';
 const Recouvrement = lazy(() => import('./pages/Recouvrement'));
 
 function LoadingFallback() {
@@ -79,6 +80,7 @@ function App() {
     <Router>
       <AuthProvider>
         <LogoProvider>
+          <SuppressionAuthProvider>
           <Toaster
             position="top-right"
             richColors
@@ -87,6 +89,7 @@ function App() {
               duration: 4000,
             }}
           />
+          </SuppressionAuthProvider>
           <Routes>
             {/* Public routes */}
             <Route

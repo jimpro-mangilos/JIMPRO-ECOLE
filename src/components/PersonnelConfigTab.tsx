@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { suppressionAuth } from './SuppressionAuth';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Plus, Pencil, Trash2, Check, X, Save, Loader2, Clock } from 'lucide-react';
@@ -104,7 +105,7 @@ export default function PersonnelConfigTab() {
   }
 
   async function deleteItem(table: 'fonctions_personnel' | 'domaines_personnel' | 'niveaux_etude', item: Item) {
-    if (!confirm(`Supprimer « ${item.libelle} » ?`)) return;
+    if (!(await suppressionAuth(`Supprimer « ${item.libelle} » ?`))) return;
     await supabase.from(table).delete().eq('id', item.id);
     await load();
   }

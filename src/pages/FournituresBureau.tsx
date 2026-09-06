@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import { Plus, Search, Briefcase, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
@@ -95,7 +96,7 @@ export default function FournituresBureau() {
     if (selectedIds.size === 0) return;
 
     const ids = Array.from(selectedIds);
-    if (!confirm(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} distribution(s) de fournitures bureau.\n\nCette action est irréversible. Continuer ?`)) {
+    if (!(await suppressionAuth(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} distribution(s) de fournitures bureau.\n\nCette action est irréversible. Continuer ?`))) {
       return;
     }
 

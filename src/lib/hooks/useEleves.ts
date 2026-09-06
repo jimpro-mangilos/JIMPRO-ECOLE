@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { suppressionAuth } from '../../components/SuppressionAuth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { queryKeys } from '../queryKeys';
@@ -208,7 +209,7 @@ export function useEleves(filters: UseElevesOptions) {
     const msg = count && count > 0
       ? `ATTENTION : ${count} paiement(s). Supprimer l'élève effacera tout l'historique. Continuer ?`
       : 'Supprimer cet élève ?';
-    if (!confirm(msg)) return;
+    if (!(await suppressionAuth(msg))) return;
     const { error } = await supabase.from('eleves').delete().eq('id', id);
     if (error) throw error;
     queryClient.invalidateQueries({ queryKey: queryKeys.eleves.all });
@@ -225,7 +226,7 @@ export function useEleves(filters: UseElevesOptions) {
   const bulkDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
     const ids = Array.from(selectedIds);
-    if (!confirm(`Supprimer définitivement ${ids.length} élève(s) ? Cette action est irréversible.`)) return;
+    if (!(await suppressionAuth(`Supprimer définitivement ${ids.length} élève(s) ? Cette action est irréversible.`))) return;
     setBulkDeleting(true);
     try {
       for (let i = 0; i < ids.length; i += 50) {

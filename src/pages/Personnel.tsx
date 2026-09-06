@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Search, Users, UserCog, Pencil, Trash2, X, Phone, Mail, Loader2, CalendarDays, Banknote, Wand2, CreditCard, Eye, Printer, Camera, CameraOff,
@@ -316,7 +317,7 @@ export default function Personnel() {
   }
 
   async function handleDelete(p: PersonnelRecord) {
-    if (!confirm(`Supprimer ${p.nom} ${p.prenom} ?`)) return;
+    if (!(await suppressionAuth(`Supprimer ${p.nom} ${p.prenom} ?`))) return;
     await remove(p.id);
   }
 

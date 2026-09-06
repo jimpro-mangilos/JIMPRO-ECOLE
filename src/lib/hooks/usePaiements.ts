@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { suppressionAuth } from '../../components/SuppressionAuth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { queryKeys } from '../queryKeys';
@@ -257,7 +258,7 @@ export function usePaiements(filters: PaiementFilters) {
     const statut = getStatut(p);
     if (statut === 'encaisse' && !isItManager()) {  toast.error("Seul l'IT Manager peut supprimer un paiement encaissé"); return; }
     if (statut === 'annule' && !isItManager() && !canSupprimerPaiement()) {  toast.error('Permission insuffisante'); return; }
-    if (!confirm('Supprimer définitivement ce paiement ?')) return;
+    if (!(await suppressionAuth('Supprimer définitivement ce paiement ?'))) return;
     const { error } = await supabase.from('paiements').delete().eq('id', p.id);
     if (error) { toast.error('Erreur: ' + error.message); return; }
     invalidate();
@@ -266,7 +267,7 @@ export function usePaiements(filters: PaiementFilters) {
   const bulkDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
     const ids = Array.from(selectedIds);
-    if (!confirm(`Supprimer définitivement ${ids.length} paiement(s) ?`)) return;
+    if (!(await suppressionAuth(`Supprimer définitivement ${ids.length} paiement(s) ?`))) return;
     setBulkDeleting(true);
     try {
       for (let i = 0; i < ids.length; i += 50) {

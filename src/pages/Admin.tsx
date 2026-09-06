@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { suppressionAuth } from '../components/SuppressionAuth';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Plus, CreditCard as Edit2, Trash2, Shield, Check, AlertCircle, Search, Loader2 } from 'lucide-react';
@@ -182,7 +183,7 @@ export default function Admin() {
 
   async function deleteUser(id: string) {
     if (!canManageUsers) return;
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
+    if (!(await suppressionAuth('Êtes-vous sûr de vouloir supprimer cet utilisateur ?'))) return;
 
     try {
       const errMsg = await callDeleteUser(id);
@@ -200,7 +201,7 @@ export default function Admin() {
 
     const ids = Array.from(selectedIds);
 
-    if (!confirm(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} utilisateur(s).\n\nCette action est irréversible. Continuer ?`)) {
+    if (!(await suppressionAuth(`ATTENTION : Vous êtes sur le point de supprimer définitivement ${ids.length} utilisateur(s).\n\nCette action est irréversible. Continuer ?`))) {
       return;
     }
 
