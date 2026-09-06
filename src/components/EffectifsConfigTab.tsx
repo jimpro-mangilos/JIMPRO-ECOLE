@@ -1,9 +1,27 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Component, useCallback, useEffect, useState } from 'react';
 import { Users, Save, Loader2, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 export const CLEF_EFFECTIF_MAX = 'effectif_max_classes';
+
+class EffBoundary extends Component<{ children: React.ReactNode }, { err: string | null }> {
+  state: { err: string | null } = { err: null };
+  static getDerivedStateFromError(e: any) {
+    return { err: (e && e.message ? String(e.message) : String(e)) + (e && e.stack ? '\n' + e.stack.split('\n').slice(0, 4).join('\n') : '') };
+  }
+  render() {
+    if (this.state.err) {
+      return (
+        <div className="bg-red-50 border border-red-300 rounded-xl p-4 text-red-700 text-sm">
+          <b>Erreur EffectifsConfigTab :</b>
+          <pre className="mt-2 whitespace-pre-wrap text-xs">{this.state.err}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export function cleClasse(section: string, option: string, classe: string): string {
   return (section + '|' + (option || '') + '|' + (classe || '')).toLowerCase().trim();
@@ -119,6 +137,7 @@ export default function EffectifsConfigTab() {
   };
 
   return (
+    <EffBoundary>
     <div className="bg-white rounded-lg shadow-sm p-6">
       <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Users className="w-5 h-5 text-blue-600" /> Limiteur d'effectif par classe</h2>
       <p className="text-sm text-gray-500 mb-5">
@@ -194,5 +213,6 @@ export default function EffectifsConfigTab() {
       </button>
       <p className="text-[11px] text-gray-400 mt-2">0 ou vide = illimité. Les classes supprimées de la liste réapparaîtront si elles contiennent des élèves.</p>
     </div>
+    </EffBoundary>
   );
 }
