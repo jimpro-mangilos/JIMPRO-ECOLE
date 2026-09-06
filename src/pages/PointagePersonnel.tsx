@@ -5,7 +5,7 @@ import { usePersonnel } from '../lib/hooks/usePersonnel';
 import { STATUT_POINTAGE, type PointageRecord, type PointageConfig, type FonctionHeures, loadPointageConfig, loadFonctionsHeures, heuresPourFonction, compareHeures, formatDatePointage } from '../lib/hooks/usePointage';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { chargerRetenuesMois } from '../lib/hooks/usePrisesEnCharge';
+import { chargerRetenuesMois, chargerSoldeReporte } from '../lib/hooks/usePrisesEnCharge';
 import { generatePointageReport } from '../utils/pointageReportGenerator';
 import { formatDateTime } from '../utils/calculations';
 import { generatePointageSalaireReport } from '../utils/pointageSalaireReportGenerator';
@@ -63,6 +63,8 @@ export default function PointagePersonnel() {
   const [paiementsSalaires, setPaiementsSalaires] = useState<Record<string, { montant_fc: number; montant_usd: number; paye_le: string }>>({});
   // Retenues « prise en charge » du mois : { personnel_id: total FC } — déduites du salaire
   const [retenuesPec, setRetenuesPec] = useState<Record<string, number>>({});
+  // Solde des prises en charge non encore déduites des mois PRÉCÉDENTS (report automatique)
+  const [balancesPec, setBalancesPec] = useState<Record<string, number>>({});
 
   const today = todayStr();
   const [year, m] = month.split('-').map(Number);
@@ -75,13 +77,14 @@ export default function PointagePersonnel() {
     const start = `${y}-${String(mo).padStart(2, '0')}-01`;
     const lastDay = new Date(y, mo, 0).getDate();
     const end = `${y}-${String(mo).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    const [cfg, fh, r, p, ps, ret] = await Promise.all([
+    const [cfg, fh, r, p, ps, ret, bal] = await Promise.all([
       loadPointageConfig(currentSchoolId),
       loadFonctionsHeures(currentSchoolId),
       supabase.from('pointages_personnel').select('*').eq('ecole_id', currentSchoolId).gte('date_pointage', start).lte('date_pointage', end),
       supabase.from('permissions_personnel').select('*').eq('ecole_id', currentSchoolId),
       supabase.from('paiements_salaires').select('*').eq('ecole_id', currentSchoolId).eq('mois', month),
       chargerRetenuesMois(currentSchoolId, y, mo),
+      chargerSoldeReporte(currentSchoolId, y, mo),
     ]);
     setConfig(cfg);
     setFonctHeures(fh);
@@ -91,6 +94,7 @@ export default function PointagePersonnel() {
     for (const row of (ps.data || []) as any[]) psMap[row.personnel_id] = { montant_fc: Number(row.montant_fc), montant_usd: Number(row.montant_usd), paye_le: row.paye_le };
     setPaiementsSalaires(psMap);
     setRetenuesPec(ret || {});
+    setBalancesPec(bal || {});
     setLoading(false);
   }, [currentSchoolId, month]);
 
@@ -285,19 +289,25 @@ export default function PointagePersonnel() {
     const detail = ligne.retenue > 0
       ? `net ${formatMontant(net)} (brut ${formatMontant(ligne.salaireMois)} − prise en charge ${formatMontant(ligne.retenue)})`
       : formatMontant(net);
-    if (!confirm(`Marquer le salaire de ${ligne.p.nom} ${ligne.p.prenom} comme payé — ${detail} ?`)) return;
-    const { error } = await supabase.from('paiements_salaires').upsert(
-      {
-        ecole_id: currentSchoolId, personnel_id: ligne.p.id, mois: month,
-        montant_fc: Math.round(net),
-        montant_usd: config.tauxChange && config.tauxChange > 0 && net > 0 ? Math.round((net / config.tauxChange) * 100) / 100 : 0,
-        taux_change: config.tauxChange,
-        jours_presents: ligne.joursPresent,
-        paye_par: user.id,
-        paye_le: new Date().toISOString(),
-      },
-      { onConflict: 'ecole_id,personnel_id,mois' }
-    );
+    const report = ligne.solde > 0 ? ` — ${formatMontant(ligne.solde)} de prise en charge reportés au mois suivant` : '';
+    if (!confirm(`Marquer le salaire de ${ligne.p.nom} ${ligne.p.prenom} comme payé — ${detail}${report} ?`)) return;
+    const base: any = {
+      ecole_id: currentSchoolId, personnel_id: ligne.p.id, mois: month,
+      montant_fc: Math.round(net),
+      montant_usd: config.tauxChange && config.tauxChange > 0 && net > 0 ? Math.round((net / config.tauxChange) * 100) / 100 : 0,
+      taux_change: config.tauxChange,
+      jours_presents: ligne.joursPresent,
+      paye_par: user.id,
+      paye_le: new Date().toISOString(),
+    };
+    // La retenue appliquée est enregistrée pour le calcul du solde reporté
+    const avecRetenue = { ...base, retenue_fc: Math.round(ligne.retenue) };
+    let { error } = await supabase.from('paiements_salaires').upsert(avecRetenue, { onConflict: 'ecole_id,personnel_id,mois' });
+    // Repli : colonne retenue_fc pas encore créée en base (migration en attente)
+    if (error && /42703|PGRST204/.test(String((error as any).code || ''))) {
+      const r2 = await supabase.from('paiements_salaires').upsert(base, { onConflict: 'ecole_id,personnel_id,mois' });
+      error = r2.error;
+    }
     if (!error) reload();
     else alert('Erreur : ' + error.message);
   }
@@ -330,7 +340,8 @@ export default function PointagePersonnel() {
       salaireMois: ligne.salaireMois,
       retenue: ligne.retenue,
       net: ligne.net,
-      retenueDue: retenuesPec[ligne.p.id] || 0,
+      retenueDue: ligne.due,
+      solde: ligne.solde,
       tauxChange: config.tauxChange,
     });
   }
@@ -388,17 +399,21 @@ export default function PointagePersonnel() {
       const salaireMensuel = p.salaire ?? null;
       const salaireJournalier = salaireMensuel != null && nbJours > 0 ? salaireMensuel / nbJours : null;
       const salaireMois = joursPresent > 0 && salaireJournalier != null ? joursPresent * salaireJournalier : null;
-      // Élèves pris en charge : les paiements « prise en charge » du mois sont déduits du salaire
-      // (retenue plafonnée à 80 % du brut — le membre reste responsable du solde éventuel).
+      // Élèves pris en charge : les paiements « prise en charge » du mois SONT déduits du salaire,
+      // plus le solde non déduit des mois précédents (report automatique).
+      // Retenue plafonnée à 80 % du brut — l'excédent éventuel est reporté au mois suivant.
+      const due = (retenuesPec[p.id] || 0) + (balancesPec[p.id] || 0);
       let retenue = 0;
       let net: number | null = salaireMois;
-      if (salaireMois != null && (retenuesPec[p.id] || 0) > 0) {
-        retenue = Math.min(retenuesPec[p.id], Math.round(salaireMois * 0.8));
+      let solde = due;
+      if (salaireMois != null && due > 0) {
+        retenue = Math.min(due, Math.round(salaireMois * 0.8));
         net = salaireMois - retenue;
+        solde = due - retenue;
       }
-      return { p, joursPresent, joursAbsent, joursPermissionPayee, joursPermissionNonPayee, salaireMensuel, salaireJournalier, salaireMois, retenue, net };
+      return { p, joursPresent, joursAbsent, joursPermissionPayee, joursPermissionNonPayee, salaireMensuel, salaireJournalier, salaireMois, retenue, net, due, solde };
     });
-  }, [list, workDays, recByKey, config, permDates, permPayeesDates, today, retenuesPec]);
+  }, [list, workDays, recByKey, config, permDates, permPayeesDates, today, retenuesPec, balancesPec]);
 
   const totalSalaires = salaires.reduce((acc, x) => acc + (x.net ?? 0), 0);
   const totalRetenuesPec = salaires.reduce((acc, x) => acc + x.retenue, 0);
@@ -790,7 +805,7 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
             </thead>
             <tbody className="divide-y divide-slate-100">
               {salaires.map((l) => {
-                const { p, joursPresent, salaireMensuel, salaireJournalier, salaireMois, retenue, net } = l;
+                const { p, joursPresent, salaireMensuel, salaireJournalier, salaireMois, retenue, net, due, solde } = l;
                 return (
                 <tr key={p.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5">
@@ -805,7 +820,8 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     <div className="font-bold text-blue-700">{formatMontant(net)}</div>
                     {retenue > 0 && <div className="text-[10px] font-medium text-red-500" title={`Brut ${formatMontant(salaireMois)} · prise en charge déduite`}>− prise en charge : {formatMontant(retenue)}</div>}
-                    {net == null && (retenuesPec[p.id] || 0) > 0 && <div className="text-[10px] font-medium text-amber-600" title="Prise en charge du mois non déductible : aucun jour de présence (salaire brut nul)">prise en charge {formatMontant(retenuesPec[p.id])} — pas de salaire ce mois</div>}
+                    {net != null && solde > 0 && <div className="text-[10px] font-medium text-amber-600" title="Montant de prise en charge au-delà du plafond de 80 % du brut — reporté au mois suivant">dont {formatMontant(solde)} reportés (plafond 80 %)</div>}
+                    {net == null && due > 0 && <div className="text-[10px] font-medium text-amber-600" title="Prise en charge due non déductible : aucun jour de présence (salaire brut nul) — reportée au mois suivant">prise en charge due {formatMontant(due)} — pas de salaire ce mois</div>}
                   </td>
                   <td className="px-4 py-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">{formatUSD(net, config.tauxChange)}</td>
                   <td className="px-4 py-2.5 text-center">

@@ -22,8 +22,10 @@ export interface BulletinData {
   retenue?: number;
   /** Salaire net à payer : brut − retenue. */
   net?: number | null;
-  /** Total des prises en charge du mois (même si non déductibles faute de salaire). */
+  /** Total des prises en charge dues du mois + report des mois précédents. */
   retenueDue?: number;
+  /** Solde non déduit ce mois (plafond 80 % du brut atteint) — reporté au mois suivant. */
+  solde?: number;
   tauxChange: number | null;
 }
 
@@ -120,9 +122,10 @@ export async function generateBulletinPaie(b: BulletinData) {
   doc.text('Salaire du mois = jours de présence × salaire journalier (salaire mensuel ÷ jours ouvrables).', 15, y2);
   if (aPec) {
     doc.text('NET à payer = salaire brut du mois − retenue prise en charge (plafond 80 % du brut).', 15, y2 + 5);
-    doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 10);
+    if (b.solde && b.solde > 0) doc.text('Solde de ' + fmtFC(b.solde) + ' reporté au mois suivant (prise en charge au-delà du plafond de 80 % du brut).', 15, y2 + 10);
+    doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + (b.solde && b.solde > 0 ? 15 : 10));
   } else if (b.retenueDue && b.retenueDue > 0) {
-    doc.text('Prise en charge du mois : ' + fmtFC(b.retenueDue) + ' — non déductible ce mois (salaire brut nul, aucun jour de présence).', 15, y2 + 5);
+    doc.text('Prise en charge due : ' + fmtFC(b.retenueDue) + ' — non déductible ce mois (salaire brut nul, aucun jour de présence). Reportée au mois suivant.', 15, y2 + 5);
     doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 10);
   } else {
     doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 5);
