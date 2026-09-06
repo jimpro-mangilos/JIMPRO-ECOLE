@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { suppressionAuth } from '../../components/SuppressionAuth';
+import { chargerEffectifsMax, cleClasse } from '../../components/EffectifsConfigTab';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { queryKeys } from '../queryKeys';
@@ -10,6 +11,41 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
 type Eleve = Database['public']['Tables']['eleves']['Row'];
+
+/**
+ * Limiteur d'effectif : renvoie un message bloquant si la classe (section + option)
+ * a atteint sa capacité maximale, sinon null.
+ */
+async function verifierCapaciteClasse(ecoleId: string, section: string, option: string, classe: string): Promise<string | null> {
+  const caps = await chargerEffectifsMax(ecoleId);
+  const key = cleClasse(section, option, classe);
+  const max = caps[key];
+  if (max == null || max <= 0) return null; // illimité
+  // Compte les élèves actuels de cette classe (section + option + classe)
+  let count = 0;
+  const PAGE = 1000;
+  let from = 0;
+  while (true) {
+    const to = from + PAGE - 1;
+    const { data } = await (supabase as any)
+      .from('eleves')
+      .select('id, option')
+      .eq('ecole_id', ecoleId)
+      .eq('section', section)
+      .eq('classe', classe)
+      .range(from, to);
+    if (!data || data.length === 0) break;
+    for (const e of data as { id: string; option: string | null }[]) {
+      if (((e.option || '') === option)) count++;
+    }
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  if (count >= max) {
+    return 'Inscription bloquée : la classe « ' + classe + ' » (' + section + (option ? ' / ' + option : '') + ') a atteint sa capacité maximale de ' + max + ' élèves.';
+  }
+  return null;
+}
 
 const MOIS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -196,6 +232,11 @@ export function useEleves(filters: UseElevesOptions) {
   }, [autoGenerateMatricule, selectedEleve, handleGenerateMatricule]);
 
   const submitEleve = useCallback(async (classes: { id: string; nom: string }[], photoUrl?: string) => {
+    // Limiteur d'effectif par classe (création uniquement)
+    if (!selectedEleve && currentSchoolId && formData.classe) {
+      const blocage = await verifierCapaciteClasse(currentSchoolId, formData.section, formData.option || '', formData.classe);
+      if (blocage) { toast.error(blocage); return false; }
+    }
     const isUnique = selectedEleve ? true : await validateMatriculeUniqueness(formData.matricule);
     if (!isUnique) {  toast.error('Ce matricule existe déjà.'); return false; }
 

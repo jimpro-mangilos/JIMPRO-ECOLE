@@ -9,6 +9,7 @@ import MenuConfigTab from '../components/MenuConfigTab';
 import { suppressionAuth } from '../components/SuppressionAuth';
 import PersonnelConfigTab from '../components/PersonnelConfigTab';
 import TaillesConfigTab from '../components/TaillesConfigTab';
+import EffectifsConfigTab from '../components/EffectifsConfigTab';
 import { useSections, useOptions, useClasses, useMotifsPaiement, useTypesPaiement, useAnneesScolaires } from '../lib/hooks/useReferenceData';
 import { useConfiguration } from '../lib/hooks/useConfiguration';
 
@@ -16,11 +17,11 @@ import { useConfiguration } from '../lib/hooks/useConfiguration';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const emptyForm = (extra?: Record<string, any>): any => ({ nom: '', description: '', is_active: true, ...extra });
 const libForm = (extra?: Record<string, string | boolean>) => ({ libelle: '', description: '', is_active: true, ...extra });
-type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'pointage' | 'sauvegarde' | 'menu_par_role' | 'personnel' | 'tailles' | 'sms';
+type TabKey = 'sections' | 'options' | 'classes' | 'motifs' | 'types_paiement' | 'annees_scolaires' | 'prefixes_matricule' | 'types_uniforme' | 'logo' | 'pointage' | 'sauvegarde' | 'menu_par_role' | 'personnel' | 'tailles' | 'sms' | 'effectifs';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'sections', label: 'Sections' }, { key: 'options', label: 'Options' }, { key: 'classes', label: 'Classes' },
   { key: 'motifs', label: 'Motifs' }, { key: 'types_paiement', label: 'Types Paiement' }, { key: 'annees_scolaires', label: 'Années Scolaires' },
-  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'pointage', label: 'Pointage' }, { key: 'sms', label: 'SMS' }, { key: 'sauvegarde', label: 'Sauvegarde' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' }, { key: 'tailles', label: 'Tailles' },
+  { key: 'prefixes_matricule', label: 'Préfixes' }, { key: 'types_uniforme', label: 'Types Uniforme' }, { key: 'logo', label: 'Logo' }, { key: 'pointage', label: 'Pointage' }, { key: 'sms', label: 'SMS' }, { key: 'effectifs', label: 'Effectifs' }, { key: 'sauvegarde', label: 'Sauvegarde' }, { key: 'menu_par_role', label: 'Menus' }, { key: 'personnel', label: 'Personnel' }, { key: 'tailles', label: 'Tailles' },
 ];
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -506,6 +507,7 @@ export default function Configuration() {
       {activeTab === 'menu_par_role' && <MenuConfigTab />}
       {activeTab === 'personnel' && <PersonnelConfigTab />}
       {activeTab === 'tailles' && <TaillesConfigTab />}
+      {activeTab === 'effectifs' && <EffectifsConfigTab />}
 
       {/* ─── CRUD Tabs (generic pattern) ──────────────────────────────────── */}
       {(activeTab === 'sections' || activeTab === 'options' || activeTab === 'classes' || activeTab === 'motifs' || activeTab === 'types_paiement' || activeTab === 'annees_scolaires' || activeTab === 'prefixes_matricule' || activeTab === 'types_uniforme') && (
