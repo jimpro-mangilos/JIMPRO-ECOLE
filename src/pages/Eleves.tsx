@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { suppressionAuth } from '../components/SuppressionAuth';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, FileText, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
@@ -9,6 +9,7 @@ import { calculateAverageAge, formatDateTime } from '../utils/calculations';
 import EleveDetailsModal from '../components/EleveDetailsModal';
 import PaymentFormModal from '../components/PaymentFormModal';
 import { useEleves } from '../lib/hooks/useEleves';
+import { chargerEffectifsMax, cleClasse } from '../components/EffectifsConfigTab';
 import { enApercu } from '../utils/pdfExport';
 import { useSections, useOptions, useClasses } from '../lib/hooks/useReferenceData';
 import { generateElevesReport } from '../utils/pdfGenerator';
@@ -169,6 +170,19 @@ export default function Eleves() {
     setSelectedEleve(eleve);
     setShowPaymentModal(true);
   };
+
+  // ── Limiteur d'effectif : capacités chargées + état de la classe choisie ──
+  const [capsClasses, setCapsClasses] = useState<Record<string, number>>({});
+  useEffect(() => { if (schoolId) chargerEffectifsMax(schoolId).then(setCapsClasses).catch(() => {}); }, [schoolId]);
+  const enCreation = !selectedEleve;
+  const classeChoisieNom = (() => { if (formData.classe_id) { const c = classeList.find(x => x.id === formData.classe_id); return c?.nom || ''; } return ''; })() || formData.classe || '';
+  const capClasse = (nomClasse: string) => {
+    const max = capsClasses[cleClasse(formData.section, formData.option || '', nomClasse)];
+    if (max == null || max <= 0) return null;
+    const cnt = eleves.filter(e => (e.section || '') === (formData.section || '') && ((e.option || '') === (formData.option || '')) && ((e.classe || '') === nomClasse)).length;
+    return { max, cnt };
+  };
+  const classePleine = enCreation && !!classeChoisieNom && (() => { const s = capClasse(classeChoisieNom); return s != null && s.cnt >= s.max; })();
 
   // Données + résumé des filtres actifs pour le rapport PDF
   const rapportElevesData = () => eleves.map(e => ({
@@ -455,10 +469,17 @@ export default function Eleves() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Classe</label>
                   <select value={formData.classe_id} onChange={e => setFormData(p => ({ ...p, classe_id: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    className={'w-full px-2 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 ' + (classePleine ? 'border-red-400 bg-red-50' : 'border-gray-300')}>
                     <option value="">Sélectionner</option>
-                    {classeList.filter(c => { if (formData.section) { const s = sectionList.find(x => x.nom === formData.section); if (s && c.section_id !== s.id) return false; } if (formData.option) { const o = optionList.find(x => x.nom === formData.option); if (o && c.option_id && c.option_id !== o.id) return false; } return true; }).map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
+                    {classeList.filter(c => { if (formData.section) { const s = sectionList.find(x => x.nom === formData.section); if (s && c.section_id !== s.id) return false; } if (formData.option) { const o = optionList.find(x => x.nom === formData.option); if (o && c.option_id && c.option_id !== o.id) return false; } return true; }).map(c => {
+                      const s = capClasse(c.nom);
+                      const pleine = enCreation && s != null && s.cnt >= s.max;
+                      return <option key={c.id} value={c.id} disabled={pleine}>{c.nom}{pleine ? ' — complète (' + s.max + ')' : s ? ' (' + s.cnt + '/' + s.max + ')' : ''}</option>;
+                    })}
                   </select>
+                  {classePleine && (
+                    <p className="text-[11px] text-red-600 font-medium mt-1">⚠ Classe complète (capacité atteinte) — enregistrement bloqué pour cette classe.</p>
+                  )}
                 </div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label><input type="text" value={formData.nom} onChange={e => setFormData(p => ({ ...p, nom: e.target.value }))} required className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Postnom</label><input type="text" value={formData.postnom} onChange={e => setFormData(p => ({ ...p, postnom: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
@@ -495,7 +516,7 @@ export default function Eleves() {
               </div>
               <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
                 <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
-                <button type="submit" className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">{selectedEleve ? 'Mettre à jour' : 'Enregistrer'}</button>
+                <button type="submit" disabled={classePleine} title={classePleine ? 'Classe complète — choisissez une autre classe' : undefined} className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">{selectedEleve ? 'Mettre à jour' : 'Enregistrer'}</button>
               </div>
             </form>
           </div>
