@@ -20,6 +20,16 @@ function isChunkLoadError(error: Error | null | undefined): boolean {
   return /dynamically imported|module script|failed to fetch|error loading/i.test(msg);
 }
 
+// Corruption DOM (ex. 'Failed to execute removeChild ... not a child of this node') :
+// React perd la trace d'un nœud déjà retiré — fréquent après une longue session de
+// dev avec beaucoup de mises à jour à chaud (HMR). L'état interne de React est alors
+// désynchronisé du DOM : 'Réessayer' re-rend l'arbre cassé. Seul un rechargement
+// complet de la page répare réellement.
+function isDomCorruptionError(error: Error | null | undefined): boolean {
+  const msg = String(error?.message || error || '');
+  return /removeChild|not a child of this node|NotFoundError/i.test(msg);
+}
+
 export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
@@ -34,11 +44,11 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     console.error('[ErrorBoundary]', error, info.componentStack);
     this.setState({ componentStack: info.componentStack || '' });
 
-    // Stale chunk → reload once (guarded to avoid a reload loop).
-    if (isChunkLoadError(error)) {
+    // Stale chunk OU corruption DOM → reload once (guarded to avoid a reload loop).
+    if (isChunkLoadError(error) || isDomCorruptionError(error)) {
       try {
-        if (!sessionStorage.getItem('jimpro_chunk_reload')) {
-          sessionStorage.setItem('jimpro_chunk_reload', '1');
+        if (!sessionStorage.getItem('jimpro_reload_guard')) {
+          sessionStorage.setItem('jimpro_reload_guard', '1');
           window.location.reload();
         }
       } catch {
@@ -48,7 +58,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   }
 
   handleReset = () => {
-    if (isChunkLoadError(this.state.error)) {
+    if (isChunkLoadError(this.state.error) || isDomCorruptionError(this.state.error)) {
       window.location.reload();
     } else {
       this.setState({ hasError: false, error: null });
@@ -60,6 +70,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
       if (this.props.fallback) return this.props.fallback;
 
       const chunkError = isChunkLoadError(this.state.error);
+      const domCorruption = isDomCorruptionError(this.state.error);
 
       return (
         <div className="min-h-[60vh] flex items-center justify-center p-6">
@@ -68,12 +79,14 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
               <AlertTriangle className="w-7 h-7 text-red-500" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              {chunkError ? 'Mise à jour nécessaire' : 'Une erreur est survenue'}
+              {chunkError ? 'Mise à jour nécessaire' : domCorruption ? 'Interface désynchronisée' : 'Une erreur est survenue'}
             </h2>
             <p className="text-sm text-gray-500 mb-4">
               {chunkError
                 ? 'Une nouvelle version de l’application est disponible. Rechargez la page pour continuer.'
-                : this.state.error?.message || 'Erreur inattendue dans cette section.'}
+                : domCorruption
+                  ? 'L’affichage s’est désynchronisé (erreur interne de mise à jour du DOM). Rechargez la page pour repartir proprement.'
+                  : this.state.error?.message || 'Erreur inattendue dans cette section.'}
             </p>
             {!chunkError && this.state.componentStack && (
               <details className="mb-4 text-left">
@@ -86,7 +99,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
               className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
             >
               <RefreshCw className="w-4 h-4" />
-              {chunkError ? 'Recharger la page' : 'Réessayer'}
+              {(chunkError || domCorruption) ? 'Recharger la page' : 'Réessayer'}
             </button>
           </div>
         </div>
