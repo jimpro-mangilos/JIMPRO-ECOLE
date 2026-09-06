@@ -19,6 +19,7 @@ import {
   loadLogoBase64,
   loadSchoolName,
   drawVerticalBarChart,
+  drawFiltresActifs,
 } from './pdfTheme';
 
 interface Eleve {
@@ -144,7 +145,7 @@ function runAutoTable(doc: jsPDF, config: any, header: ReportHeaderOptions) {
   });
 }
 
-export async function generateElevesReport(eleves: Eleve[]) {
+export async function generateElevesReport(eleves: Eleve[], options?: { filtres?: string[] }) {
   const doc = landscape();
   const _logo = await loadLogoBase64();
   const _schoolName = await loadSchoolName();
@@ -163,6 +164,10 @@ export async function generateElevesReport(eleves: Eleve[]) {
   const sections = [...new Set(eleves.map(e => e.section || 'Non defini'))];
 
   let y = contentStartY();
+  // Résumé des filtres actifs (visible dans le rapport)
+  if (options?.filtres && options.filtres.length > 0) {
+    y = drawFiltresActifs(doc, y, options.filtres);
+  }
   y = drawKpiCards(doc, y, [
     { label: 'Effectif total', value: String(totalEleves), tone: 'primary' },
     { label: 'Garcons', value: String(garcons), tone: 'info' },

@@ -355,6 +355,25 @@ export async function addRoundedImage(
   doc.restoreGraphicsState();
 }
 
+/**
+ * Dessine une ligne « FILTRES ACTIFS : … » sous l'en-tête (renvoie le y suivant).
+ */
+export function drawFiltresActifs(doc: jsPDF, y: number, filtres: string[]): number {
+  const margin = PDF_THEME.pageMargin;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const text = 'FILTRES ACTIFS : ' + filtres.join('  •  ');
+  doc.setFont(PDF_THEME.font, 'bold');
+  doc.setFontSize(6.8);
+  doc.setTextColor(PDF_THEME.colors.primary[0], PDF_THEME.colors.primary[1], PDF_THEME.colors.primary[2]);
+  const lines = doc.splitTextToSize(sanitizePdfText(text), pageWidth - 2 * margin) as string[];
+  doc.text(lines, margin, y + 2.5);
+  doc.setDrawColor(PDF_THEME.colors.accent[0], PDF_THEME.colors.accent[1], PDF_THEME.colors.accent[2]);
+  doc.setLineWidth(0.4);
+  doc.line(margin, y + 4.5, pageWidth - margin, y + 4.5);
+  doc.setTextColor(0, 0, 0);
+  return y + 4.5 + lines.length * 3.2 + 2;
+}
+
 export async function drawReportHeader(doc: jsPDF, options: ReportHeaderOptions) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const { primary, white, accent, slate, muted } = PDF_THEME.colors;

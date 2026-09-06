@@ -169,6 +169,30 @@ export default function Eleves() {
     setShowPaymentModal(true);
   };
 
+  // Données + résumé des filtres actifs pour le rapport PDF
+  const rapportElevesData = () => eleves.map(e => ({
+    matricule: e.matricule, nom: e.nom, postnom: e.postnom, prenom: e.prenom,
+    sexe: e.sexe, section: e.section, option: e.option || undefined,
+    classe: e.classe || '', responsable: e.responsable, telephone: e.telephone,
+    date_naissance: e.date_naissance || undefined,
+    lieu_naissance: e.lieu_naissance || undefined,
+    domicile: e.domicile || undefined,
+  }));
+  const rapportElevesFiltres = () => {
+    const f: string[] = [];
+    if (filters.searchTerm.trim()) f.push('Recherche : ' + filters.searchTerm.trim());
+    if (filters.selectedSection.length) f.push('Sections : ' + filters.selectedSection.join(', '));
+    if (filters.selectedOption.length) f.push('Options : ' + filters.selectedOption.join(', '));
+    if (filters.selectedClasse.length) f.push('Classes : ' + filters.selectedClasse.join(', '));
+    if (filters.filterOrdre === 'en_ordre') f.push('En ordre');
+    else if (filters.filterOrdre === 'pas_en_ordre') f.push('Pas en ordre');
+    if (filters.filterDateDebut) f.push('Créés depuis le ' + filters.filterDateDebut);
+    if (filters.filterDateFin) f.push("jusqu'au " + filters.filterDateFin);
+    if (filters.sortAlpha === 'asc') f.push('Tri alphabétique A→Z');
+    else if (filters.sortAlpha === 'desc') f.push('Tri alphabétique Z→A');
+    return f;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -187,27 +211,13 @@ export default function Eleves() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => generateElevesReport(eleves.map(e => ({
-              matricule: e.matricule, nom: e.nom, postnom: e.postnom, prenom: e.prenom,
-              sexe: e.sexe, section: e.section, option: e.option || undefined,
-              classe: e.classe || '', responsable: e.responsable, telephone: e.telephone,
-              date_naissance: e.date_naissance || undefined,
-              lieu_naissance: e.lieu_naissance || undefined,
-              domicile: e.domicile || undefined,
-            })))}
+            onClick={() => generateElevesReport(rapportElevesData(), { filtres: rapportElevesFiltres() })}
             className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
           >
             <FileDown className="w-5 h-5" /> Imprimer
           </button>
           <button
-            onClick={() => enApercu(() => generateElevesReport(eleves.map(e => ({
-              matricule: e.matricule, nom: e.nom, postnom: e.postnom, prenom: e.prenom,
-              sexe: e.sexe, section: e.section, option: e.option || undefined,
-              classe: e.classe || '', responsable: e.responsable, telephone: e.telephone,
-              date_naissance: e.date_naissance || undefined,
-              lieu_naissance: e.lieu_naissance || undefined,
-              domicile: e.domicile || undefined,
-            }))))}
+            onClick={() => enApercu(() => generateElevesReport(rapportElevesData(), { filtres: rapportElevesFiltres() }))}
             className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-4 py-3 rounded-lg hover:bg-blue-100 transition-colors font-medium"
             title="Ouvrir l'aperçu du rapport dans un nouvel onglet"
           >
