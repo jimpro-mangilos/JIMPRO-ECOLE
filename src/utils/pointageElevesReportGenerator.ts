@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
 import { loadLogoBase64, loadSchoolName, PDF_THEME, sanitizePdfText, addRoundedImage } from './pdfTheme';
 import { getSchoolInitials } from './schoolInitials';
@@ -187,5 +188,5 @@ export async function generatePointageElevesReport(opts: {
     },
   });
 
-  doc.save('pointage-eleves-' + month + '-' + year + '.pdf');
+  exporterPdf(doc, 'pointage-eleves-' + month + '-' + year + '.pdf');
 }

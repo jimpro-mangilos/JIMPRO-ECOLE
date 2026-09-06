@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { UserCheck, Clock, Search, FileDown, CalendarDays, CalendarRange, Users, ShieldCheck, ShieldX, CalendarPlus, CalendarClock, MessageCircle } from 'lucide-react';
+import { UserCheck, Clock, Search, FileDown, CalendarDays, CalendarRange, Users, ShieldCheck, ShieldX, CalendarPlus, CalendarClock, MessageCircle, Eye } from 'lucide-react';
+import { enApercu } from '../utils/pdfExport';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { loadPointageConfig, compareHeures, formatDatePointage, isTableMissingError, type PointageConfig } from '../lib/hooks/usePointage';
@@ -303,6 +304,9 @@ export default function PointageEleves() {
           <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
           <button onClick={exportMonthly} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
             <FileDown className="w-4 h-4" /> Rapport mensuel (PDF)
+          </button>
+          <button onClick={() => enApercu(exportMonthly)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-sm font-medium hover:bg-blue-100" title="Aperçu du rapport (nouvel onglet)">
+            <Eye className="w-4 h-4" /> Aperçu
           </button>
         </div>
       </div>

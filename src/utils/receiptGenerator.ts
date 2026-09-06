@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
 import QRCode from 'qrcode';
 import { sanitizePdfText, PDF_THEME, loadLogoBase64, loadSchoolName, addRoundedImage } from './pdfTheme';
@@ -323,7 +324,7 @@ export async function generateReceipt(data: ReceiptData, isDuplicate: boolean = 
     doc.restoreGraphicsState();
   }
 
-  doc.save(`recu_${data.numero_recu}_${Date.now()}.pdf`);
+  exporterPdf(doc, `recu_${data.numero_recu}_${Date.now()}.pdf`);
 }
 
 export async function printReceipt(data: ReceiptData, isDuplicate: boolean = false) {

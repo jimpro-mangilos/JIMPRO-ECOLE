@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
 import { sanitizePdfText, PDF_THEME, drawReportHeader, contentStartY, loadSchoolName, loadLogoBase64 } from './pdfTheme';
 
@@ -85,5 +86,5 @@ export async function generatePointageSalaireReport(params: {
     margin: { left: 14, right: 14 },
   });
 
-  doc.save(`salaires-${year}-${String(month).padStart(2, '0')}.pdf`);
+  exporterPdf(doc, `salaires-${year}-${String(month).padStart(2, '0')}.pdf`);
 }

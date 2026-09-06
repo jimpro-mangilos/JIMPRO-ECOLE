@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { FileText, Download, Loader2, RotateCcw } from 'lucide-react';
+import { FileText, Download, Loader2, RotateCcw, Eye } from 'lucide-react';
+import { enApercu } from '../utils/pdfExport';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import MultiSelectFilter from '../components/MultiSelectFilter';
@@ -62,8 +63,9 @@ export default function Rapports() {
             <MultiSelectFilter label="Classe" placeholder="Toutes" options={filteredClasses} selected={ef.classe} onChange={v => setEf(p => ({ ...p, classe: v }))} />
             <MultiSelectFilter label="Motif" placeholder="Tous" options={motifs} selected={ef.motif} onChange={v => setEf(p => ({ ...p, motif: v }))} />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button onClick={() => generate(generateElevesReport, [], ef.startDate ? new Date(ef.startDate) : undefined, ef.endDate ? new Date(ef.endDate) : undefined)} disabled={loading} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}Générer</button>
+            <button onClick={() => enApercu(() => generate(generateElevesReport, [], ef.startDate ? new Date(ef.startDate) : undefined, ef.endDate ? new Date(ef.endDate) : undefined))} disabled={loading} className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-100 text-sm" title="Ouvrir l'aperçu dans un nouvel onglet"><Eye className="w-4 h-4" />Aperçu</button>
             <button onClick={() => setEf({ startDate: '', endDate: '', section: [], option: [], classe: [], motif: [], annee: [], montantMin: '', montantMax: '' })} className="flex items-center gap-2 text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-100 text-sm"><RotateCcw className="w-4 h-4" />Réinitialiser</button>
           </div>
         </>}
@@ -77,9 +79,11 @@ export default function Rapports() {
             <div className="flex-1"><label className="text-xs font-medium">Date début</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-2 py-1.5 border rounded-lg text-sm" /></div>
             <div className="flex-1"><label className="text-xs font-medium">Date fin</label><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-2 py-1.5 border rounded-lg text-sm" /></div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button onClick={() => generate(generateRapportComparatifComptables, comptables, startDate ? new Date(startDate) : undefined, endDate ? new Date(endDate) : undefined)} disabled={loading} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}Comparatif</button>
+            <button onClick={() => enApercu(() => generate(generateRapportComparatifComptables, comptables, startDate ? new Date(startDate) : undefined, endDate ? new Date(endDate) : undefined))} disabled={loading} className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-100 text-sm" title="Aperçu"><Eye className="w-4 h-4" />Aperçu</button>
             <button onClick={() => generate(generateRapportComptable, comptables.length > 0 ? comptables[0].id : null, startDate ? new Date(startDate) : undefined, endDate ? new Date(endDate) : undefined)} disabled={loading} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"><Download className="w-4 h-4" />Individuel</button>
+            <button onClick={() => enApercu(() => generate(generateRapportComptable, comptables.length > 0 ? comptables[0].id : null, startDate ? new Date(startDate) : undefined, endDate ? new Date(endDate) : undefined))} disabled={loading} className="flex items-center gap-2 bg-green-50 text-green-700 border border-green-200 px-4 py-2 rounded-lg hover:bg-green-100 text-sm" title="Aperçu"><Eye className="w-4 h-4" />Aperçu</button>
           </div>
         </>}
       </section>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { CalendarDays, UserCheck, Clock, CheckCircle2, XCircle, Search, FileDown, Settings2, ShieldCheck, ShieldX, CalendarRange, User } from 'lucide-react';
+import { CalendarDays, UserCheck, Clock, CheckCircle2, XCircle, Search, FileDown, Settings2, ShieldCheck, ShieldX, CalendarRange, User, Eye } from 'lucide-react';
+import { enApercu } from '../utils/pdfExport';
 import { usePersonnel } from '../lib/hooks/usePersonnel';
 import { STATUT_POINTAGE, type PointageRecord, type PointageConfig, type FonctionHeures, loadPointageConfig, loadFonctionsHeures, heuresPourFonction, compareHeures, formatDatePointage } from '../lib/hooks/usePointage';
 import { supabase } from '../lib/supabase';
@@ -448,8 +449,14 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
           <button onClick={exportSalaires} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700" title="Exporter le tableau des salaires du mois (PDF)">
             <FileDown className="w-4 h-4" /> Salaires (PDF)
           </button>
+          <button onClick={() => enApercu(exportSalaires)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-medium hover:bg-emerald-100" title="Aperçu des salaires (nouvel onglet)">
+            <Eye className="w-4 h-4" /> Aperçu
+          </button>
           <button onClick={exportMonthly} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
             <FileDown className="w-4 h-4" /> Rapport mensuel
+          </button>
+          <button onClick={() => enApercu(exportMonthly)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-sm font-medium hover:bg-blue-100" title="Aperçu du rapport mensuel (nouvel onglet)">
+            <Eye className="w-4 h-4" /> Aperçu
           </button>
         </div>
       </div>
@@ -771,7 +778,9 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
                   <td className="px-4 py-2.5 text-center">
                     <div className="flex items-center justify-center gap-1.5">
                       <button onClick={() => exporterBulletin(l)} className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 border border-blue-200" title="Générer le bulletin de paie PDF">Bulletin</button>
+                      <button onClick={() => enApercu(() => exporterBulletin(l))} className="px-2 py-1 rounded-lg text-blue-500 hover:bg-blue-50" title="Aperçu bulletin (nouvel onglet)"><Eye className="w-3.5 h-3.5" /></button>
                       <button onClick={() => exporterFichePresence(l.p)} className="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 text-xs font-semibold hover:bg-teal-100 border border-teal-200" title="Fiche de présence PDF du mois">Fiche</button>
+                      <button onClick={() => enApercu(() => exporterFichePresence(l.p))} className="px-2 py-1 rounded-lg text-teal-500 hover:bg-teal-50" title="Aperçu fiche (nouvel onglet)"><Eye className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>
                   <td className="px-4 py-2.5 text-center whitespace-nowrap">

@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
 import { loadLogoBase64, loadSchoolName, PDF_THEME, sanitizePdfText, addRoundedImage } from './pdfTheme';
 import { getSchoolInitials } from './schoolInitials';
@@ -141,5 +142,5 @@ export async function generatePointageReport(opts: {
     doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} — Page ${i}/${pages}`, pw / 2, 292, { align: 'center' });
   }
 
-  doc.save(`Rapport-presence-${MOIS_FR[month - 1]}-${year}.pdf`);
+  exporterPdf(doc, `Rapport-presence-${MOIS_FR[month - 1]}-${year}.pdf`);
 }

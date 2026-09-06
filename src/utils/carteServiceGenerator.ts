@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { exporterPdf } from './pdfExport';
 import QRCode from 'qrcode';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
@@ -180,7 +181,7 @@ export async function generateCartesService(list: CarteService[]): Promise<void>
     if (i > 0) doc.addPage([CARD_W, CARD_H], 'portrait');
     doc.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, CARD_W, CARD_H);
   }
-  doc.save(`Cartes-service-${list.length}-membres.pdf`);
+  exporterPdf(doc, `Cartes-service-${list.length}-membres.pdf`);
 }
 
 /**
@@ -219,7 +220,7 @@ export async function generateCartesService8PerSheet(list: CarteService[]): Prom
     const y = MARGIN + row * cellH + (cellH - CARD_H) / 2;
     doc.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', x, y, CARD_W, CARD_H);
   }
-  doc.save(`Cartes-service-${list.length}-membres.pdf`);
+  exporterPdf(doc, `Cartes-service-${list.length}-membres.pdf`);
 }
 
 async function buildQrDataUrl(p: CarteService): Promise<string> {
@@ -295,5 +296,5 @@ export async function generateCartesServiceBack8PerSheet(nb: number): Promise<vo
     const y = MARGIN + row * cellH + (cellH - CARD_H) / 2;
     doc.addImage(img, 'JPEG', x, y, CARD_W, CARD_H);
   }
-  doc.save('Versos-carte-service-' + nb + '.pdf');
+  exporterPdf(doc, 'Versos-carte-service-' + nb + '.pdf');
 }

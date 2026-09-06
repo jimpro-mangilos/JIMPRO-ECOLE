@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
 import { sanitizePdfText, PDF_THEME, drawReportHeader, contentStartY, loadSchoolName, loadLogoBase64 } from './pdfTheme';
 
@@ -96,5 +97,5 @@ export async function generateBulletinPaie(b: BulletinData) {
   doc.text('Salaire du mois = jours de présence × salaire journalier (salaire mensuel ÷ jours ouvrables).', 15, y2);
   doc.text('Le présent bulletin est généré par le système JIMPRO.', 15, y2 + 5);
 
-  doc.save(`bulletin-paie-${(b.matricule || b.nom).replace(/\s+/g, '-')}-${b.moisLabel.replace(/\s+/g, '-')}.pdf`);
+  exporterPdf(doc, `bulletin-paie-${(b.matricule || b.nom).replace(/\s+/g, '-')}-${b.moisLabel.replace(/\s+/g, '-')}.pdf`);
 }

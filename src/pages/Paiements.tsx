@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { DollarSign, Search, CheckCircle, Clock, Printer, Plus, XCircle, AlertTriangle, Trash2, Calendar, CalendarDays, ChevronRight, ChevronsDownUp, FileDown, RotateCcw, LayoutDashboard, User, ChevronDown, Check, X, Pencil } from 'lucide-react';
+import { DollarSign, Search, CheckCircle, Clock, Printer, Plus, XCircle, AlertTriangle, Trash2, Calendar, CalendarDays, ChevronRight, ChevronsDownUp, FileDown, RotateCcw, LayoutDashboard, User, ChevronDown, Check, X, Pencil, Eye } from 'lucide-react';
+import { enApercu } from '../utils/pdfExport';
 import { generateReceipt } from '../utils/receiptGenerator';
 import { generatePaiementsReport } from '../utils/pdfGenerator';
 import PaymentFormModal from '../components/PaymentFormModal';
@@ -110,23 +111,33 @@ export default function Paiements() {
   };
 
   // ─── Print / Edit / Detail handlers ────────────────────────────────────────
+  const recuData = (paiement: Paiement) => {
+    const typeLabel = getTypeLabel(paiement.type_paiement);
+    return {
+      numero_recu: paiement.numero_recu, nom_eleve: paiement.nom_eleve, matricule: paiement.matricule,
+      postnom: paiement.postnom, prenom: paiement.prenom, classe: paiement.classe,
+      sexe: paiement.sexe, section: paiement.section, telephone: paiement.telephone,
+      option: paiement.option || '', lieu_naissance: paiement.lieu_naissance,
+      date_naissance: paiement.date_naissance, responsable: paiement.responsable,
+      montant_paye: paiement.montant_paye, montant_en_lettre: paiement.montant_en_lettre,
+      mode_paiement: paiement.mode_paiement, date_paiement: paiement.date_paiement,
+      date_encaissement: paiement.date_encaissement || paiement.created_at,
+      nom_comptable: paiement.nom_comptable, nom_encaisseur: paiement.nom_encaisseur,
+      type_paiement: typeLabel, annee_scolaire: paiement.annee_scolaire,
+      motif_paiement: paiement.motif_libelle || null,
+    };
+  };
+
   const handlePrintRecu = (paiement: Paiement) => {
     try {
-      const typeLabel = getTypeLabel(paiement.type_paiement);
-      generateReceipt({
-        numero_recu: paiement.numero_recu, nom_eleve: paiement.nom_eleve, matricule: paiement.matricule,
-        postnom: paiement.postnom, prenom: paiement.prenom, classe: paiement.classe,
-        sexe: paiement.sexe, section: paiement.section, telephone: paiement.telephone,
-        option: paiement.option || '', lieu_naissance: paiement.lieu_naissance,
-        date_naissance: paiement.date_naissance, responsable: paiement.responsable,
-        montant_paye: paiement.montant_paye, montant_en_lettre: paiement.montant_en_lettre,
-        mode_paiement: paiement.mode_paiement, date_paiement: paiement.date_paiement,
-        date_encaissement: paiement.date_encaissement || paiement.created_at,
-        nom_comptable: paiement.nom_comptable, nom_encaisseur: paiement.nom_encaisseur,
-        type_paiement: typeLabel, annee_scolaire: paiement.annee_scolaire,
-        motif_paiement: paiement.motif_libelle || null,
-      }, false);
+      generateReceipt(recuData(paiement), false);
     } catch (err) { console.error('Erreur impression:', err); alert('Erreur lors de la génération du reçu'); }
+  };
+
+  const handlePreviewRecu = (paiement: Paiement) => {
+    try {
+      enApercu(() => generateReceipt(recuData(paiement), false));
+    } catch (err) { console.error('Erreur aperçu:', err); alert('Erreur lors de la génération du reçu'); }
   };
 
   const openEditModal = (p: Paiement) => {
@@ -305,6 +316,7 @@ export default function Paiements() {
                           <td className="px-2 py-1.5 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <button onClick={(e) => { e.stopPropagation(); handlePrintRecu(p); }} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600" title="Reçu"><Printer className="w-3.5 h-3.5" /></button>
+<button onClick={(e) => { e.stopPropagation(); handlePreviewRecu(p); }} className="p-1.5 rounded-lg hover:bg-teal-50 text-teal-600" title="Aperçu du reçu (nouvel onglet)"><Eye className="w-3.5 h-3.5" /></button>
                               {(canCreatePaiement() || isItManager()) && getStatut(p) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openEditModal(p); }} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>}
                               {(canEncaisserMontant(p.montant_paye) && getStatut(p) === 'en_attente') && <button onClick={(e) => { e.stopPropagation(); encaisser(p.id, p.montant_paye); }} className="p-1.5 rounded-lg hover:bg-green-50 text-green-600" title="Encaisser"><CheckCircle className="w-3.5 h-3.5" /></button>}
                               {canAnnulerPaiement() && getStatut(p) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openAnnulation(p.id); }} className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-600" title="Annuler"><AlertTriangle className="w-3.5 h-3.5" /></button>}
@@ -387,7 +399,8 @@ export default function Paiements() {
                 {detailPaiement.motif_annulation && <div><span className="text-gray-500">Motif annulation</span><p className="font-medium text-red-600">{detailPaiement.motif_annulation}</p></div>}
               </div>
               <div className="flex flex-wrap gap-2 pt-3 border-t">
-                <button onClick={(e) => { e.stopPropagation(); handlePrintRecu(detailPaiement); }} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200"><Printer className="w-3.5 h-3.5 inline mr-1" />Imprimer</button>
+                <button onClick={(e) => { e.stopPropagation(); handlePrintRecu(detailPaiement); }} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200"><Printer className="w-3.5 h-3.5 inline mr-1" />Reçu PDF</button>
+                <button onClick={(e) => { e.stopPropagation(); handlePreviewRecu(detailPaiement); }} className="px-3 py-1.5 bg-teal-100 text-teal-700 rounded-lg text-xs hover:bg-teal-200"><Eye className="w-3.5 h-3.5 inline mr-1" />Aperçu</button>
                 {(canCreatePaiement() || isItManager()) && getStatut(detailPaiement) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openEditModal(detailPaiement); setDetailPaiement(null); }} className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs hover:bg-amber-200"><Pencil className="w-3.5 h-3.5 inline mr-1" />Modifier</button>}
                 {(canEncaisserMontant(detailPaiement.montant_paye) && getStatut(detailPaiement) === 'en_attente') && <button onClick={(e) => { e.stopPropagation(); encaisser(detailPaiement.id, detailPaiement.montant_paye); }} className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200"><CheckCircle className="w-3.5 h-3.5 inline mr-1" />Encaisser</button>}
                 {canAnnulerPaiement() && getStatut(detailPaiement) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openAnnulation(detailPaiement.id); }} className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-xs hover:bg-orange-200"><AlertTriangle className="w-3.5 h-3.5 inline mr-1" />Annuler</button>}

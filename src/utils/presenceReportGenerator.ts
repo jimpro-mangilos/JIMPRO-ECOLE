@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
 import { sanitizePdfText, PDF_THEME, drawReportHeader, contentStartY, loadSchoolName, loadLogoBase64 } from './pdfTheme';
 import type { PointageRecord, PointageConfig } from '../lib/hooks/usePointage';
@@ -92,5 +93,5 @@ export async function generateFichePresence(params: {
   doc.text('Signature du membre', 20, y + 22);
   doc.text('Cachet / Direction', mid + 10, y + 22);
 
-  doc.save(`fiche-presence-${(membre.matricule || membre.nom).replace(/\s+/g, '-')}-${moisLabel.replace(/\s+/g, '-')}.pdf`);
+  exporterPdf(doc, `fiche-presence-${(membre.matricule || membre.nom).replace(/\s+/g, '-')}-${moisLabel.replace(/\s+/g, '-')}.pdf`);
 }

@@ -1,5 +1,6 @@
 
 import { jsPDF } from 'jspdf';
+import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
 import {
   PDF_THEME,
@@ -210,7 +211,7 @@ export async function generateElevesReport(eleves: Eleve[]) {
   });
 
   drawReportFooter(doc, header.title);
-  doc.save(`rapport_eleves_${Date.now()}.pdf`);
+  exporterPdf(doc, `rapport_eleves_${Date.now()}.pdf`);
 }
 
 export async function generateMinervalReport(minerval: MinervalRecord[], startDate?: Date, endDate?: Date) {
@@ -284,7 +285,7 @@ export async function generateMinervalReport(minerval: MinervalRecord[], startDa
   }, header);
 
   drawReportFooter(doc, header.title);
-  doc.save(`rapport_minerval_${Date.now()}.pdf`);
+  exporterPdf(doc, `rapport_minerval_${Date.now()}.pdf`);
 }
 
 export async function generateFinancesReport(finances: FinanceRecord[], filterInfo?: string, startDate?: Date, endDate?: Date) {
@@ -420,7 +421,7 @@ export async function generateFinancesReport(finances: FinanceRecord[], filterIn
   renderOperations('Depenses', depenses, totalDepenses, PDF_THEME.colors.danger, PDF_THEME.colors.danger);
 
   drawReportFooter(doc, header.title);
-  doc.save(`rapport_financier_${Date.now()}.pdf`);
+  exporterPdf(doc, `rapport_financier_${Date.now()}.pdf`);
 }
 
 export interface FournituresElevesFilters {
@@ -548,7 +549,7 @@ export async function generateFournituresElevesReport(
   }, header);
 
   drawReportFooter(doc, header.title);
-  doc.save(`rapport_fournitures_eleves_${Date.now()}.pdf`);
+  exporterPdf(doc, `rapport_fournitures_eleves_${Date.now()}.pdf`);
 }
 
 export async function generateFournituresBureauReport(fournitures: FournitureBureau[]) {
@@ -604,7 +605,7 @@ export async function generateFournituresBureauReport(fournitures: FournitureBur
   }, header);
 
   drawReportFooter(doc, header.title);
-  doc.save(`rapport_fournitures_bureau_${Date.now()}.pdf`);
+  exporterPdf(doc, `rapport_fournitures_bureau_${Date.now()}.pdf`);
 }
 
 export async function generateElevePaymentHistoryPDF(eleve: Eleve, paiements: MinervalRecord[]) {
@@ -699,7 +700,7 @@ export async function generateElevePaymentHistoryPDF(eleve: Eleve, paiements: Mi
   }, header);
 
   drawReportFooter(doc, header.title);
-  doc.save(`historique_paiement_${eleve.matricule}_${Date.now()}.pdf`);
+  exporterPdf(doc, `historique_paiement_${eleve.matricule}_${Date.now()}.pdf`);
 }
 
 interface PaiementComptable {
@@ -884,7 +885,7 @@ export async function generateRapportComptable(
   }, header);
 
   drawReportFooter(doc, header.title);
-  doc.save(`rapport_comptable_${comptable.nom}_${Date.now()}.pdf`);
+  exporterPdf(doc, `rapport_comptable_${comptable.nom}_${Date.now()}.pdf`);
 }
 
 export async function generateRapportComparatifComptables(
@@ -1015,7 +1016,7 @@ export async function generateRapportComparatifComptables(
   });
 
   drawReportFooter(doc, header.title);
-  doc.save(`rapport_comparatif_comptables_${Date.now()}.pdf`);
+  exporterPdf(doc, `rapport_comparatif_comptables_${Date.now()}.pdf`);
 }
 
 interface PaiementReportRecord {
@@ -1135,5 +1136,5 @@ export async function generatePaiementsReport(paiements: PaiementReportRecord[],
   }, header);
 
   drawReportFooter(doc, header.title);
-  doc.save(`rapport_paiements_${Date.now()}.pdf`);
+  exporterPdf(doc, `rapport_paiements_${Date.now()}.pdf`);
 }

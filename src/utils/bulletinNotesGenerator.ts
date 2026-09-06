@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { exporterPdf } from './pdfExport';
 import 'jspdf-autotable';
 import { sanitizePdfText, PDF_THEME, drawReportHeader, contentStartY, loadSchoolName, loadLogoBase64 } from './pdfTheme';
 
@@ -53,5 +54,5 @@ export async function generateBulletinNotes(params: {
     margin: { left: 15, right: 15 },
   });
 
-  doc.save(`bulletin-notes-${(eleveMatricule || eleveNom).replace(/\s+/g, '-')}.pdf`);
+  exporterPdf(doc, `bulletin-notes-${(eleveMatricule || eleveNom).replace(/\s+/g, '-')}.pdf`);
 }

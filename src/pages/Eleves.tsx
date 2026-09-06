@@ -8,6 +8,7 @@ import { calculateAverageAge, formatDateTime } from '../utils/calculations';
 import EleveDetailsModal from '../components/EleveDetailsModal';
 import PaymentFormModal from '../components/PaymentFormModal';
 import { useEleves } from '../lib/hooks/useEleves';
+import { enApercu } from '../utils/pdfExport';
 import { useSections, useOptions, useClasses } from '../lib/hooks/useReferenceData';
 import { generateElevesReport } from '../utils/pdfGenerator';
 import { generateCartesEtudiants } from '../utils/carteEtudiantGenerator';
@@ -197,6 +198,20 @@ export default function Eleves() {
             className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
           >
             <FileDown className="w-5 h-5" /> Imprimer
+          </button>
+          <button
+            onClick={() => enApercu(() => generateElevesReport(eleves.map(e => ({
+              matricule: e.matricule, nom: e.nom, postnom: e.postnom, prenom: e.prenom,
+              sexe: e.sexe, section: e.section, option: e.option || undefined,
+              classe: e.classe || '', responsable: e.responsable, telephone: e.telephone,
+              date_naissance: e.date_naissance || undefined,
+              lieu_naissance: e.lieu_naissance || undefined,
+              domicile: e.domicile || undefined,
+            }))))}
+            className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-4 py-3 rounded-lg hover:bg-blue-100 transition-colors font-medium"
+            title="Ouvrir l'aperçu du rapport dans un nouvel onglet"
+          >
+            <Eye className="w-5 h-5" /> Aperçu
           </button>
           {isItManager() && (
           <button
