@@ -52,3 +52,8 @@ CREATE POLICY "pec_update" ON public.prises_en_charge_personnel FOR UPDATE TO au
 -- Paiements « prise en charge » : le membre concerné (déduction sur salaire)
 ALTER TABLE public.paiements ADD COLUMN IF NOT EXISTS personnel_id uuid;
 CREATE INDEX IF NOT EXISTS idx_paiements_personnel ON public.paiements (personnel_id, date_paiement);
+
+-- Autoriser le mode 'prise_en_charge' dans la contrainte du mode de paiement
+ALTER TABLE public.paiements DROP CONSTRAINT IF EXISTS paiements_mode_paiement_check;
+ALTER TABLE public.paiements ADD CONSTRAINT paiements_mode_paiement_check
+  CHECK (mode_paiement IN ('especes', 'mobile_money', 'virement', 'cheque', 'prise_en_charge'));
