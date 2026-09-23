@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, User, MapPin, Phone, Calendar, Printer, Plus, DollarSign, Loader2, Package } from 'lucide-react';
+import { X, User, MapPin, Phone, Calendar, Printer, Plus, DollarSign, Loader2, Package, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { calculateAge, formatCurrency, formatDate } from '../utils/calculations';
@@ -52,12 +52,15 @@ interface Uniforme {
 
 interface EleveDetailsModalProps {
   eleve: Eleve;
+  eleves?: Eleve[];
+  onNavigate?: (eleve: Eleve) => void;
+  onEdit?: () => void;
   onClose: () => void;
   onPaymentAdded: () => void;
   onOpenPaymentForm?: () => void;
 }
 
-export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOpenPaymentForm }: EleveDetailsModalProps) {
+export default function EleveDetailsModal({ eleve, eleves, onNavigate, onEdit, onClose, onPaymentAdded, onOpenPaymentForm }: EleveDetailsModalProps) {
   const { canCreatePaiement, currentSchoolId, isItManager } = useAuth();
   const [paiements, setPaiements] = useState<Paiement[]>([]);
   const [uniformes, setUniformes] = useState<Uniforme[]>([]);
@@ -66,6 +69,13 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
   const [showUniformeForm, setShowUniformeForm] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
   const [typesPaiement, setTypesPaiement] = useState<any[]>([]);
+
+  // Navigation entre élèves (dans l'ordre de la liste affichée)
+  const listeEleves = eleves || [];
+  const indexCourant = listeEleves.findIndex(e => e.id === eleve.id);
+  const totalEleves = listeEleves.length;
+  const elevePrecedent = indexCourant > 0 ? listeEleves[indexCourant - 1] : null;
+  const eleveSuivant = indexCourant >= 0 && indexCourant < totalEleves - 1 ? listeEleves[indexCourant + 1] : null;
 
   useEffect(() => {
     loadPaiements();
@@ -174,14 +184,50 @@ export default function EleveDetailsModal({ eleve, onClose, onPaymentAdded, onOp
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg max-w-6xl w-full my-8 max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-xl font-bold text-gray-900">Détails de l'Élève</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-6 h-6 text-gray-500" />
-          </button>
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between gap-3 z-10">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-gray-900">Détails de l'Élève</h2>
+            {onNavigate && totalEleves > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => elevePrecedent && onNavigate(elevePrecedent)}
+                  disabled={!elevePrecedent}
+                  className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Élève précédent"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-sm text-gray-500 font-medium min-w-[3.5rem] text-center">
+                  {indexCourant >= 0 ? `${indexCourant + 1} / ${totalEleves}` : ''}
+                </span>
+                <button
+                  onClick={() => eleveSuivant && onNavigate(eleveSuivant)}
+                  disabled={!eleveSuivant}
+                  className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Élève suivant"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="p-2 rounded-lg hover:bg-amber-50 text-amber-600 transition-colors"
+                title="Modifier les informations de l'élève"
+              >
+                <Pencil className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-6 h-6 text-gray-500" />
+            </button>
+          </div>
         </div>
 
         <div className="p-4 space-y-4">

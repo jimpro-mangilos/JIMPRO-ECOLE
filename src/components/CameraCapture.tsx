@@ -5,7 +5,7 @@ import { Camera, Upload, X } from 'lucide-react';
  * Capture de photo : caméra (getUserMedia) OU upload de fichier.
  * Renvoie un File (JPEG) via onCapture — l'appelant l'upload ensuite.
  */
-export default function CameraCapture({ onCapture, compact = false }: { onCapture: (file: File) => void; compact?: boolean }) {
+export default function CameraCapture({ onCapture, compact = false, portrait = false }: { onCapture: (file: File) => void; compact?: boolean; portrait?: boolean }) {
   const [mode, setMode] = useState<'idle' | 'camera'>('idle');
   const [cameraError, setCameraError] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -15,7 +15,10 @@ export default function CameraCapture({ onCapture, compact = false }: { onCaptur
   async function startCamera() {
     setCameraError('');
     setMode('camera');
-    const base = { width: { ideal: 640 }, height: { ideal: 480 } };
+    // Portrait (photo d'identité) : hauteur > largeur. Paysage par défaut : 640×480.
+    const base = portrait
+      ? { width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { ideal: 9 / 16 } }
+      : { width: { ideal: 640 }, height: { ideal: 480 } };
     try {
       // Caméra ARRIÈRE par défaut (photographier une personne/carte), avec repli
       // sur la caméra avant si l'appareil n'en a pas.
@@ -48,10 +51,27 @@ export default function CameraCapture({ onCapture, compact = false }: { onCaptur
     const video = videoRef.current;
     if (!video || !video.videoWidth) { setCameraError("La caméra n'est pas prête. Réessayez."); return; }
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(video, 0, 0);
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (portrait) {
+      // Recadrage portrait 3:4 centré (photo d'identité), quelle que soit l'orientation du capteur.
+      const RATIO = 3 / 4;
+      let sw = vw;
+      let sh = vh;
+      if (vw / vh > RATIO) sw = Math.floor(vh * RATIO);
+      else sh = Math.floor(vw / RATIO);
+      const sx = Math.floor((vw - sw) / 2);
+      const sy = Math.floor((vh - sh) / 2);
+      canvas.width = 720;
+      canvas.height = 960;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    } else {
+      canvas.width = vw;
+      canvas.height = vh;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(video, 0, 0);
+    }
     canvas.toBlob((blob) => {
       if (blob) onCapture(new File([blob], 'photo-camera.jpg', { type: 'image/jpeg' }));
       stopCamera();
@@ -69,7 +89,13 @@ export default function CameraCapture({ onCapture, compact = false }: { onCaptur
       {mode === 'camera' ? (
         <div className="space-y-2">
           <div className="relative rounded-lg overflow-hidden bg-black">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-56 object-cover" />
+            {portrait ? (
+              <div className="mx-auto w-full max-w-[260px] aspect-[3/4]">
+                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-56 object-cover" />
+            )}
             {cameraError && <p className="text-xs text-red-300 p-2">{cameraError}</p>}
           </div>
           <div className="flex gap-2">
