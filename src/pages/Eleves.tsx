@@ -75,6 +75,9 @@ export default function Eleves() {
   const optionList = options as { id: string; nom: string; section_id: string }[];
   const classeList = classes as { id: string; nom: string; section_id: string; option_id: string | null }[];
 
+  // Élèves ciblés pour la génération des cartes : la sélection si elle existe, sinon toute la liste
+  const cartesCibles = selectedIds.size > 0 ? eleves.filter(e => selectedIds.has(e.id)) : eleves;
+
   // ─── Section Stats ───────────────────────────────────────────────────────
   function getSectionStats(sectionName: string) {
     const sectionEleves = sectionName === '' ? eleves : eleves.filter(e => e.section.toLowerCase() === sectionName.toLowerCase());
@@ -245,7 +248,8 @@ export default function Eleves() {
               setGeneratingCartes(true);
               try {
                 const BATCH = 40;
-                const total = eleves.length;
+                const total = cartesCibles.length;
+                if (total === 0) { alert('Aucune carte à générer.'); return; }
                 setGeneratingProgress({ current: 0, total });
                 // Récupérer le nom de l'école (pour l'affichage sur la carte)
                 let schoolName = 'ÉCOLE';
@@ -254,7 +258,7 @@ export default function Eleves() {
                   if (ecole?.nom) schoolName = ecole.nom;
                 }
                 for (let i = 0; i < total; i += BATCH) {
-                  const batch = eleves.slice(i, i + BATCH).map(e => ({
+                  const batch = cartesCibles.slice(i, i + BATCH).map(e => ({
                     matricule: e.matricule, nom: e.nom, postnom: e.postnom, prenom: e.prenom,
                     sexe: e.sexe, section: e.section, option: e.option, classe: e.classe,
                     date_naissance: e.date_naissance, photo_url: (e as any).photo_url,
@@ -279,7 +283,7 @@ export default function Eleves() {
             className="flex items-center gap-2 bg-teal-600 text-white px-4 py-3 rounded-lg hover:bg-teal-700 transition-colors font-medium shadow-sm disabled:opacity-50"
           >
             {generatingCartes ? <Loader2 className="w-5 h-5 animate-spin" /> : <Contact className="w-5 h-5" />}
-            {generatingCartes ? `${generatingProgress.current}/${generatingProgress.total}` : 'Cartes'}
+            {generatingCartes ? `${generatingProgress.current}/${generatingProgress.total}` : (selectedIds.size > 0 ? `Cartes (${cartesCibles.length})` : 'Cartes')}
           </button>
           )}
           {!isReadOnly() && (
@@ -396,11 +400,11 @@ export default function Eleves() {
                 <tr><td colSpan={isItManager() ? 10 : 9} className="px-4 py-12 text-center text-gray-400">Aucun élève trouvé.</td></tr>
               )}
               {eleves.map(eleve => (
-                <tr key={eleve.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleViewDetails(eleve)}>
+                <tr key={eleve.id} className="hover:bg-gray-50 transition-colors">
                   {isItManager() && <td className="px-4 py-3"><input type="checkbox" checked={selectedIds.has(eleve.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(eleve.id); }} className="rounded" /></td>}
                   <td className="px-4 py-3 text-sm font-mono text-gray-900">{eleve.matricule}</td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-gray-900">{eleve.nom} {eleve.postnom} {eleve.prenom}</p>
+                  <td className="px-4 py-3 cursor-pointer group" onClick={() => handleViewDetails(eleve)} title="Voir les détails de l'élève">
+                    <p className="text-sm font-medium text-blue-600 group-hover:underline">{eleve.nom} {eleve.postnom} {eleve.prenom}</p>
                     {eleve.telephone && <p className="text-xs text-gray-400">{eleve.telephone}</p>}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{eleve.sexe}</td>
