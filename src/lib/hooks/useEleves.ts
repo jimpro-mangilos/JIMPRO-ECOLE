@@ -72,6 +72,7 @@ interface UseElevesOptions {
   selectedOption: string[];
   selectedClasse: string[];
   filterOrdre: '' | 'en_ordre' | 'pas_en_ordre';
+  filterPhoto: '' | 'avec' | 'sans';
   filterDateDebut: string;
   filterDateFin: string;
   sortAlpha: '' | 'asc' | 'desc';
@@ -182,7 +183,11 @@ export function useEleves(filters: UseElevesOptions) {
         if (new Date(eleve.created_at).toLocaleDateString('fr-CA') > filters.filterDateFin) matchesDate = false;
       }
 
-      return matchesSearch && matchesSection && matchesOption && matchesClasse && matchesOrdre && matchesDate;
+      let matchesPhoto = true;
+      if (filters.filterPhoto === 'avec') matchesPhoto = !!(eleve as any).photo_url;
+      else if (filters.filterPhoto === 'sans') matchesPhoto = !(eleve as any).photo_url;
+
+      return matchesSearch && matchesSection && matchesOption && matchesClasse && matchesOrdre && matchesDate && matchesPhoto;
     });
 
     if (filters.sortAlpha === 'asc') result.sort((a, b) => `${a.nom} ${a.postnom} ${a.prenom}`.localeCompare(`${b.nom} ${b.postnom} ${b.prenom}`));

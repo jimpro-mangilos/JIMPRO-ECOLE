@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { suppressionAuth } from '../components/SuppressionAuth';
 import MultiSelectFilter from '../components/MultiSelectFilter';
-import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, FileText, CheckCircle, XCircle, Contact, Camera } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, Eye, Users, User, RefreshCw, Loader2, FileDown, FileText, CheckCircle, XCircle, Contact, Camera, CameraOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import type { Database } from '../lib/database.types';
@@ -31,10 +31,11 @@ function useEleveFilters() {
   const [selectedOption, setSelectedOption] = useState<string[]>([]);
   const [selectedClasse, setSelectedClasse] = useState<string[]>([]);
   const [filterOrdre, setFilterOrdre] = useState<'' | 'en_ordre' | 'pas_en_ordre'>('');
+  const [filterPhoto, setFilterPhoto] = useState<'' | 'avec' | 'sans'>('');
   const [filterDateDebut, setFilterDateDebut] = useState('');
   const [filterDateFin, setFilterDateFin] = useState('');
   const [sortAlpha, setSortAlpha] = useState<'' | 'asc' | 'desc'>('');
-  return { searchTerm, setSearchTerm, selectedSection, setSelectedSection, selectedOption, setSelectedOption, selectedClasse, setSelectedClasse, filterOrdre, setFilterOrdre, filterDateDebut, setFilterDateDebut, filterDateFin, setFilterDateFin, sortAlpha, setSortAlpha };
+  return { searchTerm, setSearchTerm, selectedSection, setSelectedSection, selectedOption, setSelectedOption, selectedClasse, setSelectedClasse, filterOrdre, setFilterOrdre, filterPhoto, setFilterPhoto, filterDateDebut, setFilterDateDebut, filterDateFin, setFilterDateFin, sortAlpha, setSortAlpha };
 }
 
 // ─── Page Component ───────────────────────────────────────────────────────────
@@ -88,7 +89,9 @@ export default function Eleves() {
     const pasEnOrdre = total - enOrdre;
     const ages = sectionEleves.filter(e => e.date_naissance).map(e => e.date_naissance);
     const avgAge = calculateAverageAge(ages);
-    return { total, garcons, filles, enOrdre, pasEnOrdre, avgAge };
+    const avecPhoto = sectionEleves.filter(e => (e as any).photo_url).length;
+    const sansPhoto = total - avecPhoto;
+    return { total, garcons, filles, enOrdre, pasEnOrdre, avgAge, avecPhoto, sansPhoto };
   }
 
   // ─── Form handlers ────────────────────────────────────────────────────────
@@ -305,6 +308,10 @@ export default function Eleves() {
           <div className="flex items-center gap-3 text-xs text-gray-600">
             <span>G: {getSectionStats('').garcons}</span> <span>F: {getSectionStats('').filles}</span>
           </div>
+          <div className="flex items-center gap-3 text-xs text-gray-600 mt-1">
+            <span className="inline-flex items-center gap-1" title="Avec photo"><Camera className="w-3 h-3 text-green-600" /> {getSectionStats('').avecPhoto}</span>
+            <span className="inline-flex items-center gap-1" title="Sans photo"><CameraOff className="w-3 h-3 text-slate-400" /> {getSectionStats('').sansPhoto}</span>
+          </div>
         </div>
         {sectionList.map(section => {
           const stats = getSectionStats(section.nom);
@@ -355,13 +362,20 @@ export default function Eleves() {
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 mt-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
           <div><label className="block text-xs font-medium text-gray-700 mb-1">Date début</label>
             <input type="date" value={filters.filterDateDebut} onChange={e => filters.setFilterDateDebut(e.target.value)}
               className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
           <div><label className="block text-xs font-medium text-gray-700 mb-1">Date fin</label>
             <input type="date" value={filters.filterDateFin} onChange={e => filters.setFilterDateFin(e.target.value)}
               className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" /></div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Photo</label>
+            <select value={filters.filterPhoto} onChange={e => filters.setFilterPhoto(e.target.value as any)} title="Filtrer par présence de photo"
+              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+              <option value="">Toutes les photos</option><option value="avec">Avec photo</option><option value="sans">Sans photo</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -404,7 +418,14 @@ export default function Eleves() {
                   {isItManager() && <td className="px-4 py-3"><input type="checkbox" checked={selectedIds.has(eleve.id)} onChange={(e) => { e.stopPropagation(); toggleSelectOne(eleve.id); }} className="rounded" /></td>}
                   <td className="px-4 py-3 text-sm font-mono text-gray-900">{eleve.matricule}</td>
                   <td className="px-4 py-3 cursor-pointer group" onClick={() => handleViewDetails(eleve)} title="Voir les détails de l'élève">
-                    <p className="text-sm font-medium text-blue-600 group-hover:underline">{eleve.nom} {eleve.postnom} {eleve.prenom}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium text-blue-600 group-hover:underline">{eleve.nom} {eleve.postnom} {eleve.prenom}</p>
+                      {(eleve as any).photo_url ? (
+                        <span title="Photo présente" className="shrink-0"><Camera className="w-3.5 h-3.5 text-green-600" /></span>
+                      ) : (
+                        <span title="Sans photo" className="shrink-0"><CameraOff className="w-3.5 h-3.5 text-slate-300" /></span>
+                      )}
+                    </div>
                     {eleve.telephone && <p className="text-xs text-gray-400">{eleve.telephone}</p>}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{eleve.sexe}</td>
