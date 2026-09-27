@@ -364,6 +364,7 @@ export default function PaymentFormModal({ isOpen, onClose, onSuccess, preselect
 
       if (formData.encaisser && canEncaisser() && !(pec && pecChecked)) {
         paiementData.est_encaisse = true;
+        paiementData.statut = 'encaisse';
         paiementData.date_encaissement = new Date().toISOString();
         paiementData.encaisseur_id = user?.id;
         paiementData.nom_encaisseur = `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim();

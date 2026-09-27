@@ -126,7 +126,10 @@ export function useEleves(filters: UseElevesOptions) {
           .select('eleve_id')
           .eq('ecole_id', currentSchoolId)
           .eq('mois_minerval', getCurrentMoisMinerval())
-          .eq('statut', 'encaisse')
+          // Un paiement « en_attente » ou « encaisse » est déjà effectué : seuls les
+          // paiements annulés ne comptent pas (cohérent avec fetchPaidMonths et le
+          // portail de recouvrement).
+          .neq('statut', 'annule')
           .range(from, to);
         if (error) throw error;
         if (!data || data.length === 0) break;
