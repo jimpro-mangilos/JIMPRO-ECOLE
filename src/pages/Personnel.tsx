@@ -238,11 +238,11 @@ export default function Personnel() {
   }
 
   const stats = useMemo(() => ({
-    total: personnel.length,
-    actifs: personnel.filter(p => p.statut === 'actif').length,
-    inactifs: personnel.filter(p => p.statut !== 'actif').length,
-    fonctions: new Set(personnel.map(p => p.fonction)).size,
-  }), [personnel]);
+    total: filtered.length,
+    actifs: filtered.filter(p => p.statut === 'actif').length,
+    inactifs: filtered.filter(p => p.statut !== 'actif').length,
+    fonctions: new Set(filtered.map(p => p.fonction)).size,
+  }), [filtered]);
 
   function openCreate() {
     setEditing(null);
