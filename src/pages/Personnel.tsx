@@ -363,12 +363,12 @@ export default function Personnel() {
       {/* Filtres */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher (nom, matricule, fonction...)"
-            className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <select value={filterFonction} onChange={e => setFilterFonction(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">

@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { UserCheck, Clock, Search, FileDown, CalendarDays, CalendarRange, Users, ShieldCheck, ShieldX, CalendarPlus, CalendarClock, MessageCircle, Eye } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { UserCheck, Clock, Search, FileDown, CalendarDays, CalendarRange, Users, ShieldCheck, ShieldX, CalendarPlus, CalendarClock, MessageCircle, Eye, Zap, CheckCheck, QrCode } from 'lucide-react';
 import { enApercu } from '../utils/pdfExport';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { loadPointageConfig, compareHeures, formatDatePointage, isTableMissingError, type PointageConfig } from '../lib/hooks/usePointage';
 import { generatePointageElevesReport, type PointageEleveRecord, type PermissionEleve } from '../utils/pointageElevesReportGenerator';
+import { parseScannedMatricule } from '../utils/ascii';
 
 interface EleveLigne {
   id: string;
@@ -61,6 +62,10 @@ export default function PointageEleves() {
   const [permMotif, setPermMotif] = useState('');
   const [permSaving, setPermSaving] = useState(false);
   const [schoolPhone, setSchoolPhone] = useState<string | null>(null);
+  const [rapidDate, setRapidDate] = useState(todayStr());
+  const [scanInput, setScanInput] = useState('');
+  const [scanFeedback, setScanFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
+  const scanRef = useRef<HTMLInputElement>(null);
 
   const today = todayStr();
   const [year, m] = month.split('-').map(Number);
@@ -197,10 +202,54 @@ export default function PointageEleves() {
     return s;
   }, [bilans]);
 
+  // ═══ Pointage rapide : compteur + liste (non pointés d'abord) ═══
+  const rapidPointes = useMemo(() => {
+    let n = 0;
+    for (const e of list) if (getStatutJour(e.id, rapidDate).rec) n++;
+    return n;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, rapidDate, recByKey, permDates, config]);
+
+  const rapidList = useMemo(() => {
+    return [...list].sort((a, b) => {
+      const ma = getStatutJour(a.id, rapidDate).rec ? 1 : 0;
+      const mb = getStatutJour(b.id, rapidDate).rec ? 1 : 0;
+      return ma - mb;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, rapidDate, recByKey, permDates, config]);
+
+  // Applique un pointage localement (optimiste) : la cellule se met à jour
+  // immédiatement, sans recharger toute la page. L'écriture part en arrière-plan.
+  function applyLocalRecord(eleveId: string, date: string, patch: Partial<PointageEleveRecord>) {
+    setRecords(prev => {
+      const idx = prev.findIndex(r => r.eleve_id === eleveId && r.date_pointage === date);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...patch };
+        return next;
+      }
+      const nouveau: PointageEleveRecord = {
+        id: 'tmp_' + eleveId + '_' + date,
+        eleve_id: eleveId,
+        date_pointage: date,
+        heure_arrivee: null,
+        heure_depart: null,
+        statut: 'present',
+        note: null,
+        ...patch,
+      };
+      return [...prev, nouveau];
+    });
+  }
+
   async function mark(eleveId: string, statut: string, date: string) {
     if (!currentSchoolId) return;
-    setBusy(eleveId + '_' + date);
-    const rec = recByKey.get(eleveId + '_' + date);
+    const key = eleveId + '_' + date;
+    const rec = recByKey.get(key);
+    setBusy(key);
+    // Optimiste : mise à jour locale immédiate, écriture en arrière-plan.
+    applyLocalRecord(eleveId, date, { statut });
     const { error } = await supabase.from('pointages_eleves').upsert({
       ecole_id: currentSchoolId, eleve_id: eleveId, date_pointage: date,
       statut,
@@ -208,18 +257,35 @@ export default function PointageEleves() {
       heure_depart: rec?.heure_depart || null,
       note: rec?.note || null,
     }, { onConflict: 'eleve_id,date_pointage' });
-    if (error) console.error(error);
     setBusy(null);
-    reload();
+    if (error) {
+      console.error(error);
+      // Repli en cas d'échec : on restaure l'état précédent.
+      setRecords(prev => {
+        if (!rec) return prev.filter(r => !(r.eleve_id === eleveId && r.date_pointage === date));
+        const idx = prev.findIndex(r => r.eleve_id === eleveId && r.date_pointage === date);
+        if (idx < 0) return prev;
+        const next = [...prev];
+        next[idx] = rec;
+        return next;
+      });
+    }
   }
 
   async function setTime(eleveId: string, field: 'heure_arrivee' | 'heure_depart', value: string, date: string) {
     if (!currentSchoolId) return;
-    setBusy(eleveId + '_' + date);
-    const rec = recByKey.get(eleveId + '_' + date);
+    const key = eleveId + '_' + date;
+    const rec = recByKey.get(key);
     let statut = rec?.statut || 'present';
     const heureArrivee = field === 'heure_arrivee' ? (value || null) : (rec?.heure_arrivee || null);
     if (heureArrivee && statut === 'present' && compareHeures(heureArrivee.slice(0, 5), config.heureEntree) > 0) statut = 'retard';
+    const patch: Partial<PointageEleveRecord> = {
+      statut,
+      heure_arrivee: heureArrivee,
+      heure_depart: field === 'heure_depart' ? (value || null) : (rec?.heure_depart || null),
+    };
+    setBusy(key);
+    applyLocalRecord(eleveId, date, patch);
     const { error } = await supabase.from('pointages_eleves').upsert({
       ecole_id: currentSchoolId, eleve_id: eleveId, date_pointage: date,
       statut,
@@ -227,9 +293,68 @@ export default function PointageEleves() {
       heure_depart: field === 'heure_depart' ? (value || null) : (rec?.heure_depart || null),
       note: rec?.note || null,
     }, { onConflict: 'eleve_id,date_pointage' });
-    if (error) console.error(error);
     setBusy(null);
-    reload();
+    if (error) {
+      console.error(error);
+      setRecords(prev => {
+        if (!rec) return prev.filter(r => !(r.eleve_id === eleveId && r.date_pointage === date));
+        const idx = prev.findIndex(r => r.eleve_id === eleveId && r.date_pointage === date);
+        if (idx < 0) return prev;
+        const next = [...prev];
+        next[idx] = rec;
+        return next;
+      });
+    }
+  }
+
+  // Marque en un seul clic tous les élèves non pointés comme présents (écriture batchée).
+  async function marquerTousPresent(date: string) {
+    if (!currentSchoolId) return;
+    const rows: { ecole_id: string; eleve_id: string; date_pointage: string; statut: string; heure_arrivee: string | null; heure_depart: string | null; note: string | null }[] = [];
+    for (const e of list) {
+      if (getStatutJour(e.id, date).rec) continue; // déjà pointé
+      rows.push({ ecole_id: currentSchoolId, eleve_id: e.id, date_pointage: date, statut: 'present', heure_arrivee: null, heure_depart: null, note: null });
+    }
+    if (rows.length === 0) return;
+    if (!window.confirm(`Marquer ${rows.length} élève(s) comme présent(s) le ${date} ?`)) return;
+    for (const r of rows) applyLocalRecord(r.eleve_id, date, { statut: 'present' });
+    const { error } = await supabase.from('pointages_eleves').upsert(rows, { onConflict: 'eleve_id,date_pointage' });
+    if (error) { console.error(error); reload(); }
+  }
+
+  // ═══ Pointer par scan QR (lecteur physique = clavier qui tape le QR + Entrée) ═══
+  async function pointerScan(raw: string) {
+    if (!currentSchoolId) return;
+    const matricule = parseScannedMatricule(raw);
+    if (!matricule) { setScanFeedback({ ok: false, msg: 'Scan illisible — aucun matricule détecté.' }); return; }
+    const eleve = eleves.find(e => e.matricule.toUpperCase() === matricule);
+    if (!eleve) { setScanFeedback({ ok: false, msg: 'Matricule introuvable : ' + matricule }); return; }
+    const key = eleve.id + '_' + rapidDate;
+    const rec = recByKey.get(key);
+    if (rec) {
+      setScanFeedback({ ok: true, msg: `${eleve.nom} ${eleve.prenom} — déjà pointé (${STATUT_LABEL[rec.statut] || rec.statut}).` });
+      return;
+    }
+    const heure = new Date().toTimeString().slice(0, 8);
+    const statut = compareHeures(heure.slice(0, 5), config.heureEntree) > 0 ? 'retard' : 'present';
+    // Optimiste : mise à jour immédiate + écriture en arrière-plan.
+    applyLocalRecord(eleve.id, rapidDate, { statut, heure_arrivee: heure });
+    const { error } = await supabase.from('pointages_eleves').upsert({
+      ecole_id: currentSchoolId, eleve_id: eleve.id, date_pointage: rapidDate,
+      statut, heure_arrivee: heure, heure_depart: null, note: null,
+    }, { onConflict: 'eleve_id,date_pointage' });
+    if (error) { console.error(error); reload(); setScanFeedback({ ok: false, msg: 'Erreur d\'enregistrement.' }); return; }
+    setScanFeedback({ ok: true, msg: `${eleve.nom} ${eleve.prenom} — ${STATUT_LABEL[statut]} à ${heure.slice(0, 5)}.` });
+  }
+
+  function onScanSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const v = scanInput;
+    if (!v.trim()) return;
+    setScanInput('');
+    pointerScan(v);
+    // Refocus immédiat pour enchaîner les scans sans toucher la souris.
+    setTimeout(() => scanRef.current?.focus(), 0);
   }
 
   async function exportMonthly() {
@@ -339,6 +464,76 @@ export default function PointageEleves() {
             <div className={'text-2xl font-bold ' + s.cls}>{s.value}</div>
           </div>
         ))}
+      </div>
+
+      {/* ═══ POINTAGE RAPIDE ═══ */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-6">
+        <div className="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-bold text-gray-800 flex items-center gap-2"><Zap className="w-5 h-5 text-amber-500" /> Pointage rapide</h3>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={'text-xs font-semibold ' + (rapidPointes === list.length && list.length > 0 ? 'text-green-600' : 'text-gray-500')}>
+              {rapidPointes} / {list.length} pointé(s)
+            </span>
+            <input type="date" value={rapidDate} onChange={e => setRapidDate(e.target.value)} className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
+            <button
+              onClick={() => marquerTousPresent(rapidDate)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700"
+              title="Marquer tous les élèves non pointés comme présents"
+            >
+              <CheckCheck className="w-4 h-4" /> Tout présent
+            </button>
+          </div>
+        </div>
+        <p className="px-4 pt-3 text-xs text-gray-500">
+          Un clic suffit pour pointer un élève : l'enregistrement est immédiat (sans rechargement de la page) et s'écrit en arrière-plan. Les élèves déjà pointés passent en bas de liste.
+        </p>
+        <form onSubmit={onScanSubmit} className="px-4 pt-2 pb-1">
+          <div className="flex gap-2">
+            <input
+              ref={scanRef}
+              value={scanInput}
+              onChange={e => setScanInput(e.target.value)}
+              placeholder="Scannez la carte QR ici (lecteur USB = clavier : scan + Entrée)…"
+              autoFocus
+              className="flex-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-amber-500"
+            />
+            <button type="submit" className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600">
+              <QrCode className="w-4 h-4" /> Pointer
+            </button>
+          </div>
+          {scanFeedback && (
+            <div className={'mt-2 px-3 py-2 rounded-lg text-sm ' + (scanFeedback.ok ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200')}>
+              {scanFeedback.msg}
+            </div>
+          )}
+        </form>
+        <div className="max-h-[26rem] overflow-y-auto divide-y divide-slate-100 mt-2">
+          {rapidList.map(e => {
+            const s = getStatutJour(e.id, rapidDate);
+            const isMarked = !!s.rec;
+            const baseBtn = 'px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors ';
+            return (
+              <div key={e.id} className={'flex items-center gap-2 px-4 py-2 ' + (isMarked ? 'bg-slate-50' : 'bg-white')}>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-800 truncate">{e.nom} {e.postnom ? e.postnom + ' ' : ''}{e.prenom}</div>
+                  <div className="text-[11px] text-gray-400">{e.matricule} · {e.section}{e.classe ? ' · ' + e.classe : ''}</div>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {(['present', 'retard', 'absent', 'permission'] as const).map(st => (
+                    <button
+                      key={st}
+                      onClick={() => mark(e.id, st, rapidDate)}
+                      className={baseBtn + (s.rec && s.statut === st ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-slate-200 hover:bg-blue-50')}
+                    >
+                      {STATUT_LABEL[st]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {rapidList.length === 0 && <div className="text-center py-8 text-gray-400 text-sm">Aucun élève.</div>}
+        </div>
       </div>
 
       {/* Recherche */}

@@ -374,55 +374,74 @@ export default function PortailRecouvrement() {
     setResultat({ type: 'loading' });
 
     try {
-      // Vérification limitée à CETTE école — pas de repli inter-écoles
-      const matriculeTrim = matricule.trim();
-      const { data: eleve } = await supabase
-        .from('eleves')
-        .select('*')
-        .eq('ecole_id', schoolId)
-        .ilike('matricule', matriculeTrim)
-        .maybeSingle();
-      if (!eleve) {
-        const { data: autre } = await supabase
-          .from('eleves')
-          .select('ecole_id')
-          .ilike('matricule', matriculeTrim)
-          .maybeSingle();
-        if (autre) {
+      // ═══ Voie rapide : UNE SEULE requête via la fonction SQL (élève + paiement) ═══
+      // Le matricule est normalisé en MAJUSCULES (il est unique et stocké en majuscules).
+      const matriculeTrim = matricule.trim().toUpperCase();
+      const motif = motifId ? motifs.find(m => m.id === motifId) : undefined;
+      const anneeScolaire = anneeScolaireDepuis(moisActuel, year);
+
+      const { data: rpcData, error: rpcError } = await supabase.rpc('verifier_statut_eleve', {
+        p_ecole: schoolId,
+        p_matricule: matriculeTrim,
+        p_mois: moisActuel,
+        p_annee: anneeScolaire,
+        p_motif_libelle: motif ? motif.libelle.trim() : null,
+      });
+
+      if (!rpcError && rpcData) {
+        if (rpcData.autre_ecole) {
           setResultat(null);
           setScanError('Cette carte appartient à une autre école : la vérification est refusée ici.');
-        } else {
+        } else if (!rpcData.trouve) {
           setResultat({ type: 'introuvable' });
+        } else {
+          const info: EleveInfo = {
+            matricule: rpcData.eleve.matricule, nom: rpcData.eleve.nom, postnom: rpcData.eleve.postnom, prenom: rpcData.eleve.prenom,
+            section: rpcData.eleve.section, classe: rpcData.eleve.classe || null, photo_url: rpcData.eleve.photo_url || null,
+          };
+          if (rpcData.paiement) {
+            setResultat({ type: 'en_ordre', eleve: info, paiement: {
+              id: rpcData.paiement.id, montant_paye: rpcData.paiement.montant_paye, date_paiement: rpcData.paiement.date_paiement,
+              type_paiement: rpcData.paiement.type_paiement, motif_libelle: rpcData.paiement.motif_libelle || '', statut: rpcData.paiement.statut,
+              created_at: rpcData.paiement.created_at,
+            }});
+          } else {
+            setResultat({ type: 'pas_en_ordre', eleve: info });
+          }
         }
+        return;
+      }
+
+      // ═══ Repli (migration SQL pas encore appliquée) — requêtes directes optimisées ═══
+      const { data: eleve } = await supabase
+        .from('eleves')
+        .select('id, matricule, nom, postnom, prenom, section, classe, photo_url, ecole_id')
+        .eq('matricule', matriculeTrim)
+        .maybeSingle();
+      if (!eleve) {
+        setResultat({ type: 'introuvable' });
+        return;
+      }
+      if (eleve.ecole_id !== schoolId) {
+        setResultat(null);
+        setScanError('Cette carte appartient à une autre école : la vérification est refusée ici.');
         return;
       }
 
       const info: EleveInfo = {
         matricule: eleve.matricule, nom: eleve.nom, postnom: eleve.postnom, prenom: eleve.prenom,
-        section: eleve.section, classe: (eleve as any).classe || null, photo_url: (eleve as any).photo_url || null,
+        section: eleve.section, classe: eleve.classe || null, photo_url: eleve.photo_url || null,
       };
 
-      // Check payment for selected month, motif and année.
-      // L'élève peut avoir été retrouvé via le repli dans une AUTRE école que celle résolue
-      // par le portail (ex : portail sur CSES, élève de CSGA) → on filtre par l'école RÉELLE
-      // de l'élève (eleve.ecole_id), sinon son paiement ne serait jamais trouvé.
-      const eleveEcoleId = (eleve as any).ecole_id || schoolId;
       let query = supabase.from('paiements')
-        .select('*')
-        .eq('ecole_id', eleveEcoleId)
+        .select('id, montant_paye, date_paiement, type_paiement, motif_libelle, statut, created_at')
+        .eq('ecole_id', schoolId)
         .eq('eleve_id', eleve.id)
         .eq('mois_minerval', moisActuel)
-        // Un paiement « en_attente » est déjà effectué (seuls les paiements annulés
-        // ne comptent pas) — cohérent avec PaymentFormModal.fetchPaidMonths.
         .neq('statut', 'annule')
         .order('created_at', { ascending: false });
-      query = query.eq('annee_scolaire', anneeScolaireDepuis(moisActuel, year));
-      if (motifId) {
-        // Les paiements de minerval ont motif_id NULL (le mois est dans mois_minerval) :
-        // le filtre par motif doit donc se faire sur le LIBELLÉ (motif_libelle), pas sur motif_id.
-        const motif = motifs.find(m => m.id === motifId);
-        if (motif) query = query.eq('motif_libelle', motif.libelle.trim());
-      }
+      query = query.eq('annee_scolaire', anneeScolaire);
+      if (motif) query = query.eq('motif_libelle', motif.libelle.trim());
       const { data: paiement } = await query.maybeSingle();
 
       if (paiement) {
