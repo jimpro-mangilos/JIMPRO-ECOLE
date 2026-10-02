@@ -361,8 +361,8 @@ export default function Personnel() {
       </div>
 
       {/* Filtres */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-col md:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-col gap-3">
+        <div className="relative w-full">
           <Search className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             value={search}
@@ -371,37 +371,39 @@ export default function Personnel() {
             className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        <select value={filterFonction} onChange={e => setFilterFonction(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
-          <option value="">Toutes les fonctions</option>
-          {fonctions.map(f => <option key={f} value={f}>{f}</option>)}
-        </select>
-        <select value={filterStatut} onChange={e => setFilterStatut(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
-          <option value="">Tous les statuts</option>
-          {Object.entries(STATUT_PERSONNEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-        <select value={filterPhoto} onChange={e => setFilterPhoto(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white" title="Filtrer par présence de photo">
-          <option value="">Toutes les photos</option>
-          <option value="avec">Avec photo</option>
-          <option value="sans">Sans photo</option>
-        </select>
-        <button
-          onClick={printSelectedCartes}
-          disabled={printingAll || filtered.length === 0}
-          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 font-semibold disabled:opacity-50 whitespace-nowrap transition-colors"
-          title="Imprimer les cartes (recto) des membres sélectionnés (8 par feuille A4)"
-        >
-          {printingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-          Cartes sélectionnées ({selectedIds.size}) — 8/feuille
-        </button>
-        <button
-          onClick={printSelectedVersos}
-          disabled={printingAll || selectedIds.size === 0}
-          className="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 font-semibold disabled:opacity-50 whitespace-nowrap transition-colors"
-          title="Imprimer les versos universels selon le nombre de membres sélectionnés (8 par feuille A4)"
-        >
-          {printingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-          Imprimer les versos ({selectedIds.size}) — 8/feuille
-        </button>
+        <div className="flex flex-col md:flex-row gap-3 md:items-center flex-wrap">
+          <select value={filterFonction} onChange={e => setFilterFonction(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+            <option value="">Toutes les fonctions</option>
+            {fonctions.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+          <select value={filterStatut} onChange={e => setFilterStatut(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+            <option value="">Tous les statuts</option>
+            {Object.entries(STATUT_PERSONNEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+          <select value={filterPhoto} onChange={e => setFilterPhoto(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white" title="Filtrer par présence de photo">
+            <option value="">Toutes les photos</option>
+            <option value="avec">Avec photo</option>
+            <option value="sans">Sans photo</option>
+          </select>
+          <button
+            onClick={printSelectedCartes}
+            disabled={printingAll || filtered.length === 0}
+            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 font-semibold disabled:opacity-50 whitespace-nowrap transition-colors"
+            title="Imprimer les cartes (recto) des membres sélectionnés (8 par feuille A4)"
+          >
+            {printingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+            Cartes sélectionnées ({selectedIds.size}) — 8/feuille
+          </button>
+          <button
+            onClick={printSelectedVersos}
+            disabled={printingAll || selectedIds.size === 0}
+            className="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 font-semibold disabled:opacity-50 whitespace-nowrap transition-colors"
+            title="Imprimer les versos universels selon le nombre de membres sélectionnés (8 par feuille A4)"
+          >
+            {printingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+            Imprimer les versos ({selectedIds.size}) — 8/feuille
+          </button>
+        </div>
       </div>
 
       {/* Tableau */}
