@@ -168,7 +168,7 @@ export async function generateCarteServiceBack(p: CarteService): Promise<void> {
  * Génère les cartes de service de plusieurs membres en cascade (un PDF,
  * une carte par page — 54 × 86 mm). Utilisé par l'impression en lot.
  */
-export async function generateCartesService(list: CarteService[]): Promise<void> {
+export async function generateCartesService(list: CarteService[], onProgress?: (done: number, total: number) => void): Promise<void> {
   if (!list.length) return;
   const schoolName = (await loadSchoolName()) || 'ÉTABLISSEMENT';
   const logo = await loadLogoBase64();
@@ -180,6 +180,7 @@ export async function generateCartesService(list: CarteService[]): Promise<void>
     const canvas = await renderCarteServiceToCanvas(p, schoolName, logo || null, qrDataUrl);
     if (i > 0) doc.addPage([CARD_W, CARD_H], 'portrait');
     doc.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, CARD_W, CARD_H);
+    onProgress?.(i + 1, list.length);
   }
   exporterPdf(doc, `Cartes-service-${list.length}-membres.pdf`);
 }
@@ -190,7 +191,7 @@ export async function generateCartesService(list: CarteService[]): Promise<void>
  * ORIENTATION PAYSAGE (297 × 210 mm), 8 cartes par feuille (4 colonnes × 2 rangées),
  * avec des marges entre les cartes pour faciliter la découpe.
  */
-export async function generateCartesService8PerSheet(list: CarteService[]): Promise<void> {
+export async function generateCartesService8PerSheet(list: CarteService[], onProgress?: (done: number, total: number) => void): Promise<void> {
   if (!list.length) return;
   const schoolName = (await loadSchoolName()) || 'ÉTABLISSEMENT';
   const logo = await loadLogoBase64();
@@ -219,6 +220,7 @@ export async function generateCartesService8PerSheet(list: CarteService[]): Prom
     const x = MARGIN + col * cellW + (cellW - CARD_W) / 2;
     const y = MARGIN + row * cellH + (cellH - CARD_H) / 2;
     doc.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', x, y, CARD_W, CARD_H);
+    onProgress?.(i + 1, list.length);
   }
   exporterPdf(doc, `Cartes-service-${list.length}-membres.pdf`);
 }
@@ -271,7 +273,7 @@ async function renderCarteServiceBackToCanvas(schoolName: string, logoUrl: strin
  * sélectionnés : le verso est rendu UNE fois puis reproduit N fois, 8 par feuille A4
  * paysage (4 colonnes × 2 rangées), pages en cascade.
  */
-export async function generateCartesServiceBack8PerSheet(nb: number): Promise<void> {
+export async function generateCartesServiceBack8PerSheet(nb: number, onProgress?: (done: number, total: number) => void): Promise<void> {
   if (!nb || nb <= 0) return;
   const { schoolName, logo, telephone } = await chargerInfosEtablissement();
   const canvas = await renderCarteServiceBackToCanvas(schoolName, logo, telephone);
@@ -295,6 +297,7 @@ export async function generateCartesServiceBack8PerSheet(nb: number): Promise<vo
     const x = MARGIN + col * cellW + (cellW - CARD_W) / 2;
     const y = MARGIN + row * cellH + (cellH - CARD_H) / 2;
     doc.addImage(img, 'JPEG', x, y, CARD_W, CARD_H);
+    onProgress?.(i + 1, nb);
   }
   exporterPdf(doc, 'Versos-carte-service-' + nb + '.pdf');
 }

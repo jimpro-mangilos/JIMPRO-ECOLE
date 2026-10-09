@@ -18,6 +18,7 @@ import { generateBulletinNotes } from '../utils/bulletinNotesGenerator';
 import { useLogo } from '../contexts/LogoContext';
 import { useAuth } from '../contexts/AuthContext';
 import { compressPhoto } from '../utils/photoCompression';
+import ProgressBar from '../components/ProgressBar';
 
 type Eleve = Database['public']['Tables']['eleves']['Row'];
 
@@ -266,11 +267,12 @@ export default function Eleves() {
                     sexe: e.sexe, section: e.section, option: e.option, classe: e.classe,
                     date_naissance: e.date_naissance, photo_url: (e as any).photo_url,
                   }));
-                  const doc = await generateCartesEtudiants(batch, schoolName, logoBase64 || logoUrl);
+                  const doc = await generateCartesEtudiants(batch, schoolName, logoBase64 || logoUrl, (doneInBatch) => {
+                    setGeneratingProgress({ current: Math.min(i + doneInBatch, total), total });
+                  });
                   const batchNum = Math.floor(i / BATCH) + 1;
                   const totalBatches = Math.ceil(total / BATCH);
                   doc.save(`cartes-etudiants-${batchNum}-sur-${totalBatches}.pdf`);
-                  setGeneratingProgress({ current: Math.min(i + BATCH, total), total });
                   // Small delay to let browser save the file
                   await new Promise(r => setTimeout(r, 300));
                 }
@@ -296,6 +298,17 @@ export default function Eleves() {
           )}
         </div>
       </div>
+
+      {generatingCartes && generatingProgress.total > 0 && (
+        <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+          <ProgressBar
+            label="Génération des cartes d'élèves"
+            value={(generatingProgress.current / generatingProgress.total) * 100}
+            current={generatingProgress.current}
+            total={generatingProgress.total}
+          />
+        </div>
+      )}
 
       {/* Section Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

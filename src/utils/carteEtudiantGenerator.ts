@@ -30,6 +30,7 @@ export async function generateCartesEtudiants(
   eleves: CarteEleve[],
   schoolName: string,
   logoUrl?: string | null,
+  onProgress?: (done: number, total: number) => void,
 ): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const perRow = 2, perCol = 4, perPage = perRow * perCol;
@@ -46,6 +47,7 @@ export async function generateCartesEtudiants(
     const qr = await generateQrDataUrl(eleves[i]);
     const canvas = await renderCarteEleveToCanvas(eleves[i], schoolName, logoUrl ?? null, qr, 2);
     doc.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', x, y, CARD_W, CARD_H);
+    onProgress?.(i + 1, eleves.length);
   }
   return doc;
 }

@@ -18,6 +18,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateCarteService, generateCarteServiceBack, generateCartesService8PerSheet, generateCartesServiceBack8PerSheet } from '../utils/carteServiceGenerator';
 import CameraCapture from '../components/CameraCapture';
+import ProgressBar from '../components/ProgressBar';
 import { compressImage } from '../utils/compressImage';
 import { formatDateTime, calculerAnciennete } from '../utils/calculations';
 
@@ -82,6 +83,7 @@ export default function Personnel() {
   const [editing, setEditing] = useState<PersonnelRecord | null>(null);
   const [saving, setSaving] = useState(false);
   const [printingAll, setPrintingAll] = useState(false);
+  const [printingProgress, setPrintingProgress] = useState({ current: 0, total: 0 });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const [form, setForm] = useState<PersonnelForm>(EMPTY_FORM);
@@ -170,12 +172,14 @@ export default function Personnel() {
     }
     if (!confirm(`Imprimer ${selected.length} carte(s) de service (8 par feuille A4) ?`)) return;
     setPrintingAll(true);
+    setPrintingProgress({ current: 0, total: selected.length });
     try {
-      await generateCartesService8PerSheet(selected);
+      await generateCartesService8PerSheet(selected, (done) => setPrintingProgress({ current: done, total: selected.length }));
     } catch {
       alert('Erreur lors de la génération des cartes.');
     } finally {
       setPrintingAll(false);
+      setPrintingProgress({ current: 0, total: 0 });
     }
   }
 
@@ -187,12 +191,14 @@ export default function Personnel() {
     }
     if (!confirm(`Imprimer ${selected.length} verso(s) universels (8 par feuille A4) ?`)) return;
     setPrintingAll(true);
+    setPrintingProgress({ current: 0, total: selected.length });
     try {
-      await generateCartesServiceBack8PerSheet(selected.length);
+      await generateCartesServiceBack8PerSheet(selected.length, (done) => setPrintingProgress({ current: done, total: selected.length }));
     } catch {
       alert('Erreur lors de la génération des versos.');
     } finally {
       setPrintingAll(false);
+      setPrintingProgress({ current: 0, total: 0 });
     }
   }
 
@@ -405,6 +411,17 @@ export default function Personnel() {
           </button>
         </div>
       </div>
+
+      {printingAll && printingProgress.total > 0 && (
+        <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 mb-4">
+          <ProgressBar
+            label="Génération des cartes de service"
+            value={(printingProgress.current / printingProgress.total) * 100}
+            current={printingProgress.current}
+            total={printingProgress.total}
+          />
+        </div>
+      )}
 
       {/* Tableau */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
