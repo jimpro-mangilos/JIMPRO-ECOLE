@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { CalendarDays, UserCheck, Clock, CheckCircle2, XCircle, Search, FileDown, Settings2, ShieldCheck, ShieldX, CalendarRange, User, Eye } from 'lucide-react';
+import { CalendarDays, UserCheck, Clock, CheckCircle2, XCircle, Search, FileDown, Settings2, ShieldCheck, ShieldX, CalendarRange, User, Eye, Fingerprint } from 'lucide-react';
 import { enApercu } from '../utils/pdfExport';
 import { usePersonnel } from '../lib/hooks/usePersonnel';
 import { STATUT_POINTAGE, type PointageRecord, type PointageConfig, type FonctionHeures, loadPointageConfig, loadFonctionsHeures, heuresPourFonction, compareHeures, formatDatePointage } from '../lib/hooks/usePointage';
@@ -11,6 +11,7 @@ import { formatDateTime } from '../utils/calculations';
 import { generatePointageSalaireReport } from '../utils/pointageSalaireReportGenerator';
 import { generateBulletinPaie } from '../utils/bulletinPaieGenerator';
 import { generateFichePresence } from '../utils/presenceReportGenerator';
+import GestionEmpreintes from '../components/GestionEmpreintes';
 
 function todayStr(): string {
   const d = new Date();
@@ -65,6 +66,7 @@ export default function PointagePersonnel() {
   const [retenuesPec, setRetenuesPec] = useState<Record<string, number>>({});
   // Solde des prises en charge non encore déduites des mois PRÉCÉDENTS (report automatique)
   const [balancesPec, setBalancesPec] = useState<Record<string, number>>({});
+  const [showEmpreintes, setShowEmpreintes] = useState(false);
 
   const today = todayStr();
   const [year, m] = month.split('-').map(Number);
@@ -481,6 +483,13 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowEmpreintes(s => !s)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border ${showEmpreintes ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'}`}
+            title="Enrôler / gérer les empreintes digitales de la borne"
+          >
+            <Fingerprint className="w-4 h-4" /> Empreintes
+          </button>
           <CalendarDays className="w-4 h-4 text-gray-400" />
           <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
           <button onClick={exportSalaires} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700" title="Exporter le tableau des salaires du mois (PDF)">
@@ -512,6 +521,9 @@ function StatutChip({ statut, auto, permissionPayee, size = 'md' }: { statut: st
           </div>
         ))}
       </div>
+
+      {/* ═══ Empreintes digitales (borne) ═══ */}
+      {showEmpreintes && <GestionEmpreintes />}
 
       {/* Alertes retards récurrents */}
       {membresAlerte.length > 0 && (
