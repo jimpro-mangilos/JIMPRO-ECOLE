@@ -13,6 +13,8 @@ dist/
 # Secrets (TRÈS IMPORTANT)
 .env
 .env.*
+# ... mais les modèles d'exemple ne sont pas secrets et doivent être versionnés
+!.env.example
 
 # Logs et caches
 *.log
@@ -24,3 +26,7 @@ dist/
 # Environnement (contient les secrets)
 .env
 .env.local
+
+# Runtime du pont pointeuses (agent Node / script Python)
+borne-pointage/last-sync.json
+borne-pointage/queue-offline.json

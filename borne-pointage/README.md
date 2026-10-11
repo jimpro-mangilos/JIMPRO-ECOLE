@@ -79,6 +79,31 @@ Dans **Supabase → SQL Editor**, exécutez :
 - Posez un doigt enrôlé : la ligne apparaît **instantanément** (abonnement Realtime déjà en place),
   arrivée ou départ selon l'heure, source `empreinte`.
 
+## 7) Alternative Python — pointeuses ZKTeco (sync-pointeuses.py)
+
+Si vos pointeuses sont des **ZKTeco** (port 4370), vous pouvez aussi utiliser le
+script Python `sync-pointeuses.py` (au lieu de l'agent Node) :
+
+1. `pip install -r requirements.txt` (pyzk + supabase).
+2. Adaptez la liste `DEVICES` en haut du script (IP + `appareil_id` de chaque
+   pointeuse ; `appareil_id` = le champ « Appareil » saisi lors de l'enrôlement).
+3. `cp .env.example .env` puis renseignez (URL, clé anon, compte borne, école).
+4. Enrôlez chaque employé **sur la pointeuse** : notez son `user_id` (numéro), puis
+   dans l'app (Pointage → Empreintes) saisissez **Référence = ce user_id** et
+   l'**Appareil** correspondant à la pointeuse.
+5. Lancez : `python3 sync-pointeuses.py` (boucle continue) ou `--once` (cron).
+
+Le script :
+- déduplique (mémorise le dernier pointage synchronisé dans `last-sync.json`) ;
+- met en file `queue-offline.json` et rejoue en cas de coupure réseau ;
+- appelle la MÊME fonction `pointer_personnel_borne()` que l'agent Node et le
+  portail (arrivée → départ → déjà complet).
+
+> ⚠️ Les pointeuses doivent être réglées sur le fuseau `Africa/Lubumbashi`.
+> La logique actuelle enregistre **2 pointages par jour** (arrivée puis départ) :
+> si un employé pointe plus de 2 fois (pause déjeuner), les pointages
+> intermédiaires sont ignorés par la fonction SQL (à faire évoluer si besoin).
+
 ## Sécurité & fiabilité
 - **Jamais de clé *service role* sur la borne** : compte dédié + RLS + fonction SECURITY DEFINER.
 - Gardez le **QR / code manuel** (portail existant) en secours si le lecteur tombe en panne.

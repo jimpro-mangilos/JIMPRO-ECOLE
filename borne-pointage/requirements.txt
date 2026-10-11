@@ -1,0 +1,3 @@
+# Dépendances Python pour sync-pointeuses.py
+pyzk>=0.9
+supabase>=2.0
