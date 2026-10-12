@@ -60,4 +60,8 @@ BEGIN
 END;
 $$;
 
+-- Sécurité : la fonction écrit dans pointages_personnel (SECURITY DEFINER).
+-- On retire le droit d'exécution par défaut (PUBLIC/anon) puis on ne le donne
+-- qu'aux utilisateurs connectés (le compte « borne »).
+REVOKE EXECUTE ON FUNCTION public.pointer_personnel_borne(uuid, uuid, date, time, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.pointer_personnel_borne(uuid, uuid, date, time, text) TO authenticated;
