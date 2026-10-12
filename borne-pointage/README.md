@@ -84,7 +84,12 @@ Dans **Supabase → SQL Editor**, exécutez :
 Si vos pointeuses sont des **ZKTeco** (port 4370), vous pouvez aussi utiliser le
 script Python `sync-pointeuses.py` (au lieu de l'agent Node) :
 
-1. `pip install -r requirements.txt` (pyzk + supabase).
+1. Créez un environnement virtuel puis installez (le venv évite l'erreur
+   « externally-managed-environment » sur Debian/Ubuntu) :
+   ```bash
+   python3 -m venv .venv && source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
 2. Adaptez la liste `DEVICES` en haut du script (IP + `appareil_id` de chaque
    pointeuse ; `appareil_id` = le champ « Appareil » saisi lors de l'enrôlement).
 3. `cp .env.example .env` puis renseignez (URL, clé anon, compte borne, école).
@@ -100,9 +105,8 @@ Le script :
   portail (arrivée → départ → déjà complet).
 
 > ⚠️ Les pointeuses doivent être réglées sur le fuseau `Africa/Lubumbashi`.
-> La logique actuelle enregistre **2 pointages par jour** (arrivée puis départ) :
-> si un employé pointe plus de 2 fois (pause déjeuner), les pointages
-> intermédiaires sont ignorés par la fonction SQL (à faire évoluer si besoin).
+> La fonction enregistre le **premier** pointage du jour comme l'arrivée et le
+> **dernier** comme le départ (les pauses déjeuner sont donc gérées).
 
 ## Sécurité & fiabilité
 - **Jamais de clé *service role* sur la borne** : compte dédié + RLS + fonction SECURITY DEFINER.

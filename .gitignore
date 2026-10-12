@@ -30,3 +30,8 @@ dist/
 # Runtime du pont pointeuses (agent Node / script Python)
 borne-pointage/last-sync.json
 borne-pointage/queue-offline.json
+
+# Python (environnement virtuel + caches)
+.venv/
+__pycache__/
+*.pyc

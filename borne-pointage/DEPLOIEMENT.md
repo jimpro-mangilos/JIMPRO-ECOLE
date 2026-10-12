@@ -52,9 +52,13 @@ SELECT to_regclass('public.empreintes_personnel') AS table_ok,
 ## Étape 3 — Configurer le poste de la borne
 ```bash
 cd borne-pointage
-pip install -r requirements.txt        # pour le script Python
+python3 -m venv .venv                  # créer l'environnement virtuel (1re fois)
+source .venv/bin/activate              # l'activer
+pip install -r requirements.txt        # pyzk + supabase
 cp .env.example .env                   # puis éditer .env
 ```
+> Sur Debian/Ubuntu, `pip install` échoue avec « externally-managed-environment »
+> (PEP 668) : c'est normal. L'environnement virtuel `.venv` contourne ce blocage.
 Renseigner dans `.env` :
 - `SUPABASE_URL` (ex. `https://xxxx.supabase.co`)
 - `SUPABASE_ANON_KEY` (la clé anon, la même que l'app)
@@ -76,9 +80,13 @@ chaque pointeuse).
 
 ## Étape 5 — Lancer et tester
 ```bash
+# depuis borne-pointage, après `source .venv/bin/activate` :
 python3 sync-pointeuses.py          # boucle continue
 # ou une seule passe :
 python3 sync-pointeuses.py --once
+
+# sans activer le venv :
+.venv/bin/python3 sync-pointeuses.py
 ```
 
 Test de bout en bout :
