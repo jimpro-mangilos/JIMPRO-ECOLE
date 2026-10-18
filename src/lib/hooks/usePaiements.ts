@@ -58,14 +58,14 @@ export function usePaiements(filters: PaiementFilters) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // ─── Data Queries ──────────────────────────────────────────────────────────
-  const { data: rawRows = [], isLoading: loading } = useQuery({
+  const { data: result = { rows: [], total: 0 }, isLoading: loading } = useQuery({
     // ⚡ Chargement progressif + recherche côté serveur : on ne télécharge que
     // les `visibleCount` premiers paiements (et uniquement ceux qui matchent la
     // recherche), au lieu des ~10 000 lignes complètes à chaque ouverture.
     queryKey: [...queryKeys.paiements.all, 'v5', { schoolId: currentSchoolId, mode: filters.viewMode, search: filters.searchTerm, visibleCount, userId: user?.id }],
     queryFn: async () => {
       const iso = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      const base = () => supabase.from('paiements').select('*').eq('ecole_id', currentSchoolId);
+      const base = () => supabase.from('paiements').select('*', { count: 'exact' }).eq('ecole_id', currentSchoolId);
       const now = new Date();
       let q: any;
       if (filters.viewMode === 'journalier') {
@@ -91,16 +91,17 @@ export function usePaiements(filters: PaiementFilters) {
         q = q.or('nom_eleve.ilike.%' + s + '%,matricule.ilike.%' + s + '%,numero_recu.ilike.%' + s + '%,classe.ilike.%' + s + '%');
       }
       q = q.order('created_at', { ascending: false });
-      // On charge visibleCount + 1 lignes pour détecter s'il en reste (hasMore).
-      const { data, error } = await q.range(0, visibleCount);
+      // On ne charge que visibleCount lignes ; `count` renvoie le total exact
+      // (indépendant de la limite → « Charger plus » fiable au-delà de 1 000).
+      const { data, count, error } = await q.range(0, visibleCount - 1);
       if (error) throw error;
-      return (data || []) as Paiement[];
+      return { rows: (data || []) as Paiement[], total: count ?? 0 };
     },
     staleTime: 60 * 1000,
   });
 
-  const hasMore = rawRows.length > visibleCount;
-  const paiements = hasMore ? rawRows.slice(0, visibleCount) : rawRows;
+  const hasMore = result.total > visibleCount;
+  const paiements = result.rows;
   const loadMore = useCallback(() => setVisibleCount(c => c + PAGE_SIZE), []);
 
   const { data: typesPaiement = [] } = useQuery({

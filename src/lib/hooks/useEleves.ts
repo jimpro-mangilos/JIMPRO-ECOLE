@@ -110,34 +110,20 @@ export function useEleves(filters: UseElevesOptions) {
     staleTime: 60 * 1000,
   });
 
-  // Load paid eleve IDs for current month
+  // Load paid eleve IDs for current month (SECURITY DEFINER : tous les rôles
+  // peuvent connaître les élèves « en ordre » sans lire directement la table paiements).
   const { data: paidEleveIds = new Set<string>() } = useQuery({
     queryKey: ['eleves', 'paidThisMonth', { schoolId: currentSchoolId }],
     queryFn: async () => {
-      // ⚠️ Pagination obligatoire : la limite par défaut de Supabase est 1000 lignes —
-      // sans boucle, des centaines d'élèves payés resteraient « PAS EN ORDRE ».
-      const set = new Set<string>();
-      const PAGE = 1000;
-      let from = 0;
-      while (true) {
-        const to = from + PAGE - 1;
-        const { data, error } = await supabase
-          .from('paiements')
-          .select('eleve_id')
-          .eq('ecole_id', currentSchoolId)
-          .eq('mois_minerval', getCurrentMoisMinerval())
-          // Un paiement « en_attente » ou « encaisse » est déjà effectué : seuls les
-          // paiements annulés ne comptent pas (cohérent avec fetchPaidMonths et le
-          // portail de recouvrement).
-          .neq('statut', 'annule')
-          .range(from, to);
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        for (const p of data as { eleve_id: string }[]) set.add(p.eleve_id);
-        if (data.length < PAGE) break;
-        from += PAGE;
-      }
-      return set;
+      const { data, error } = await supabase.rpc('get_paid_eleve_ids', {
+        p_ecole: currentSchoolId,
+        p_mois: getCurrentMoisMinerval(),
+      });
+      if (error) throw error;
+      // La fonction renvoie un jsonb (tableau d'ids) : PostgREST peut le rendre
+      // en tableau déjà parsé OU en chaîne JSON selon les cas.
+      const ids = Array.isArray(data) ? data : (typeof data === 'string' ? JSON.parse(data) : []);
+      return new Set<string>(ids as string[]);
     },
     staleTime: 60 * 1000,
   });

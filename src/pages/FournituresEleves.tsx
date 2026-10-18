@@ -122,22 +122,21 @@ export default function FournituresEleves() {
     };
   }, [showScanner]);
 
-  const loadDistributions = async (count = visibleCount) => {
+  const loadDistributions = async (maxRows = visibleCount) => {
     try {
       setLoading(true);
-      // ⚡ Chargement progressif : on ne charge que `count` lignes (+1 pour
-      // détecter s'il en reste), au lieu des ~8 000 lignes complètes.
-      const { data, error } = await supabase
+      // ⚡ Chargement progressif : `count` renvoie le total exact (fiable même
+      // au-delà de 1 000 lignes, contrairement à un simple décompte de la page).
+      const { data, count, error } = await supabase
         .from('gestion_uniformes')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('ecole_id', currentSchoolId)
         .order('date_distribution', { ascending: false })
-        .range(0, count);
+        .range(0, maxRows - 1);
 
       if (error) throw error;
-      const rows = (data || []) as DistributionUniforme[];
-      setHasMore(rows.length > count);
-      setDistributions(rows.slice(0, count));
+      setHasMore((count ?? 0) > maxRows);
+      setDistributions((data || []) as DistributionUniforme[]);
     } catch (error) {
       console.error('Erreur:', error);
     } finally {
