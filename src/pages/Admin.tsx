@@ -3,6 +3,7 @@ import { suppressionAuth } from '../components/SuppressionAuth';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Plus, CreditCard as Edit2, Trash2, Shield, Check, AlertCircle, Search, Loader2 } from 'lucide-react';
+import GestionAppareils from '../components/GestionAppareils';
 
 interface Profile {
   id: string;
@@ -474,6 +475,9 @@ export default function Admin() {
           </div>
         ))}
       </div>
+
+      {/* ═══ Gestion des appareils de confiance ═══ */}
+      {canManageUsers && <GestionAppareils />}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
