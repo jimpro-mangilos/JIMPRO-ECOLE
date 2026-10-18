@@ -125,18 +125,29 @@ export default function FournituresEleves() {
   const loadDistributions = async (maxRows = visibleCount) => {
     try {
       setLoading(true);
-      // ⚡ Chargement progressif : `count` renvoie le total exact (fiable même
-      // au-delà de 1 000 lignes, contrairement à un simple décompte de la page).
-      const { data, count, error } = await supabase
-        .from('gestion_uniformes')
-        .select('*', { count: 'exact' })
-        .eq('ecole_id', currentSchoolId)
-        .order('date_distribution', { ascending: false })
-        .range(0, maxRows - 1);
-
-      if (error) throw error;
-      setHasMore((count ?? 0) > maxRows);
-      setDistributions((data || []) as DistributionUniforme[]);
+      // Pagination par lots de 1000 (limite PostgREST) pour récupérer jusqu'à
+      // `maxRows` lignes.
+      const PAGE = 1000;
+      const all: DistributionUniforme[] = [];
+      let total = 0;
+      let from = 0;
+      while (all.length < maxRows) {
+        const to = Math.min(from + PAGE - 1, maxRows - 1);
+        const { data, count, error } = await supabase
+          .from('gestion_uniformes')
+          .select('*', { count: 'exact' })
+          .eq('ecole_id', currentSchoolId)
+          .order('date_distribution', { ascending: false })
+          .range(from, to);
+        if (error) throw error;
+        if (count != null) total = count;
+        if (!data || data.length === 0) break;
+        all.push(...(data as DistributionUniforme[]));
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      setHasMore(total > maxRows);
+      setDistributions(all);
     } catch (error) {
       console.error('Erreur:', error);
     } finally {

@@ -92,11 +92,24 @@ export function usePaiements(filters: PaiementFilters) {
         q = q.or('nom_eleve.ilike.%' + s + '%,matricule.ilike.%' + s + '%,numero_recu.ilike.%' + s + '%,classe.ilike.%' + s + '%');
       }
       q = q.order('created_at', { ascending: false });
-      // On ne charge que visibleCount lignes ; `count` renvoie le total exact
-      // (indépendant de la limite → « Charger plus » fiable au-delà de 1 000).
-      const { data, count, error } = await q.range(0, visibleCount - 1);
-      if (error) throw error;
-      return { rows: (data || []) as Paiement[], total: count ?? 0 };
+      // Pagination par lots de 1000 (limite PostgREST) pour récupérer jusqu'à
+      // `visibleCount` lignes : une seule requête est plafonnée à 1000 lignes,
+      // même pour « Tout charger ».
+      const PAGE = 1000;
+      const all: Paiement[] = [];
+      let total = 0;
+      let from = 0;
+      while (all.length < visibleCount) {
+        const to = Math.min(from + PAGE - 1, visibleCount - 1);
+        const { data, count, error } = await q.range(from, to);
+        if (error) throw error;
+        if (count != null) total = count;
+        if (!data || data.length === 0) break;
+        all.push(...(data as Paiement[]));
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return { rows: all, total };
     },
     staleTime: 60 * 1000,
   });
