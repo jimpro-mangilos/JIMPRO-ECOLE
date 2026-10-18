@@ -56,6 +56,7 @@ export function usePaiements(filters: PaiementFilters) {
   );
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set(['__first__']));
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loadAll, setLoadAll] = useState(false);
 
   // ─── Data Queries ──────────────────────────────────────────────────────────
   const { data: result = { rows: [], total: 0 }, isLoading: loading } = useQuery({
@@ -102,7 +103,16 @@ export function usePaiements(filters: PaiementFilters) {
 
   const hasMore = result.total > visibleCount;
   const paiements = result.rows;
-  const loadMore = useCallback(() => setVisibleCount(c => c + PAGE_SIZE), []);
+  const loadMore = useCallback(() => {
+    if (!loadAll) {
+      // 1er clic : +500 (aperçu rapide)
+      setVisibleCount(c => c + PAGE_SIZE);
+      setLoadAll(true);
+    } else {
+      // 2e clic : charger tout le reste
+      setVisibleCount(result.total || Number.MAX_SAFE_INTEGER);
+    }
+  }, [loadAll, result.total]);
 
   const { data: typesPaiement = [] } = useQuery({
     queryKey: queryKeys.typesPaiement.active,
@@ -296,6 +306,7 @@ export function usePaiements(filters: PaiementFilters) {
     loading,
     hasMore,
     loadMore,
+    loadAll,
     stats,
     motifOptions,
     dateGroups,

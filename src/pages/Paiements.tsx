@@ -85,7 +85,7 @@ export default function Paiements() {
   }, [isStrictComptable, filters.viewMode]);
 
   const {
-    paiements, typesPaiement, loading, hasMore, loadMore, stats, motifOptions,
+    paiements, typesPaiement, loading, hasMore, loadMore, loadAll, stats, motifOptions,
     dateGroups, expandedDates,
     toggleDate, expandAllDates, collapseAllDates, allExpanded,
     selectedIds, bulkDeleting,
@@ -258,6 +258,11 @@ export default function Paiements() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-bold">Liste des Paiements</h2>
           <div className="flex items-center gap-2">
+            {hasMore && (
+              <button onClick={loadMore} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm">
+                {loadAll ? 'Tout charger' : 'Charger plus'}
+              </button>
+            )}
             <button onClick={handlePrintReport} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm"><FileDown className="w-4 h-4" /> Rapport</button>
             {selectedIds.size > 0 && (
               <>
@@ -363,15 +368,6 @@ export default function Paiements() {
         })}
         {dateGroups.length === 0 && <div className="px-4 py-12 text-center text-gray-400">Aucun paiement trouvé.</div>}
       </div>
-
-      {/* ⚡ Chargement progressif */}
-      {hasMore && (
-        <div className="mt-3 flex justify-center">
-          <button onClick={loadMore} className="px-6 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm">
-            Charger plus de paiements
-          </button>
-        </div>
-      )}
 
       {/* New Payment Modal */}
       {showModal && <PaymentFormModal isOpen={showModal} onClose={() => setShowModal(false)} onSuccess={() => { invalidate(); setShowModal(false); }} preselectedEleve={undefined} />}
