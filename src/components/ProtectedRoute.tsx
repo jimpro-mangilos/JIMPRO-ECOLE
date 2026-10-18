@@ -29,6 +29,10 @@ export default function ProtectedRoute({
   useEffect(() => {
     if (!user || !profile) return;
     let cancelled = false;
+    // Garde-fou : ne jamais rester bloqué sur « Chargement... » (fail-open après 8 s).
+    const timeout = setTimeout(() => {
+      if (!cancelled) setDeviceStatus('approved');
+    }, 8000);
     (async () => {
       try {
         const { data, error } = await supabase.rpc('register_user_device', {
@@ -36,15 +40,17 @@ export default function ProtectedRoute({
           p_device_name: getDeviceName(),
           p_user_agent: getDeviceUserAgent(),
         });
+        clearTimeout(timeout);
         if (cancelled) return;
         // Fail-open : si la table/fonction n'existe pas encore (migration non
         // appliquée) ou erreur réseau, on ne bloque pas l'application.
         setDeviceStatus(error || !data ? 'approved' : (data as string));
       } catch {
+        clearTimeout(timeout);
         if (!cancelled) setDeviceStatus('approved');
       }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, [user, profile]);
 
   if (loading) {
