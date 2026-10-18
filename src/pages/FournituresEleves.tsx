@@ -44,6 +44,8 @@ export default function FournituresEleves() {
   const { isReadOnly, isItManager, isGestionnaireUniforme, profile, currentSchoolId } = useAuth();
   const [distributions, setDistributions] = useState<DistributionUniforme[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(500);
+  const [hasMore, setHasMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterAnnees, setFilterAnnees] = useState<string[]>([]);
@@ -120,35 +122,33 @@ export default function FournituresEleves() {
     };
   }, [showScanner]);
 
-  const loadDistributions = async () => {
+  const loadDistributions = async (count = visibleCount) => {
     try {
       setLoading(true);
-      // Charge toutes les lignes par lots de 1 000 (limite PostgREST)
-      // sans plafond, au lieu des 1 000 par défaut.
-      const PAGE = 1000;
-      let all: DistributionUniforme[] = [];
-      let from = 0;
-      while (true) {
-        const to = from + PAGE - 1;
-        const { data, error } = await supabase
-          .from('gestion_uniformes')
-          .select('*')
-          .eq('ecole_id', currentSchoolId)
-          .order('date_distribution', { ascending: false })
-          .range(from, to);
+      // ⚡ Chargement progressif : on ne charge que `count` lignes (+1 pour
+      // détecter s'il en reste), au lieu des ~8 000 lignes complètes.
+      const { data, error } = await supabase
+        .from('gestion_uniformes')
+        .select('*')
+        .eq('ecole_id', currentSchoolId)
+        .order('date_distribution', { ascending: false })
+        .range(0, count);
 
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        all = all.concat(data as DistributionUniforme[]);
-        if (data.length < PAGE) break;
-        from += PAGE;
-      }
-      setDistributions(all);
+      if (error) throw error;
+      const rows = (data || []) as DistributionUniforme[];
+      setHasMore(rows.length > count);
+      setDistributions(rows.slice(0, count));
     } catch (error) {
       console.error('Erreur:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMore = () => {
+    const next = visibleCount + 500;
+    setVisibleCount(next);
+    loadDistributions(next);
   };
 
   const handleDistributionSuccess = () => {
@@ -648,6 +648,15 @@ export default function FournituresEleves() {
           </table>
         </div>
       </div>
+
+      {/* ⚡ Chargement progressif */}
+      {hasMore && !loading && (
+        <div className="mt-3 flex justify-center">
+          <button onClick={loadMore} className="px-6 py-2.5 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 shadow-sm">
+            Charger plus de distributions
+          </button>
+        </div>
+      )}
 
       {showEleveSelector && (
         <EleveSelectorModal

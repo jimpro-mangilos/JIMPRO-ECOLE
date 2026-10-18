@@ -85,7 +85,7 @@ export default function Paiements() {
   }, [isStrictComptable, filters.viewMode]);
 
   const {
-    paiements, typesPaiement, loading, stats, motifOptions,
+    paiements, typesPaiement, loading, hasMore, loadMore, stats, motifOptions,
     dateGroups, expandedDates,
     toggleDate, expandAllDates, collapseAllDates, allExpanded,
     selectedIds, bulkDeleting,
@@ -363,6 +363,15 @@ export default function Paiements() {
         })}
         {dateGroups.length === 0 && <div className="px-4 py-12 text-center text-gray-400">Aucun paiement trouvé.</div>}
       </div>
+
+      {/* ⚡ Chargement progressif */}
+      {hasMore && (
+        <div className="mt-3 flex justify-center">
+          <button onClick={loadMore} className="px-6 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm">
+            Charger plus de paiements
+          </button>
+        </div>
+      )}
 
       {/* New Payment Modal */}
       {showModal && <PaymentFormModal isOpen={showModal} onClose={() => setShowModal(false)} onSuccess={() => { invalidate(); setShowModal(false); }} preselectedEleve={undefined} />}

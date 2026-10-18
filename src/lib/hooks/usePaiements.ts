@@ -6,6 +6,8 @@ import { queryKeys } from '../queryKeys';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
+const PAGE_SIZE = 500; // paiements chargés par « page » (Charger plus)
+
 export interface Paiement {
   id: string; numero_recu: string; eleve_id: string; nom_eleve: string; matricule: string;
   postnom: string; prenom: string; classe: string; sexe: string; section: string;
@@ -53,16 +55,15 @@ export function usePaiements(filters: PaiementFilters) {
     { open: false, paiementId: null, motif: '', loading: false }
   );
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set(['__first__']));
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // ─── Data Queries ──────────────────────────────────────────────────────────
-  const { data: paiements = [], isLoading: loading } = useQuery({
-    // ⚡ Requête SCOPÉE par mode/période côté serveur : on ne télécharge que
-    // les paiements de la vue affichée (journalier/mois ≈ quelques lignes),
-    // au lieu des ~5 000 lignes complètes à chaque ouverture.
-    queryKey: [...queryKeys.paiements.all, 'v4', { schoolId: currentSchoolId, mode: filters.viewMode, userId: user?.id }],
+  const { data: rawRows = [], isLoading: loading } = useQuery({
+    // ⚡ Chargement progressif + recherche côté serveur : on ne télécharge que
+    // les `visibleCount` premiers paiements (et uniquement ceux qui matchent la
+    // recherche), au lieu des ~10 000 lignes complètes à chaque ouverture.
+    queryKey: [...queryKeys.paiements.all, 'v5', { schoolId: currentSchoolId, mode: filters.viewMode, search: filters.searchTerm, visibleCount, userId: user?.id }],
     queryFn: async () => {
-      const PAGE = 1000;
-      const all: Paiement[] = [];
       const iso = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       const base = () => supabase.from('paiements').select('*').eq('ecole_id', currentSchoolId);
       const now = new Date();
@@ -84,21 +85,23 @@ export function usePaiements(filters: PaiementFilters) {
       } else {
         q = base();
       }
-      q = q.order('created_at', { ascending: false });
-      let from = 0;
-      while (true) {
-        const to = from + PAGE - 1;
-        const { data, error } = await q.range(from, to);
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        all.push(...(data as Paiement[]));
-        if (data.length < PAGE) break;
-        from += PAGE;
+      // Recherche côté serveur (nom, matricule, n° reçu, classe)
+      const s = (filters.searchTerm || '').trim().replace(/[%,()']/g, '');
+      if (s) {
+        q = q.or('nom_eleve.ilike.%' + s + '%,matricule.ilike.%' + s + '%,numero_recu.ilike.%' + s + '%,classe.ilike.%' + s + '%');
       }
-      return all;
+      q = q.order('created_at', { ascending: false });
+      // On charge visibleCount + 1 lignes pour détecter s'il en reste (hasMore).
+      const { data, error } = await q.range(0, visibleCount);
+      if (error) throw error;
+      return (data || []) as Paiement[];
     },
     staleTime: 60 * 1000,
   });
+
+  const hasMore = rawRows.length > visibleCount;
+  const paiements = hasMore ? rawRows.slice(0, visibleCount) : rawRows;
+  const loadMore = useCallback(() => setVisibleCount(c => c + PAGE_SIZE), []);
 
   const { data: typesPaiement = [] } = useQuery({
     queryKey: queryKeys.typesPaiement.active,
@@ -143,10 +146,7 @@ export function usePaiements(filters: PaiementFilters) {
       filtered = filtered.filter(p => p.comptable_id === user?.id || getStatut(p) === 'en_attente');
     }
 
-    if (filters.searchTerm) {
-      const s = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(p => p.numero_recu.toLowerCase().includes(s) || p.nom_eleve.toLowerCase().includes(s) || p.classe.toLowerCase().includes(s));
-    }
+    // (la recherche est désormais faite côté serveur)
     if (filters.filterType.length > 0) filtered = filtered.filter(p => filters.filterType.includes(p.type_paiement));
     if (filters.filterStatut.length > 0) filtered = filtered.filter(p => filters.filterStatut.includes(getStatut(p)));
     if (filters.filterMotifs.length > 0) filtered = filtered.filter(p => filters.filterMotifs.includes(p.motif_libelle));
@@ -293,6 +293,8 @@ export function usePaiements(filters: PaiementFilters) {
     allPaiements: paiements,
     typesPaiement,
     loading,
+    hasMore,
+    loadMore,
     stats,
     motifOptions,
     dateGroups,
