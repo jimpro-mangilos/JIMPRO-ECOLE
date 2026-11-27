@@ -16,13 +16,14 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 // Résumé lisible d'une entrée d'audit (champs dénormalisés des paiements / compte_courant / eleves)
-function summarize(entry: AuditLog): { recu: string | null; nom: string | null; motif: string | null; montant: number | null; statut: string | null } | null {
+function summarize(entry: AuditLog): { recu: string | null; matricule: string | null; nom: string | null; motif: string | null; montant: number | null; statut: string | null } | null {
   const d = entry.action === 'DELETE' ? entry.old_data : (entry.new_data || entry.old_data);
   if (!d) return null;
   const nomParts = [d.nom_eleve, d.postnom, d.prenom, d.nom, d.beneficiaire].filter(Boolean);
   const nom = nomParts.length > 0 ? nomParts.join(' ') : null;
   return {
-    recu: d.numero_recu ?? d.matricule ?? null,
+    recu: d.numero_recu ?? null,
+    matricule: d.matricule ?? null,
     nom,
     motif: d.motif_libelle ?? d.libelle ?? d.motif ?? null,
     montant: d.montant_paye ?? d.montant_chiffre ?? null,
@@ -121,6 +122,7 @@ export default function JournalAudit() {
                     </td>
                     <td className="px-3 py-2 text-sm">
                       {s?.recu && <p className="font-mono text-gray-900 font-medium">{s.recu}</p>}
+                      {s?.matricule && <p className="font-mono text-xs text-gray-500">{s.matricule}</p>}
                       {s?.nom && <p className="text-gray-700">{s.nom}</p>}
                       {s?.motif && <p className="text-xs text-gray-500">Motif : {s.motif}</p>}
                       {s?.montant != null && <p className="text-xs text-gray-500">{Number(s.montant).toLocaleString('fr-FR')} FC</p>}

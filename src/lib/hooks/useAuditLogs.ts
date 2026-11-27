@@ -49,12 +49,18 @@ export function useAuditLogs(filters: AuditFilters) {
         q = q.or(
           'old_data->>numero_recu.ilike.%' + s + '%,' +
           'new_data->>numero_recu.ilike.%' + s + '%,' +
+          'old_data->>matricule.ilike.%' + s + '%,' +
+          'new_data->>matricule.ilike.%' + s + '%,' +
           'old_data->>nom_eleve.ilike.%' + s + '%,' +
           'new_data->>nom_eleve.ilike.%' + s + '%,' +
+          'old_data->>nom.ilike.%' + s + '%,' +
+          'new_data->>nom.ilike.%' + s + '%,' +
           'old_data->>prenom.ilike.%' + s + '%,' +
           'new_data->>prenom.ilike.%' + s + '%,' +
           'old_data->>postnom.ilike.%' + s + '%,' +
-          'new_data->>postnom.ilike.%' + s + '%'
+          'new_data->>postnom.ilike.%' + s + '%,' +
+          'old_data->>classe.ilike.%' + s + '%,' +
+          'new_data->>classe.ilike.%' + s + '%'
         );
       }
 
