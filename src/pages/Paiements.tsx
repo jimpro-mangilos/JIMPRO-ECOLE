@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { DollarSign, Search, CheckCircle, Clock, Printer, Plus, XCircle, AlertTriangle, Trash2, Calendar, CalendarDays, ChevronRight, ChevronsDownUp, FileDown, RotateCcw, LayoutDashboard, User, ChevronDown, Check, X, Pencil, Eye } from 'lucide-react';
+import { DollarSign, Search, CheckCircle, Clock, Printer, Plus, XCircle, AlertTriangle, Trash2, Calendar, CalendarDays, ChevronRight, ChevronsDownUp, FileDown, RotateCcw, LayoutDashboard, User, ChevronDown, Check, X, Pencil, Eye, Send, Inbox, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { enApercu } from '../utils/pdfExport';
 import { generateReceipt } from '../utils/receiptGenerator';
 import { generatePaiementsReport } from '../utils/pdfGenerator';
@@ -7,6 +7,7 @@ import PaymentFormModal from '../components/PaymentFormModal';
 import MultiSelectFilter from '../components/MultiSelectFilter';
 import { useAuth } from '../contexts/AuthContext';
 import { usePaiements, getStatut, type Paiement } from '../lib/hooks/usePaiements';
+import { useDemandesAnnulation } from '../lib/hooks/useDemandesAnnulation';
 import { useSections, useClasses } from '../lib/hooks/useReferenceData';
 import { formatDateTime } from '../utils/calculations';
 import { supabase } from '../lib/supabase';
@@ -75,7 +76,7 @@ function usePaiementFilters() {
 
 // ─── Page Component ───────────────────────────────────────────────────────────
 export default function Paiements() {
-  const { currentSchoolId, canCreatePaiement, canAnnulerPaiement, canSupprimerPaiement, isItManager, isComptable } = useAuth();
+  const { currentSchoolId, canCreatePaiement, canAnnulerPaiement, canSupprimerPaiement, isItManager, isComptable, canDemanderAnnulation, isAnnulationApprover } = useAuth();
   const filters = usePaiementFilters();
   const isStrictComptable = isComptable() && !isItManager();
 
@@ -95,6 +96,8 @@ export default function Paiements() {
     supprimer, editPaiement, invalidate,
   } = usePaiements(filters);
 
+  const { demandes, demanderAnnulation, approuverDemande, refuserDemande } = useDemandesAnnulation();
+
   const schoolId = currentSchoolId!;
   const { data: sections = [] } = useSections(schoolId);
   const { data: classes = [] } = useClasses(schoolId);
@@ -103,6 +106,9 @@ export default function Paiements() {
   const [editModal, setEditModal] = useState<{ open: boolean; paiement: Paiement | null; loading: boolean }>({ open: false, paiement: null, loading: false });
   const [detailPaiement, setDetailPaiement] = useState<Paiement | null>(null);
   const [editFormData, setEditFormData] = useState({ montant_paye: 0, montant_en_lettre: '', motif_libelle: '', mode_paiement: '', date_paiement: '', annee_scolaire: '' });
+  const [demandeModal, setDemandeModal] = useState<{ open: boolean; paiementId: string | null; motif: string; loading: boolean }>({ open: false, paiementId: null, motif: '', loading: false });
+  const [showDemandes, setShowDemandes] = useState(false);
+  const [demandeActionId, setDemandeActionId] = useState<string | null>(null);
 
   const isDateFilterActive = filters.filterDateDebut !== '' || filters.filterDateFin !== '';
 
@@ -162,6 +168,30 @@ export default function Paiements() {
     else setEditModal(prev => ({ ...prev, loading: false }));
   };
 
+  const openDemandeAnnulation = (paiementId: string) => setDemandeModal({ open: true, paiementId, motif: '', loading: false });
+
+  const handleDemanderAnnulation = async () => {
+    if (!demandeModal.paiementId) return;
+    setDemandeModal(p => ({ ...p, loading: true }));
+    const ok = await demanderAnnulation(demandeModal.paiementId, demandeModal.motif);
+    if (ok) setDemandeModal({ open: false, paiementId: null, motif: '', loading: false });
+    else setDemandeModal(p => ({ ...p, loading: false }));
+  };
+
+  const handleApprouverDemande = async (id: string) => {
+    setDemandeActionId(id);
+    await approuverDemande(id);
+    setDemandeActionId(null);
+  };
+
+  const handleRefuserDemande = async (id: string) => {
+    const motif = window.prompt('Motif du refus (optionnel) :');
+    if (motif === null) return;
+    setDemandeActionId(id);
+    await refuserDemande(id, motif);
+    setDemandeActionId(null);
+  };
+
   const formatDateLong = (dateStr: string) => {
     const parts = dateStr.split('/');
     return new Date(+parts[2], +parts[1] - 1, +parts[0]).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -197,6 +227,7 @@ export default function Paiements() {
   // ─── Derived data for filter dropdowns ─────────────────────────────────────
   const years = useMemo(() => Array.from(new Set(paiements.map(p => new Date(p.date_paiement).getFullYear().toString()))).sort(), [paiements]);
   const encaisseurs = useMemo(() => Array.from(new Set(paiements.map(p => p.nom_encaisseur).filter(Boolean) as string[])).sort(), [paiements]);
+  const pendingDemandes = useMemo(() => demandes.filter(d => d.statut === 'en_attente'), [demandes]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
@@ -206,11 +237,18 @@ export default function Paiements() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Gestion des Paiements</h1>
-        {canCreatePaiement() && (
-          <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-md">
-            <Plus className="w-5 h-5" /> Nouveau Paiement
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {isAnnulationApprover() && (
+            <button onClick={() => setShowDemandes(true)} className="flex items-center gap-2 bg-amber-100 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-200 transition-colors shadow-sm">
+              <Inbox className="w-5 h-5" /> Demandes d'annulation{pendingDemandes.length > 0 ? ' (' + pendingDemandes.length + ')' : ''}
+            </button>
+          )}
+          {canCreatePaiement() && (
+            <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-md">
+              <Plus className="w-5 h-5" /> Nouveau Paiement
+            </button>
+          )}
+        </div>
       </div>
 
       {/* View Mode Tabs */}
@@ -352,6 +390,7 @@ export default function Paiements() {
 <button onClick={(e) => { e.stopPropagation(); handlePreviewRecu(p); }} className="p-1.5 rounded-lg hover:bg-teal-50 text-teal-600" title="Aperçu du reçu (nouvel onglet)"><Eye className="w-3.5 h-3.5" /></button>
                               {(canCreatePaiement() || isItManager()) && getStatut(p) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openEditModal(p); }} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>}
                               {(canEncaisserMontant(p.montant_paye) && getStatut(p) === 'en_attente') && <button onClick={(e) => { e.stopPropagation(); encaisser(p.id, p.montant_paye); }} className="p-1.5 rounded-lg hover:bg-green-50 text-green-600" title="Encaisser"><CheckCircle className="w-3.5 h-3.5" /></button>}
+                              {canDemanderAnnulation() && getStatut(p) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openDemandeAnnulation(p.id); }} className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-600" title="Demander l'annulation"><Send className="w-3.5 h-3.5" /></button>}
                               {canAnnulerPaiement() && getStatut(p) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openAnnulation(p.id); }} className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-600" title="Annuler"><AlertTriangle className="w-3.5 h-3.5" /></button>}
                               {(canSupprimerPaiement() || isItManager()) && <button onClick={(e) => { e.stopPropagation(); supprimer(p); }} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500" title="Supprimer"><Trash2 className="w-3.5 h-3.5" /></button>}
                             </div>
@@ -383,6 +422,54 @@ export default function Paiements() {
             <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
               <button onClick={closeAnnulation} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
               <button onClick={handleAnnuler} disabled={annulationModal.loading} className="px-6 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50">{annulationModal.loading ? 'En cours...' : 'Confirmer'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Demande d'annulation Modal (comptable) */}
+      {demandeModal.open && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDemandeModal({ open: false, paiementId: null, motif: '', loading: false })}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Demander l'annulation</h2><button onClick={() => setDemandeModal({ open: false, paiementId: null, motif: '', loading: false })} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
+            <div className="p-6">
+              <p className="text-sm text-gray-500 mb-3">Votre demande sera transmise à la hiérarchie (promoteur / it_manager / admin) pour approbation.</p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Motif d'annulation *</label>
+              <textarea value={demandeModal.motif} onChange={e => setDemandeModal(p => ({ ...p, motif: e.target.value }))} rows={3} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500" placeholder="Raison de la demande d'annulation..." />
+            </div>
+            <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
+              <button onClick={() => setDemandeModal({ open: false, paiementId: null, motif: '', loading: false })} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
+              <button onClick={handleDemanderAnnulation} disabled={demandeModal.loading} className="px-6 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50">{demandeModal.loading ? 'Envoi...' : 'Envoyer la demande'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Demandes d'annulation (approbation hiérarchique) */}
+      {showDemandes && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDemandes(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Demandes d'annulation</h2><button onClick={() => setShowDemandes(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button></div>
+            <div className="p-4 space-y-3 overflow-y-auto">
+              {pendingDemandes.length === 0 ? (
+                <div className="px-4 py-10 text-center text-gray-400">Aucune demande en attente.</div>
+              ) : pendingDemandes.map(d => (
+                <div key={d.id} className="border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Reçu {d.paiement?.numero_recu ?? '—'}</p>
+                      <p className="text-xs text-gray-500">{d.paiement ? (d.paiement.nom_eleve + ' ' + d.paiement.prenom) : '—'} · {d.paiement?.classe ?? '—'}</p>
+                    </div>
+                    <p className="text-sm font-bold text-gray-900">{d.paiement ? d.paiement.montant_paye.toLocaleString('fr-FR') : '—'} FC</p>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-1"><span className="font-medium text-gray-500">Motif :</span> {d.motif}</p>
+                  <p className="text-xs text-gray-400 mb-2">Demandé par {d.demandeur_nom || '—'} · {new Date(d.date_demande).toLocaleString('fr-FR')}</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleApprouverDemande(d.id)} disabled={demandeActionId === d.id} className="flex-1 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200 disabled:opacity-50"><ThumbsUp className="w-3.5 h-3.5 inline mr-1" />Approuver (annuler)</button>
+                    <button onClick={() => handleRefuserDemande(d.id)} disabled={demandeActionId === d.id} className="flex-1 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs hover:bg-red-200 disabled:opacity-50"><ThumbsDown className="w-3.5 h-3.5 inline mr-1" />Refuser</button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -436,6 +523,7 @@ export default function Paiements() {
                 <button onClick={(e) => { e.stopPropagation(); handlePreviewRecu(detailPaiement); }} className="px-3 py-1.5 bg-teal-100 text-teal-700 rounded-lg text-xs hover:bg-teal-200"><Eye className="w-3.5 h-3.5 inline mr-1" />Aperçu</button>
                 {(canCreatePaiement() || isItManager()) && getStatut(detailPaiement) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openEditModal(detailPaiement); setDetailPaiement(null); }} className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs hover:bg-amber-200"><Pencil className="w-3.5 h-3.5 inline mr-1" />Modifier</button>}
                 {(canEncaisserMontant(detailPaiement.montant_paye) && getStatut(detailPaiement) === 'en_attente') && <button onClick={(e) => { e.stopPropagation(); encaisser(detailPaiement.id, detailPaiement.montant_paye); }} className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200"><CheckCircle className="w-3.5 h-3.5 inline mr-1" />Encaisser</button>}
+                {canDemanderAnnulation() && getStatut(detailPaiement) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openDemandeAnnulation(detailPaiement.id); }} className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-xs hover:bg-orange-200"><Send className="w-3.5 h-3.5 inline mr-1" />Demander l'annulation</button>}
                 {canAnnulerPaiement() && getStatut(detailPaiement) !== 'annule' && <button onClick={(e) => { e.stopPropagation(); openAnnulation(detailPaiement.id); }} className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-xs hover:bg-orange-200"><AlertTriangle className="w-3.5 h-3.5 inline mr-1" />Annuler</button>}
                 {(canSupprimerPaiement() || isItManager()) && <button onClick={(e) => { e.stopPropagation(); supprimer(detailPaiement); }} className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs hover:bg-red-200"><Trash2 className="w-3.5 h-3.5 inline mr-1" />Supprimer</button>}
               </div>

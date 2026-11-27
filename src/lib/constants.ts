@@ -14,6 +14,7 @@ import {
   BookOpen,
   UserCog,
   UserCheck,
+  History,
 } from 'lucide-react';
 
 export const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -36,6 +37,7 @@ export const MENU_ICON_MAP: Record<string, React.ComponentType<{ className?: str
   'pointage': UserCheck,
   'pointage-eleves': UserCheck,
   'recouvrement': UserCheck,
+  'journal-audit': History,
 };
 
 export const MENU_PATH_MAP: Record<string, string> = {
@@ -58,6 +60,7 @@ export const MENU_PATH_MAP: Record<string, string> = {
   'pointage': '/pointage',
   'pointage-eleves': '/pointage-eleves',
   'recouvrement': '/recouvrement',
+  'journal-audit': '/journal-audit',
 };
 
 export const QUICK_ACCESS_COLORS: Record<string, { bg: string; hover: string; icon: string; border: string }> = {

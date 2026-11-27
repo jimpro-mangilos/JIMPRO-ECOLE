@@ -37,6 +37,12 @@ export const queryKeys = {
     all: ['paiements'] as const,
     list: (filters?: Record<string, unknown>) => ['paiements', 'list', filters ?? {}] as const,
   },
+  demandesAnnulation: {
+    all: ['demandesAnnulation'] as const,
+  },
+  auditLogs: {
+    all: ['auditLogs'] as const,
+  },
   finances: {
     all: ['compteCourant'] as const,
     list: (filters?: Record<string, unknown>) => ['compteCourant', 'list', filters ?? {}] as const,

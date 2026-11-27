@@ -37,6 +37,8 @@ interface AuthContextType {
   canManageConfiguration: () => boolean;
   canAnnulerPaiement: () => boolean;
   canSupprimerPaiement: () => boolean;
+  isAnnulationApprover: () => boolean;
+  canDemanderAnnulation: () => boolean;
   isItManager: () => boolean;
   isCoordonnateur: () => boolean;
   isPromoteur: () => boolean;
@@ -211,8 +213,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return isItManager() || profile?.role?.nom === 'admin';
   }
 
+  function isAnnulationApprover(): boolean {
+    // Hiérarchie autorisée à annuler / approuver une annulation.
+    return isItManager() || isPromoteur() || profile?.role?.nom === 'admin';
+  }
+
+  function canDemanderAnnulation(): boolean {
+    // Le comptable (rôle strict) soumet une demande d'annulation à approuver.
+    return profile?.role?.nom === 'comptable';
+  }
+
   function canAnnulerPaiement(): boolean {
-    return isItManager() || profile?.role?.nom === 'admin' || profile?.role?.nom === 'comptable';
+    // Annulation directe réservée à la hiérarchie (promoteur / it_manager / admin).
+    return isAnnulationApprover();
   }
 
   function canSupprimerPaiement(): boolean {
@@ -262,6 +275,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     canManageConfiguration,
     canAnnulerPaiement,
     canSupprimerPaiement,
+    isAnnulationApprover,
+    canDemanderAnnulation,
     isItManager,
     isCoordonnateur,
     isPromoteur,

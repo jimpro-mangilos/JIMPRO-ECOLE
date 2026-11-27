@@ -52,6 +52,7 @@ const PortailPointageEleves = lazy(() => import('./pages/PortailPointageEleves')
 const CarteServicePublic = lazy(() => import('./pages/CarteServicePublic'));
 import { SuppressionAuthProvider } from './components/SuppressionAuth';
 const Recouvrement = lazy(() => import('./pages/Recouvrement'));
+const JournalAudit = lazy(() => import('./pages/JournalAudit'));
 
 function LoadingFallback() {
   return (
@@ -354,6 +355,17 @@ function App() {
                 <ProtectedRoute requireAdmin>
                   <Layout>
                     <LazyPage><Admin /></LazyPage>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/journal-audit"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <LazyPage><JournalAudit /></LazyPage>
                   </Layout>
                 </ProtectedRoute>
               }

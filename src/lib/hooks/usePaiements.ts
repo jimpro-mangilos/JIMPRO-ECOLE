@@ -47,7 +47,7 @@ interface PaiementFilters {
 }
 
 export function usePaiements(filters: PaiementFilters) {
-  const { user, userProfile, canEncaisser, canSupprimerPaiement, isItManager, isPromoteur, isCoordonnateur, isSecretary, currentSchoolId } = useAuth();
+  const { user, userProfile, canEncaisser, canAnnulerPaiement, canSupprimerPaiement, isItManager, isPromoteur, isCoordonnateur, isSecretary, currentSchoolId } = useAuth();
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -266,18 +266,17 @@ export function usePaiements(filters: PaiementFilters) {
 
   const handleAnnuler = useCallback(async () => {
     if (!annulationModal.paiementId) return;
+    if (!canAnnulerPaiement()) {  toast.error("Annulation refusée : approbation hiérarchique requise (promoteur ou it_manager)"); return; }
     if (!annulationModal.motif.trim()) {  toast.error('Veuillez saisir un motif'); return; }
     setAnnulationModal(p => ({ ...p, loading: true }));
-    const { error } = await supabase.from('paiements').update({
-      statut: 'annule', motif_annulation: annulationModal.motif.trim(),
-      annule_par: user?.id, nom_annuleur: `${userProfile?.prenom} ${userProfile?.nom}`,
-      date_annulation: new Date().toISOString(),
-      ecole_id: currentSchoolId,
-    }).eq('id', annulationModal.paiementId);
+    const { error } = await supabase.rpc('annuler_paiement', {
+      p_id: annulationModal.paiementId,
+      p_motif: annulationModal.motif.trim(),
+    });
     if (error) {  toast.error("Erreur d'annulation: " + error.message); setAnnulationModal(p => ({ ...p, loading: false })); return; }
     closeAnnulation();
     invalidate();
-  }, [annulationModal, user, userProfile, closeAnnulation, invalidate]);
+  }, [annulationModal, canAnnulerPaiement, closeAnnulation, invalidate]);
 
   const supprimer = useCallback(async (p: Paiement) => {
     const statut = getStatut(p);
